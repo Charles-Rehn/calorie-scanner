@@ -1177,7 +1177,7 @@ const SHOP_BRANDS = [
   ["Alcampo", "Alcampo|Auchan", "alcampo|auchan"], ["El Corte Inglés", "El Corte Inglés", "el corte ingles|corte ingles"],
   ["Kellogg's", "Kellogg's|Kelloggs", "kelloggs|kellogg"], ["Nestlé", "Nestlé|Nestle", "nestle"], ["Cadbury", "Cadbury", "cadbury"],
   ["Heinz", "Heinz", "heinz"], ["Müller", "Müller|Muller", "muller|mueller"], ["Alpro", "Alpro", "alpro"], ["Danone", "Danone", "danone"]
-].map(([label, names, al]) => { const ns = names.split("|"); return { label, names: ns, tag: tagify(ns[0]), tags: [...new Set(ns.map(tagify))], aliases: al.split("|").map(snorm).filter(Boolean) }; });
+].map(([label, names, al]) => { const ns = names.split("|"); return { label, names: ns, tag: tagify(ns[0]), tags: [...new Set(ns.map(tagify))], store: ["Aldi", "Lidl", "Farmfoods"].includes(label), aliases: al.split("|").map(snorm).filter(Boolean) }; });
 const brandObj = tag => SHOP_BRANDS.find(b => b.tag === tag) || null;
 function detectBrand(raw) {
   const s = " " + snorm(raw) + " ";
@@ -1768,7 +1768,7 @@ function openSearch(flow) {
     const key = offKey();
     if (offState.key === key && offState.items) return offState.items.length ? list(offState.items) : `<p class="note">No products found. Try fewer words, or scan the barcode.</p>`;
     if (offState.key === key && offState.loading) return `<p class="note"><span class="spin"></span>&nbsp; Searching…</p>`;
-    return `${offState.key === key && offState.err ? `<p class="err">${esc(offState.err)}</p>` : ""}<button class="btn wide" id="offGo">${esc(label)}</button>`;
+    return `${offState.key === key && offState.err ? `<p class="err">${esc(offState.err)}</p>${offState.diag ? `<p class="note" style="font-size:11px;font-family:var(--mono)">${esc(offState.diag)}</p>` : ""}` : ""}<button class="btn wide" id="offGo">${esc(label)}</button>`;
   }
   function draw() {
     items = {};
@@ -1821,7 +1821,7 @@ function openSearch(flow) {
     if (!b && !snorm(raw)) return;
     offState = { key, items: null, loading: true, err: "" }; flow.off = offState; draw();
     try { offState.items = await searchOFF(terms, b); }
-    catch (e) { offState.err = e.message || "Search failed. Check your connection and try again."; }
+    catch (e) { offState.err = e.message || "Search failed. Check your connection and try again."; offState.diag = e.diag || ""; }
     offState.loading = false; if (offKey() === key && input.isConnected) draw();
   }
   sh.querySelectorAll("[data-chain]").forEach(b => b.onclick = () => { haptic(); chain = chain === b.dataset.chain ? null : b.dataset.chain; brand = null; sync(); draw(); });
@@ -1870,7 +1870,7 @@ async function getJSON(url, ms = 10000) {
     return await r.json();
   } catch (e) {
     if (e.name === "AbortError") throw new Error("The food database took too long to answer. Try again.");
-    if (e instanceof TypeError) throw new Error("Couldn't reach the food database. Check your connection.");
+    if (e instanceof TypeError) throw new Error("The food database didn't answer.");
     throw e;
   } finally { clearTimeout(tm); }
 }
@@ -1890,23 +1890,31 @@ async function salFetch(q, b) {
   return [];
 }
 const mergeFoods = (a, b) => { const seen = new Set(a.map(x => x.id)); return a.concat((b || []).filter(x => !seen.has(x.id) && seen.add(x.id))); };
+// Ask every source at once and use whatever answers; only fail if nothing does.
 async function searchOFF(q, b) {
   const key = (b ? b.tag : "") + "|" + snorm(q);
   if (offCache.has(key)) return offCache.get(key);
-  let items = [], lastErr = null;
-  try { items = await salFetch(q, b); } catch (e) { lastErr = e; }
-  if (items.length < 5) {
-    try {
-      if (b && !q) {
-        items = mergeFoods(items, await v2Fetch(`brands_tags=${encodeURIComponent(b.tags.join("|"))}`));
-        if (items.length < 5) items = mergeFoods(items, await v2Fetch(`stores_tags=${encodeURIComponent(b.tags.join("|"))}`).catch(() => []));
-      } else if (b) {
-        items = mergeFoods(items, await offFetch(`search_terms=${encodeURIComponent(q)}&tagtype_0=brands&tag_contains_0=contains&tag_0=${encodeURIComponent(b.tag)}`));
-        if (!items.length) items = await offFetch(`search_terms=${encodeURIComponent(b.names[0] + " " + q)}`).catch(() => []);
-      } else items = mergeFoods(items, await offFetch(`search_terms=${encodeURIComponent(q)}`));
-    } catch (e) { lastErr = lastErr || e; }
+  const diag = [], enc = encodeURIComponent;
+  const attempt = (label, fn) => fn().then(r => { diag.push(`${label}:${r.length}`); return r; },
+    e => { diag.push(`${label}:${e.status || (/long/.test(e.message) ? "timeout" : /searches in a row/.test(e.message) ? "limit" : "net")}`); return null; });
+  const terms = q ? `search_terms=${enc(q)}&` : "";
+  const jobs = [attempt("new", () => salFetch(q, b))];
+  if (b) {
+    jobs.push(attempt("brand", () => offFetch(`${terms}tagtype_0=brands&tag_contains_0=contains&tag_0=${enc(b.tag)}`)));
+    if (b.store) jobs.push(attempt("store", () => offFetch(`${terms}tagtype_0=stores&tag_contains_0=contains&tag_0=${enc(b.tag)}`)));
+    else if (b.tags[1]) jobs.push(attempt("brand2", () => offFetch(`${terms}tagtype_0=brands&tag_contains_0=contains&tag_0=${enc(b.tags[1])}`)));
+  } else jobs.push(attempt("text", () => offFetch(`search_terms=${enc(q)}`)));
+  const res = await Promise.all(jobs);
+  let items = [];
+  for (const r of res) if (r) items = mergeFoods(items, r);
+  if (b && !items.length) {
+    const r = await attempt("words", () => offFetch(`search_terms=${enc((b.names[0] + " " + q).trim())}`));
+    if (r) items = r; res.push(r);
   }
-  if (!items.length && lastErr) throw lastErr;
+  if (!items.length && res.every(r => r === null)) {
+    const e = new Error("The food database didn't answer. Wait a moment and try again, or scan the barcode instead.");
+    e.diag = diag.join(" · "); throw e;
+  }
   offCache.set(key, items);
   return items;
 }
