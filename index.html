@@ -2289,6 +2289,14 @@ function ownToFood(r, rank) {
   return { id: "bc-" + code, src: "off", code, name, brand: niceBrand(brand || ""), img: url, servingLabel: sg > 0 ? (sl || `${sg} g`) : "100 g", servingGrams: g,
     kcal: Math.round(k * m), protein: r1(p * m), carbs: r1(c * m), fat: r1(f * m), uk: !!uk, scans: Math.round(2e5 / (rank + 20)) };
 }
+// Scanned barcode: our copy first, so scanning works even when Open Food Facts doesn't answer
+async function ownByCode(code) {
+  const m = await ownMeta(); if (!m.barcodes) return null;
+  const sh = await ownJSON(`${m.v}/b/${code.slice(-2)}.json`, own.shards); if (!sh) return null;
+  const i = [code, code.replace(/^0+/, ""), code.padStart(13, "0")].map(c => sh[c]).find(x => x != null); if (i == null) return null;
+  const ch = await ownJSON(`${m.v}/p/${Math.floor(i / m.chunk)}.json`, own.chunks), rec = ch && ch[i % m.chunk];
+  return rec ? ownToFood(rec, i) : null;
+}
 async function searchOwn(Q) {
   const m = await ownMeta(), v = m.v;
   const words = [...new Set(Q.words)].slice(0, 5); if (!words.length) return [];
@@ -2781,8 +2789,10 @@ async function lookup(code, flow) {
   const back = () => openSearch(flow);
   const mine = cache.pantry["bc-" + code];
   if (mine) return openFood({ ...mine, id: "bc-" + code }, { ...flow, back });
-  openSheet(`${head("Looking up")}<p class="code" style="font-size:18px;text-align:center">${esc(code)}</p><p class="note"><span class="spin"></span>&nbsp; Checking Open Food Facts…</p>`, flow.pick ? flow.back : null);
-  const food = await fetchProduct(code);
+  openSheet(`${head("Looking up")}<p class="code" style="font-size:18px;text-align:center">${esc(code)}</p><p class="note"><span class="spin"></span>&nbsp; Looking it up…</p>`, flow.pick ? flow.back : null);
+  let food = null;
+  try { food = await ownByCode(code); } catch (e) {}
+  if (!food) food = await fetchProduct(code); // not in our copy: ask Open Food Facts directly
   if (food) return openFood(food, { ...flow, back });
   openFood({ ...blankFood(), id: "bc-" + code, src: "scan", code }, { ...flow, back, unknown: true });
 }

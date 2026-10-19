@@ -100,6 +100,14 @@ def main(src, out):
     base = os.path.join(out, ver)
     os.makedirs(os.path.join(base, "p"), exist_ok=True)
     os.makedirs(os.path.join(base, "t"), exist_ok=True)
+    os.makedirs(os.path.join(base, "b"), exist_ok=True)
+    # barcode -> product number, by the barcode's last two digits
+    codes = defaultdict(dict)
+    for i, (_, rec) in enumerate(rows):
+        codes[rec[0][-2:]][rec[0]] = i
+    for key, d in codes.items():
+        with open(os.path.join(base, "b", f"{key}.json"), "w") as fh:
+            json.dump(d, fh, separators=(",", ":"))
     index = defaultdict(list)
     for i, (_, rec) in enumerate(rows):
         for tok in set(norm(rec[1] + " " + rec[2]).split()):
@@ -121,7 +129,7 @@ def main(src, out):
         with open(os.path.join(base, "t", f"{key}.json"), "w") as fh:
             json.dump(d, fh, separators=(",", ":"), ensure_ascii=False)
     size = sum(os.path.getsize(os.path.join(dp, fn)) for dp, _, fns in os.walk(base) for fn in fns)
-    meta = {"v": ver, "products": len(rows), "chunk": CHUNK, "cap": CAP, "words": len(index), "capped": capped,
+    meta = {"v": ver, "products": len(rows), "barcodes": True, "chunk": CHUNK, "cap": CAP, "words": len(index), "capped": capped,
             "shards": len(shards), "bytes": size, "source": "Open Food Facts (ODbL)", "built": time.strftime("%Y-%m-%d %H:%M UTC", time.gmtime())}
     with open(os.path.join(out, "meta.json"), "w") as fh:
         json.dump(meta, fh)
