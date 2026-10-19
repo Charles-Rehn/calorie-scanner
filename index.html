@@ -1,0 +1,1416 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Calorie Scanner</title>
+<meta name="description" content="Scan barcodes, search foods and log calories together as a family.">
+<meta name="theme-color" content="#17734A">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Calories">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&family=IBM+Plex+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: one-column phone diary. The day's equation and 7-day strip up top, shared dishes,
+   then meals; a fixed scan/search bar at the bottom. Sheets borrow the black rules of a nutrition label. */
+:root{
+  --bg:#EEF2EE; --surface:#FFFFFF; --ink:#141B17; --muted:#5B6862; --line:#D5DDD7;
+  --accent:#17734A; --accent-ink:#FFFFFF; --laser:#E0312B;
+  --protein:#3A68CF; --carbs:#C9861C; --fat:#A64A9E; --over:#C23B30; --over-bg:#FBE9E7;
+  --shade:rgba(10,20,15,.45);
+  --display:"Archivo", "Helvetica Neue", Arial, sans-serif;
+  --mono:"IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+  --r:14px;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){:root{
+  --bg:#0F1512; --surface:#18201C; --ink:#E9EFEA; --muted:#93A39A; --line:#2B3630;
+  --accent:#3DBA7E; --accent-ink:#06140D; --laser:#FF5A4F;
+  --protein:#7A9DF0; --carbs:#E5A84A; --fat:#D27BC9; --over:#FF6B5E; --over-bg:#3A1D1A; --shade:rgba(0,0,0,.6);
+  color-scheme:dark}}
+
+*{box-sizing:border-box}
+html,body{background:var(--bg);margin:0}
+body{color:var(--ink);font-family:var(--display);font-size:15px;line-height:1.4;font-variant-numeric:tabular-nums;
+  -webkit-text-size-adjust:100%;-webkit-tap-highlight-color:transparent;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px));}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+[hidden]{display:none!important}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.wrap{max-width:560px;margin:0 auto;padding-block:14px 120px;display:flex;flex-direction:column;gap:14px}
+
+/* Header */
+.top{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.brand{font-weight:900;font-stretch:115%;font-size:20px;letter-spacing:-.01em;display:flex;align-items:center;gap:8px;min-width:0}
+.brand svg{flex:none}
+.top-r{display:flex;gap:8px;align-items:center}
+.iconbtn{border:1px solid var(--line);background:var(--surface);border-radius:999px;min-width:40px;height:40px;display:inline-grid;place-items:center;padding:0 10px}
+.famchip{display:inline-flex;align-items:center;gap:6px;font-weight:700;font-size:13px;max-width:150px}
+.famchip span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.datebar{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.datebar .day{font-weight:800;font-stretch:105%;font-size:17px;text-align:center;flex:1}
+.datebar .day small{display:block;font-weight:500;font-size:12px;color:var(--muted);font-stretch:100%}
+.install{border:1px solid var(--line);background:var(--surface);border-radius:var(--r);padding:12px 14px;display:flex;gap:10px;align-items:flex-start;font-size:13px}
+.install p{margin:0;flex:1}
+
+/* Summary */
+.summary{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px;display:flex;flex-direction:column;gap:14px}
+.summary.over{border-color:var(--over);box-shadow:0 0 0 1px var(--over) inset}
+.eq{display:grid;grid-template-columns:1fr auto 1fr auto 1.25fr;align-items:end;gap:6px;text-align:center}
+.eq .n{font-weight:800;font-size:20px;font-stretch:90%;line-height:1.1}
+.eq .l{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.eq .op{color:var(--muted);font-size:18px;padding-bottom:16px}
+.eq .rem .n{font-size:30px;font-weight:900;color:var(--accent)}
+.summary.over .eq .rem .n,.summary.over .eq .rem .l{color:var(--over)}
+.eq button{border:0;background:none;padding:0}
+.overmsg{background:var(--over-bg);color:var(--over);border-radius:10px;padding:8px 12px;font-weight:700;font-size:14px;display:flex;align-items:center;gap:8px}
+.bar{height:8px;border-radius:99px;background:var(--line);overflow:hidden;position:relative}
+.bar>i{display:block;height:100%;background:var(--accent);border-radius:99px;transition:width .4s}
+.bar.over>i{background:var(--over)}
+.macros{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.macro{display:flex;flex-direction:column;gap:5px;min-width:0}
+.macro .t{display:flex;justify-content:space-between;font-size:12px;gap:4px}
+.macro .t b{font-weight:700}
+.macro .t span{color:var(--muted);white-space:nowrap}
+.macro .bar{height:5px}
+.m-p .bar>i{background:var(--protein)} .m-c .bar>i{background:var(--carbs)} .m-f .bar>i{background:var(--fat)}
+
+/* Week strip */
+.week-h{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);gap:8px}
+.week-h b{color:var(--over);font-weight:700}
+.week{position:relative;display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.wd{border:0;background:none;padding:0;display:flex;flex-direction:column;align-items:center;gap:4px;font-size:11px;color:var(--muted)}
+.wbar{position:relative;width:100%;max-width:30px;height:52px;border-radius:6px;background:var(--bg);overflow:hidden;display:flex;align-items:flex-end}
+.wbar i{display:block;width:100%;background:var(--accent);opacity:.85}
+.wd.over .wbar i{background:var(--over);opacity:1}
+.wd.sel span{color:var(--ink);font-weight:800}
+.wd.sel .wbar{outline:2px solid var(--ink);outline-offset:1px}
+.wbar .lim{position:absolute;left:0;right:0;border-top:2px dashed var(--muted);opacity:.7}
+
+/* Sections & cards */
+.sec-h{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:4px}
+.sec-h h2{margin:0;font-size:13px;font-weight:800;font-stretch:110%;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.meal{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.meal-h{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;gap:8px}
+.meal-h h3{margin:0;font-size:15px;font-weight:800;font-stretch:110%;text-transform:uppercase;letter-spacing:.04em}
+.meal-h .k{color:var(--muted);font-size:13px;margin-left:auto}
+.add{border:0;background:none;color:var(--accent);font-weight:700;padding:6px 2px}
+.entry{display:flex;gap:10px;align-items:center;padding:10px 14px;border:0;border-top:1px solid var(--line);width:100%;text-align:left;background:none}
+.entry .nm{flex:1;min-width:0}
+.entry .nm b{display:block;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.entry .nm small{color:var(--muted);font-size:12px;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.entry .kc{font-weight:700;text-align:right;white-space:nowrap}
+.entry .kc small{display:block;font-weight:500;font-size:11px;color:var(--muted)}
+.empty{padding:0 14px 12px;color:var(--muted);font-size:13px;margin:0}
+.entry-actions{display:flex;gap:8px;padding:0 14px 12px;justify-content:flex-end;align-items:center;flex-wrap:wrap}
+.foot{color:var(--muted);font-size:12px;text-align:center;margin:0}
+.dishes{display:flex;flex-direction:column;gap:10px}
+.dish{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;display:flex;align-items:center;gap:12px}
+.dish .pot{flex:none;width:40px;height:40px;border-radius:10px;background:var(--bg);display:grid;place-items:center;color:var(--accent)}
+.dish .nm{flex:1;min-width:0}
+.dish .nm b{display:block;font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dish .nm small{display:block;color:var(--muted);font-size:12px}
+.dish-empty{border:1px dashed var(--line);border-radius:var(--r);padding:14px;color:var(--muted);font-size:13px;display:flex;flex-direction:column;gap:10px;align-items:flex-start}
+
+/* Bottom bar */
+.dock{position:fixed;left:0;right:0;bottom:0;z-index:5;
+  padding:10px max(16px, env(safe-area-inset-right, 0px)) calc(10px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
+  background:linear-gradient(to top, var(--bg) 70%, transparent)}
+.dock-in{max-width:560px;margin:0 auto;display:flex;gap:10px}
+.btn{border-radius:12px;border:1px solid var(--line);background:var(--surface);padding:12px 16px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:48px;text-decoration:none;color:var(--ink)}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:transparent}
+.btn.ghost{background:none}
+.btn.small{min-height:36px;padding:6px 12px;font-size:13px;border-radius:10px}
+.btn.danger{color:var(--over)}
+.btn.wide{width:100%}
+.btn:disabled{opacity:.5;cursor:default}
+.dock .btn{flex:1;font-size:16px;font-stretch:108%}
+
+/* Sheet */
+.shade{position:fixed;inset:0;background:var(--shade);z-index:20;display:flex;align-items:flex-end;justify-content:center}
+.sheet{background:var(--surface);width:100%;max-width:560px;max-height:calc(100% - env(safe-area-inset-top, 0px) - 12px);overflow:auto;-webkit-overflow-scrolling:touch;border-radius:20px 20px 0 0;
+  padding:18px max(16px, env(safe-area-inset-right, 0px)) calc(20px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
+  display:flex;flex-direction:column;gap:14px;animation:up .22s ease-out}
+@keyframes up{from{transform:translateY(30px);opacity:.6}to{transform:none;opacity:1}}
+@media (prefers-reduced-motion: reduce){.sheet{animation:none}.laser{animation:none!important}}
+.sheet-h{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.sheet-h h3{margin:0;font-size:19px;font-weight:900;font-stretch:112%;text-wrap:balance}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{border:1px solid var(--line);border-radius:99px;padding:6px 12px;background:none;font-size:13px;font-weight:600}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+.tools{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.tool{border:1px solid var(--line);border-radius:12px;background:var(--bg);padding:10px 8px;display:flex;flex-direction:column;align-items:center;gap:4px;font-weight:700;font-size:13px;text-align:center}
+.tool svg{color:var(--accent)}
+.field{display:flex;flex-direction:column;gap:4px;min-width:0}
+.field label,.lbl{font-size:12px;color:var(--muted);font-weight:600}
+input[type=text],input[type=email],input[type=password],input[type=number],input[type=search],select,textarea{width:100%;border:1px solid var(--line);background:var(--bg);border-radius:10px;padding:10px 12px;min-height:44px;font-size:16px}
+.row{display:flex;gap:10px;align-items:flex-end}
+.row>*{flex:1;min-width:0}
+.list{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.list>.entry:first-child,.list>.est:first-child{border-top:0}
+.grp{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:700;margin:4px 0 -6px}
+.note{font-size:13px;color:var(--muted);margin:0}
+p{margin:0}
+.banner{border-radius:12px;padding:12px;background:var(--bg);border:1px dashed var(--line);font-size:13px;display:flex;flex-direction:column;gap:8px}
+.err{color:var(--over);font-size:13px}
+a{color:var(--accent)}
+.code{font-family:var(--mono);letter-spacing:.06em}
+.bigcode{font-family:var(--mono);font-size:24px;letter-spacing:.12em;font-weight:600;text-align:center;padding:10px;border:2px dashed var(--line);border-radius:12px;user-select:all}
+
+/* Camera */
+.finder{position:relative;border-radius:12px;overflow:hidden;background:#000;aspect-ratio:4/3;max-width:100%;width:100%}
+.finder video,.finder img{width:100%;height:100%;object-fit:cover;display:block}
+.finder .frame{position:absolute;left:10%;right:10%;top:30%;bottom:30%;border:2px solid rgba(255,255,255,.85);border-radius:10px}
+.laser{position:absolute;left:12%;right:12%;height:2px;background:var(--laser);box-shadow:0 0 10px 2px var(--laser);top:32%;animation:sweep 1.4s ease-in-out infinite alternate}
+@keyframes sweep{to{top:68%}}
+
+/* Nutrition label */
+.label{border:2px solid var(--ink);padding:8px 10px 10px;display:flex;flex-direction:column}
+.label .title{font-weight:900;font-stretch:72%;font-size:34px;line-height:1;letter-spacing:-.01em;border-bottom:1px solid var(--ink);padding-bottom:4px}
+.label .rule-xl{height:10px;background:var(--ink);margin:6px 0 4px}
+.label .rule-m{height:4px;background:var(--ink);margin:4px 0}
+.label .ln{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:5px 0;border-top:1px solid var(--ink)}
+.label .ln.first{border-top:0}
+.label .ln .k{font-weight:800}
+.label .ln input{width:96px;min-height:34px;padding:4px 8px;text-align:right;font-weight:700;border-radius:6px}
+.label .ln.cal .k{font-size:22px;font-weight:900;font-stretch:80%}
+.label .ln.cal input{font-size:20px;width:110px}
+.label .sub{font-size:12px;font-weight:700}
+.label .nm-in{border:0;background:none;padding:6px 0 0;min-height:0;font-weight:800;font-size:17px;border-radius:0}
+.label .br-in{border:0;background:none;padding:0;min-height:0;font-size:13px;color:var(--muted);border-radius:0}
+.label .nm-in:focus,.label .br-in:focus{outline:none;box-shadow:inset 0 -2px 0 var(--accent)}
+.label .serv{display:flex;gap:8px;align-items:center;font-size:13px}
+.label .serv input{min-height:32px;padding:4px 8px;border-radius:6px;font-size:15px}
+.label .serv .sz{flex:1;min-width:0}
+.label .serv .gr{width:72px;text-align:right}
+.total{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap;padding:10px 12px;border-radius:12px;background:var(--bg)}
+.total .big{font-size:26px;font-weight:900;font-stretch:90%}
+.total .mac{font-size:13px;color:var(--muted)}
+.amount{display:flex;gap:10px;align-items:center}
+.amount input{flex:1;min-width:0;font-size:22px;font-weight:800;text-align:right}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:3px;vertical-align:1px}
+.spin{width:16px;height:16px;border-radius:50%;border:2px solid currentColor;border-right-color:transparent;animation:rot .8s linear infinite;display:inline-block;vertical-align:-3px}
+@keyframes rot{to{transform:rotate(360deg)}}
+.pot-meter{display:flex;flex-direction:column;gap:6px}
+.pot-meter .bar{height:10px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;text-align:center}
+.stats div{background:var(--bg);border-radius:10px;padding:8px 4px}
+.stats b{display:block;font-size:18px;font-weight:900;font-stretch:90%}
+.stats small{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.x{border:0;background:none;color:var(--muted);font-size:18px;padding:4px 8px}
+.vh{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+#toast{position:fixed;left:50%;transform:translateX(-50%);top:calc(12px + env(safe-area-inset-top,0px));pointer-events:none;box-shadow:0 6px 20px rgba(0,0,0,.18);background:var(--ink);color:var(--surface);padding:10px 16px;border-radius:99px;font-weight:600;font-size:14px;z-index:40;max-width:calc(100% - 32px);text-align:center}
+#toast.bad{background:var(--over);color:#fff}
+</style>
+</head>
+<body>
+<div class="wrap" id="app">
+  <header class="top">
+    <div class="brand">
+      <svg width="26" height="20" viewBox="0 0 26 20" aria-hidden="true"><g fill="currentColor"><rect x="0" width="2" height="20"/><rect x="4" width="1" height="20"/><rect x="7" width="3" height="20"/><rect x="12" width="1" height="20"/><rect x="15" width="2" height="20"/><rect x="19" width="1" height="20"/><rect x="22" width="1" height="20"/><rect x="24" width="2" height="20"/></g><rect x="-1" y="9" width="28" height="2" fill="var(--laser)"/></svg>
+      Calories
+    </div>
+    <div class="top-r">
+      <button class="iconbtn famchip" id="famBtn" aria-label="Family">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="17" cy="9" r="2.5"/><path d="M15.5 14.2c3 .2 5.5 2.6 5.5 5.8"/></svg>
+        <span id="famName">Family</span>
+      </button>
+      <button class="iconbtn" id="goalsBtn" aria-label="Daily limit and goals">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <div class="install" id="installTip" hidden>
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" style="flex:none;color:var(--accent)"><path d="M12 3v12M7 8l5-5 5 5"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg>
+    <p><b>Install it as an app:</b> tap the Share button in Safari, then <b>Add to Home Screen</b>. It opens full-screen like a normal app.</p>
+    <button class="x" id="installX" aria-label="Dismiss">✕</button>
+  </div>
+
+  <nav class="datebar" aria-label="Day">
+    <button class="iconbtn" id="prevDay" aria-label="Previous day">‹</button>
+    <div class="day" id="dayLabel">Today<small>&nbsp;</small></div>
+    <button class="iconbtn" id="nextDay" aria-label="Next day">›</button>
+  </nav>
+
+  <section class="summary" id="summary" aria-label="Calories for the day">
+    <div class="eq">
+      <button id="limitBtn" aria-label="Change daily limit"><div class="n" id="sGoal">2,000</div><div class="l">Limit</div></button>
+      <div class="op">−</div>
+      <div><div class="n" id="sFood">0</div><div class="l">Food</div></div>
+      <div class="op">=</div>
+      <div class="rem"><div class="n" id="sRem">2,000</div><div class="l" id="sRemL">Remaining</div></div>
+    </div>
+    <div class="overmsg" id="overMsg" hidden></div>
+    <div class="bar" id="sBar"><i style="width:0%"></i></div>
+    <div class="macros">
+      <div class="macro m-p"><div class="t"><b>Protein</b><span id="mP">0 / 150 g</span></div><div class="bar"><i style="width:0%"></i></div></div>
+      <div class="macro m-c"><div class="t"><b>Carbs</b><span id="mC">0 / 200 g</span></div><div class="bar"><i style="width:0%"></i></div></div>
+      <div class="macro m-f"><div class="t"><b>Fat</b><span id="mF">0 / 65 g</span></div><div class="bar"><i style="width:0%"></i></div></div>
+    </div>
+    <div class="week-h"><span>Last 7 days</span><span id="weekNote"></span></div>
+    <div class="week" id="week"></div>
+  </section>
+
+  <div class="sec-h"><h2 id="dishTitle">Dishes</h2><button class="add" id="newDishBtn">+ Create a dish</button></div>
+  <div class="dishes" id="dishes"></div>
+
+  <div class="sec-h"><h2>Your diary</h2></div>
+  <div id="meals" style="display:flex;flex-direction:column;gap:12px"></div>
+  <p class="foot" id="storeNote"></p>
+  <p class="foot">Product data from <a href="https://world.openfoodfacts.org" target="_blank" rel="noopener">Open Food Facts</a> (ODbL).</p>
+</div>
+
+<div class="dock">
+  <div class="dock-in">
+    <button class="btn primary" id="scanBtn">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M3 7V4h3M18 4h3v3M21 17v3h-3M6 20H3v-3"/><path d="M7 8v8M10 8v8M13 8v8M16 8v8" stroke-width="1.6"/></svg>
+      Scan
+    </button>
+    <button class="btn" id="searchBtn">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>
+      Search food
+    </button>
+  </div>
+</div>
+
+<input type="file" accept="image/*" capture="environment" id="photoFile" class="vh" tabindex="-1" aria-hidden="true">
+<div id="sheetRoot"></div>
+<div id="toast" role="status" hidden></div>
+
+<script src="config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js"></script>
+<script>
+// Firebase is only loaded when family sharing is configured.
+if (window.FIREBASE_CONFIG) {
+  for (const f of ["firebase-app-compat", "firebase-auth-compat", "firebase-firestore-compat"])
+    document.write(`<script src="https://www.gstatic.com/firebasejs/10.12.2/${f}.js"><\/script>`);
+}
+</script>
+<script>
+(() => {
+"use strict";
+/* =========================================================
+   Helpers
+   ========================================================= */
+const $ = (s, el = document) => el.querySelector(s);
+const MEALS = ["Breakfast", "Lunch", "Dinner", "Snacks"];
+const fmt = n => Math.round(+n || 0).toLocaleString("en-US");
+const r1 = n => Math.round((+n || 0) * 10) / 10;
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const rid = (n = 12) => { const a = "abcdefghijkmnpqrstuvwxyz23456789"; let s = ""; const r = crypto.getRandomValues(new Uint8Array(n)); for (const x of r) s += a[x % a.length]; return s; };
+const dayKey = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+const mealForNow = () => { const h = new Date().getHours(); return h < 11 ? "Breakfast" : h < 15 ? "Lunch" : h < 21 ? "Dinner" : "Snacks"; };
+const norm = s => String(s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+const hash = s => { let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return (h >>> 0).toString(36); };
+const clean = o => JSON.parse(JSON.stringify(o));
+const LS = {
+  ns: "local", // which account's data this device is showing ("local" = not signed in)
+  key(k, global) { return "cs2:" + (global ? "" : this.ns + ":") + k; },
+  get(k, d = null, global) { try { const v = localStorage.getItem(this.key(k, global)); return v ? JSON.parse(v) : d; } catch (e) { return d; } },
+  set(k, v, global) { try { localStorage.setItem(this.key(k, global), JSON.stringify(v)); } catch (e) {} },
+  del(k, global) { try { localStorage.removeItem(this.key(k, global)); } catch (e) {} },
+  keys(prefix) { const p = this.key(prefix), out = []; try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k.startsWith(p)) out.push(k.slice(this.key("").length)); } } catch (e) {} return out; }
+};
+let toastT;
+function toast(msg, bad) { const t = $("#toast"); t.textContent = msg; t.className = bad ? "bad" : ""; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => t.hidden = true, bad ? 4200 : 2600); }
+
+/* =========================================================
+   Common foods (typical values per 100 g; serving where natural)
+   name|kcal|protein|carbs|fat|serving label|serving grams
+   ========================================================= */
+const COMMON = `Spaghetti / pasta, dry|371|13|75|1.5|1 portion (75 g)|75
+Pasta, cooked|158|5.8|31|0.9|1 bowl (220 g)|220
+White rice, uncooked|360|6.6|79|0.6|1 portion (75 g)|75
+White rice, cooked|130|2.7|28|0.3|1 cup (160 g)|160
+Brown rice, cooked|123|2.7|26|1|1 cup (160 g)|160
+Basmati rice, uncooked|355|8.5|78|0.6|1 portion (75 g)|75
+Porridge oats, rolled|379|13|68|6.5|1 portion (40 g)|40
+Bread, white|265|9|49|3.2|1 slice (30 g)|30
+Bread, wholemeal|247|13|41|3.4|1 slice (36 g)|36
+Sourdough bread|260|9|51|1.8|1 slice (50 g)|50
+Baguette / barra de pan|270|9|56|1.3|1 piece (60 g)|60
+Bagel, plain|257|10|50|1.6|1 bagel (85 g)|85
+Tortilla wrap, flour|310|8|52|7.5|1 wrap (60 g)|60
+Potato, raw|77|2|17|0.1|1 medium (170 g)|170
+Potato, boiled|87|1.9|20|0.1|1 medium (150 g)|150
+Sweet potato, raw|86|1.6|20|0.1|1 medium (130 g)|130
+French fries / chips|312|3.4|41|15|1 portion (120 g)|120
+Couscous, cooked|112|3.8|23|0.2|1 cup (160 g)|160
+Quinoa, cooked|120|4.4|21|1.9|1 cup (185 g)|185
+Egg noodles, cooked|138|4.5|25|2.1|1 bowl (200 g)|200
+Cornflakes|357|7.5|84|0.4|1 bowl (30 g)|30
+Granola|471|10|64|20|1 bowl (45 g)|45
+Wheat flour|364|10|76|1|1 tbsp (8 g)|8
+Pizza, cheese|266|11|33|10|1 slice (107 g)|107
+Crisps / potato chips|536|7|53|35|1 bag (25 g)|25
+Popcorn, plain|387|13|78|4.5|1 bowl (25 g)|25
+Chicken breast, raw|120|22.5|0|2.6|1 breast (170 g)|170
+Chicken breast, cooked|165|31|0|3.6|1 breast (120 g)|120
+Chicken thigh, skinless, raw|121|19.7|0|4.1|1 thigh (100 g)|100
+Turkey breast, raw|114|23.7|0|1.5||
+Beef mince 5% fat, raw|137|21|0|5||
+Beef mince 20% fat, raw|254|17|0|20||
+Pork mince, raw|263|17|0|21||
+Beef steak, sirloin, raw|160|21|0|8|1 steak (200 g)|200
+Bacon, back, raw|215|16.5|0|16.5|1 rasher (25 g)|25
+Ham, cooked slices|110|18|1|3.5|1 slice (15 g)|15
+Jamón serrano|241|31|0|13|1 slice (15 g)|15
+Chorizo|455|24|2|38|1 slice (6 g)|6
+Pork sausage|301|12|3|27|1 sausage (57 g)|57
+Salmon fillet, raw|208|20|0|13|1 fillet (120 g)|120
+Tuna, canned in water, drained|116|26|0|0.8|1 can (112 g)|112
+Cod, raw|82|18|0|0.7|1 fillet (140 g)|140
+Prawns, cooked|99|24|0.2|0.3||
+Egg|143|12.6|0.7|9.5|1 large egg (50 g)|50
+Tofu, firm|144|17|3|8.7||
+Lentils, cooked|116|9|20|0.4||
+Chickpeas, canned, drained|139|7|22|2.6|1 can drained (240 g)|240
+Kidney beans, canned, drained|100|7|15|0.5||
+Baked beans|78|4.7|12.5|0.2|1/2 can (207 g)|207
+Milk, whole|64|3.3|4.7|3.6|1 glass (250 ml)|250
+Milk, semi-skimmed|47|3.4|4.8|1.7|1 glass (250 ml)|250
+Milk, skimmed|35|3.4|5|0.1|1 glass (250 ml)|250
+Oat drink|46|1|6.7|1.5|1 glass (250 ml)|250
+Greek yogurt, full fat|97|9|4|5|1 pot (150 g)|150
+Greek yogurt, 0% fat|59|10|3.6|0.4|1 pot (150 g)|150
+Natural yogurt|61|3.5|4.7|3.3|1 pot (125 g)|125
+Cheddar cheese|410|25|0.1|34|1 slice (30 g)|30
+Mozzarella|300|22|2.2|22|1 ball (125 g)|125
+Parmesan|392|36|3.2|26|1 tbsp grated (5 g)|5
+Manchego|390|26|0.5|32|1 slice (20 g)|20
+Feta|264|14|4|21||
+Cottage cheese|98|11|3.4|4.3||
+Cream cheese|342|6|4.1|34|1 tbsp (15 g)|15
+Double cream|450|1.6|2.7|48|1 tbsp (15 g)|15
+Butter|717|0.9|0.1|81|1 tsp (5 g)|5
+Olive oil|884|0|0|100|1 tbsp (14 g)|14
+Sunflower / vegetable oil|884|0|0|100|1 tbsp (14 g)|14
+Peanut butter|588|25|20|50|1 tbsp (16 g)|16
+Mayonnaise|680|1|0.6|75|1 tbsp (14 g)|14
+Ketchup|112|1.2|26|0.1|1 tbsp (17 g)|17
+Sugar|387|0|100|0|1 tsp (4 g)|4
+Honey|304|0.3|82|0|1 tsp (7 g)|7
+Jam|278|0.4|69|0.1|1 tbsp (20 g)|20
+Chocolate hazelnut spread|539|6.3|57|31|1 tbsp (15 g)|15
+Hummus|166|7.9|14|9.6|2 tbsp (30 g)|30
+Passata|29|1.3|5|0.2||
+Chopped tomatoes, canned|22|1.1|3.5|0.2|1 can (400 g)|400
+Tomato purée / paste|82|4.3|19|0.5|1 tbsp (16 g)|16
+Soy sauce|53|8|4.9|0.6|1 tbsp (16 g)|16
+Apple|52|0.3|14|0.2|1 medium (180 g)|180
+Banana|89|1.1|23|0.3|1 medium (118 g)|118
+Orange|47|0.9|12|0.1|1 medium (130 g)|130
+Pear|57|0.4|15|0.1|1 medium (180 g)|180
+Grapes|69|0.7|18|0.2||
+Strawberries|32|0.7|7.7|0.3||
+Blueberries|57|0.7|14|0.3||
+Mango|60|0.8|15|0.4||
+Pineapple|50|0.5|13|0.1||
+Watermelon|30|0.6|7.6|0.2||
+Kiwi|61|1.1|15|0.5|1 fruit (75 g)|75
+Avocado|160|2|8.5|14.7|1/2 avocado (75 g)|75
+Raisins|299|3.1|79|0.5||
+Onion|40|1.1|9.3|0.1|1 medium (110 g)|110
+Garlic|149|6.4|33|0.5|1 clove (3 g)|3
+Carrot|41|0.9|9.6|0.2|1 medium (61 g)|61
+Celery|16|0.7|3|0.2|1 stick (40 g)|40
+Broccoli|34|2.8|7|0.4||
+Spinach|23|2.9|3.6|0.4||
+Lettuce|15|1.4|2.9|0.2||
+Tomato|18|0.9|3.9|0.2|1 medium (123 g)|123
+Cucumber|15|0.7|3.6|0.1||
+Bell pepper|31|1|6|0.3|1 pepper (120 g)|120
+Mushrooms|22|3.1|3.3|0.3||
+Courgette / zucchini|17|1.2|3.1|0.3|1 medium (200 g)|200
+Aubergine / eggplant|25|1|6|0.2||
+Peas, frozen|77|5.2|13.6|0.4||
+Sweetcorn|86|3.3|19|1.4||
+Green beans|31|1.8|7|0.2||
+Cauliflower|25|1.9|5|0.3||
+Cabbage|25|1.3|5.8|0.1||
+Almonds|579|21|22|50|1 handful (30 g)|30
+Peanuts|567|26|16|49|1 handful (30 g)|30
+Walnuts|654|15|14|65|1 handful (30 g)|30
+Cashews|553|18|30|44|1 handful (30 g)|30
+Dark chocolate 70%|598|7.8|46|43|4 squares (20 g)|20
+Milk chocolate|535|7.7|59|30|4 squares (20 g)|20
+Digestive biscuit|483|7|62.6|20.9|1 biscuit (15 g)|15
+Croissant|406|8.2|46|21|1 croissant (60 g)|60
+Vanilla ice cream|207|3.5|24|11|1 scoop (50 g)|50
+Orange juice|45|0.7|10|0.2|1 glass (250 ml)|250
+Cola, regular|42|0|10.6|0|1 can (330 ml)|330
+Beer, lager|43|0.5|3.6|0|1 caña (200 ml)|200
+Red wine|85|0.1|2.6|0|1 glass (150 ml)|150
+White wine|82|0.1|2.6|0|1 glass (150 ml)|150
+Coffee, black|2|0.3|0|0|1 cup (240 ml)|240`
+  .split("\n").map((line, i) => {
+    const [name, k, p, c, f, sl, sg] = line.split("|");
+    const g = +sg || 100, m = g / 100;
+    return { id: "db-" + i, src: "db", name, brand: "", code: "", servingLabel: sl || "100 g", servingGrams: g,
+      kcal: Math.round(+k * m), protein: r1(+p * m), carbs: r1(+c * m), fat: r1(+f * m), _n: norm(name) };
+  });
+const COMMON_BY_ID = Object.fromEntries(COMMON.map(f => [f.id, f]));
+
+/* =========================================================
+   Data
+   - Not signed in: everything stays on this device (localStorage).
+   - Signed in: your diary, limit, foods and dishes live in your account
+     (users/<uid>), cached on the device so it works offline.
+   - In a family: foods, dishes and who-ate-what are shared
+     (families/<code>); your diary stays private to your account.
+   ========================================================= */
+const url = new URL(location.href);
+const joinCode = (url.searchParams.get("family") || "").replace(/[^a-z0-9]/gi, "").toLowerCase() || null;
+const DEFAULT_ME = () => ({ pid: null, name: "", family: null, goals: { kcal: 2000, protein: 150, carbs: 200, fat: 65 }, recent: [] });
+function loadMe() { const m = Object.assign(DEFAULT_ME(), LS.get("me", {})); if (!m.pid) m.pid = rid(14); LS.set("me", m); return m; }
+let me = loadMe();
+
+const R = { fs: null, user: null, fam: null, err: null, unsubs: [] };
+let listeners = {}; // collections kept on the device
+const cache = { pantry: {}, dishes: {}, members: {} };
+
+const userRef = () => R.fs && R.user ? R.fs.collection("users").doc(R.user.uid) : null;
+const base = () => R.fam || userRef();
+const refFor = c => c.split("/").reduce((r, seg, i) => i % 2 ? r.doc(seg) : r.collection(seg), base());
+function colKey(c) { return "col:" + (R.fam ? R.fam.id : "mine") + ":" + c; }
+function localCol(c) { return LS.get(colKey(c), {}); }
+function emit(c) { (listeners[c] || []).forEach(fn => fn(localCol(c))); }
+
+const Data = {
+  async getDay(k) {
+    const local = LS.get("day:" + k, null);
+    const u = userRef();
+    if (u) {
+      try {
+        const s = await u.collection("days").doc(k).get();
+        if (s.exists) { const e = s.data().entries || []; LS.set("day:" + k, e); return e; }
+      } catch (e) {}
+    }
+    return local || [];
+  },
+  setDay(k, entries) {
+    LS.set("day:" + k, entries);
+    const u = userRef();
+    if (u) u.collection("days").doc(k).set(clean({ entries, updated: Date.now() })).catch(remoteFail);
+  },
+  saveMe() {
+    LS.set("me", me);
+    const u = userRef();
+    if (u) u.set(clean({ name: me.name, goals: me.goals, recent: me.recent, family: me.family || null }), { merge: true }).catch(remoteFail);
+    if (R.fam && me.name) R.fam.collection("members").doc(me.pid).set({ name: me.name, joined: cache.members[me.pid]?.joined || Date.now() }).catch(remoteFail);
+  },
+  watch(c, cb) {
+    if (base()) {
+      let q = base().collection(c);
+      if (c === "dishes") q = q.orderBy("at", "desc").limit(100);
+      cb(localCol(c)); // saved copy while the live one loads
+      const key = colKey(c);
+      const un = q.onSnapshot(s => { const m = {}; s.forEach(d => m[d.id] = d.data()); LS.set(key, m); cb(m); }, remoteFail);
+      R.unsubs.push(un);
+      return un;
+    }
+    (listeners[c] = listeners[c] || []).push(cb); cb(localCol(c));
+    return () => { listeners[c] = (listeners[c] || []).filter(f => f !== cb); };
+  },
+  put(c, id, data) {
+    if (base()) return refFor(c).doc(id).set(clean(data)).catch(remoteFail);
+    const m = localCol(c); m[id] = clean(data); LS.set(colKey(c), m); emit(c); return Promise.resolve();
+  },
+  del(c, id) {
+    if (base()) return refFor(c).doc(id).delete().catch(remoteFail);
+    const m = localCol(c); delete m[id]; LS.set(colKey(c), m); emit(c); return Promise.resolve();
+  },
+  watchPath(c, cb) { // nested collection, e.g. dishes/<id>/logs
+    if (base()) return refFor(c).onSnapshot(s => { const m = {}; s.forEach(d => m[d.id] = d.data()); cb(m); }, () => cb({}));
+    (listeners[c] = listeners[c] || []).push(cb); cb(localCol(c));
+    return () => { listeners[c] = (listeners[c] || []).filter(f => f !== cb); };
+  }
+};
+let lastFail = 0;
+function remoteFail(e) { console.warn(e); if (Date.now() - lastFail > 10000) { lastFail = Date.now(); toast("Couldn't reach your account. Changes are kept on this device and sync when you're back online.", true); } }
+
+async function initRemote() {
+  if (!window.FIREBASE_CONFIG || !window.firebase) return false;
+  try {
+    if (!firebase.apps.length) firebase.initializeApp(window.FIREBASE_CONFIG);
+    R.fs = firebase.firestore();
+    try { await R.fs.enablePersistence({ synchronizeTabs: true }); } catch (e) {}
+    return true;
+  } catch (e) { R.err = e && e.message || String(e); R.fs = null; return false; }
+}
+function stopRemote() {
+  R.unsubs.forEach(u => { try { u(); } catch (e) {} }); R.unsubs = [];
+  R.fam = null; S.famInfo = null; listeners = {};
+  cache.pantry = {}; cache.dishes = {}; cache.members = {};
+}
+
+/* Signing in: switch this device over to the account, bringing along anything
+   logged here before signing in (only once per device). */
+async function signedIn(user) {
+  closeSheet(); stopRemote();
+  const wasLocal = LS.ns === "local";
+  const carry = wasLocal && !LS.get("carried", false, true) ? {
+    days: LS.keys("day:").map(k => [k.slice(4), LS.get(k, [])]).filter(([, e]) => e.length),
+    pantry: LS.get("col:mine:pantry", {}), dishes: LS.get("col:mine:dishes", {}), goals: me.goals, recent: me.recent
+  } : null;
+  R.user = user; LS.ns = user.uid; LS.set("everSignedIn", true, true);
+  me = Object.assign(DEFAULT_ME(), LS.get("me", {})); me.pid = user.uid;
+  const u = userRef();
+  let fresh = true;
+  try {
+    const s = await u.get();
+    if (s.exists) { fresh = false; const d = s.data(); if (d.goals) me.goals = { ...me.goals, ...d.goals }; if (Array.isArray(d.recent)) me.recent = d.recent; if (d.name) me.name = d.name; if ("family" in d) me.family = d.family || null; }
+  } catch (e) {}
+  if (!me.name && user.displayName) me.name = user.displayName;
+  if (carry && (carry.days.length || Object.keys(carry.pantry).length || Object.keys(carry.dishes).length)) {
+    const jobs = [];
+    for (const [k, local] of carry.days) jobs.push((async () => {
+      const doc = u.collection("days").doc(k), s = await doc.get();
+      const remote = s.exists ? (s.data().entries || []) : [], ids = new Set(remote.map(e => e.id));
+      await doc.set(clean({ entries: remote.concat(local.filter(e => !ids.has(e.id))), updated: Date.now() }));
+    })());
+    for (const [id, f] of Object.entries(carry.pantry)) jobs.push(u.collection("pantry").doc(id).set(clean(f), { merge: true }));
+    for (const [id, d] of Object.entries(carry.dishes)) jobs.push(u.collection("dishes").doc(id).set(clean({ ...d, by: d.by && d.by.length < 20 ? user.uid : d.by }), { merge: true }));
+    if (fresh) { me.goals = carry.goals; me.recent = carry.recent; }
+    await Promise.allSettled(jobs);
+    LS.set("carried", true, true);
+    // it now lives in the account, so clear the signed-out copy on this device
+    for (const [k] of carry.days) localStorage.removeItem("cs2:local:day:" + k);
+    ["col:mine:pantry", "col:mine:dishes", "me"].forEach(k => localStorage.removeItem("cs2:local:" + k));
+  }
+  Data.saveMe();
+  startWatches();
+  const code = me.family;
+  if (code) { try { await connectFamily(code); } catch (e) { me.family = null; Data.saveMe(); stopRemote(); startWatches(); } }
+  await loadDay(); await loadWeek(); render(); renderAccount();
+  if (!me.family && joinCode) openFamily();
+}
+function signedOut() {
+  stopRemote(); R.user = null; LS.ns = "local"; me = loadMe();
+  startWatches(); loadDay().then(loadWeek); render(); renderAccount();
+  openAuth("in");
+}
+
+async function connectFamily(code, { create = false, name = "" } = {}) {
+  const ref = R.fs.collection("families").doc(code);
+  if (create) await ref.set({ name: name || "Our family", created: Date.now(), by: me.pid });
+  else { const s = await ref.get(); if (!s.exists) throw new Error("No family uses that code. Check it with the person who sent it."); }
+  // Share the foods and dishes from your account with the family the first time you join.
+  if (!LS.get("sharedInto:" + code, false)) {
+    const u = userRef();
+    try {
+      const [p, d] = await Promise.all([u.collection("pantry").get(), u.collection("dishes").get()]);
+      const jobs = [];
+      p.forEach(doc => jobs.push(ref.collection("pantry").doc(doc.id).set(doc.data(), { merge: true })));
+      d.forEach(doc => jobs.push(ref.collection("dishes").doc(doc.id).set(doc.data(), { merge: true })));
+      await Promise.allSettled(jobs);
+    } catch (e) {}
+    LS.set("sharedInto:" + code, true);
+  }
+  stopRemote();
+  R.fam = ref; me.family = code;
+  Data.saveMe();
+  startWatches();
+  R.unsubs.push(ref.onSnapshot(s => { S.famInfo = s.exists ? s.data() : null; renderHeader(); }, () => {}));
+  render();
+}
+
+/* =========================================================
+   State
+   ========================================================= */
+const S = { date: new Date(), entries: [], week: {}, open: null, famInfo: null };
+function startWatches() {
+  Data.watch("pantry", m => { cache.pantry = m; });
+  Data.watch("dishes", m => { cache.dishes = m; renderDishes(); });
+  Data.watch("members", m => { cache.members = m; renderDishes(); const l = $("#memList"); if (l) l.innerHTML = memListHtml(); });
+}
+const memberName = pid => pid === me.pid ? "You" : (cache.members[pid]?.name || "Someone");
+function foodById(id) { return COMMON_BY_ID[id] || (cache.pantry[id] ? { ...cache.pantry[id], id } : null); }
+function foodId(f) { return f.id && !String(f.id).startsWith("tmp") ? f.id : f.code ? "bc-" + f.code : "nm-" + hash(norm(f.name + "|" + (f.brand || ""))); }
+function remember(id) { me.recent = [id, ...me.recent.filter(x => x !== id)].slice(0, 40); Data.saveMe(); }
+
+async function loadDay() { S.entries = await Data.getDay(dayKey(S.date)); S.week[dayKey(S.date)] = sum(S.entries).kcal; render(); }
+async function loadWeek() {
+  const keys = weekKeys();
+  const vals = await Promise.all(keys.map(k => Data.getDay(k)));
+  keys.forEach((k, i) => S.week[k] = sum(vals[i]).kcal);
+  renderSummary();
+}
+function weekKeys() { const out = []; for (let i = 6; i >= 0; i--) { const d = new Date(S.date); d.setDate(d.getDate() - i); out.push(dayKey(d)); } return out; }
+function saveDay() { const k = dayKey(S.date); Data.setDay(k, S.entries); S.week[k] = sum(S.entries).kcal; }
+function sum(es) { return (es || []).reduce((t, e) => ({ kcal: t.kcal + (+e.kcal || 0), protein: t.protein + (+e.protein || 0), carbs: t.carbs + (+e.carbs || 0), fat: t.fat + (+e.fat || 0) }), { kcal: 0, protein: 0, carbs: 0, fat: 0 }); }
+function addEntry(e) {
+  const before = sum(S.entries).kcal;
+  S.entries.push({ id: rid(10), at: Date.now(), ...e }); saveDay(); render();
+  const after = before + (+e.kcal || 0), lim = me.goals.kcal;
+  if (after > lim && before <= lim) toast(`Added ${fmt(e.kcal)} kcal. You're now ${fmt(after - lim)} kcal over your limit.`, true);
+  else if (after > lim) toast(`Added ${fmt(e.kcal)} kcal. ${fmt(after - lim)} kcal over your limit.`, true);
+  else toast(`Added ${fmt(e.kcal)} kcal to ${e.meal}. ${fmt(lim - after)} left.`);
+}
+
+/* =========================================================
+   Render
+   ========================================================= */
+function renderHeader() {
+  const fam = R.fam && S.famInfo;
+  renderAccount();
+  $("#dishTitle").textContent = fam ? `${S.famInfo.name} dishes` : "Dishes";
+}
+function renderSummary() {
+  const today = dayKey(new Date()), k = dayKey(S.date);
+  const y = new Date(); y.setDate(y.getDate() - 1);
+  const name = k === today ? "Today" : k === dayKey(y) ? "Yesterday" : S.date.toLocaleDateString(undefined, { weekday: "long" });
+  $("#dayLabel").innerHTML = `${esc(name)}<small>${esc(S.date.toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short", year: "numeric" }))}</small>`;
+  $("#nextDay").disabled = k >= today;
+
+  const t = sum(S.entries), g = me.goals, rem = g.kcal - t.kcal, over = rem < 0;
+  $("#sGoal").textContent = fmt(g.kcal);
+  $("#sFood").textContent = fmt(t.kcal);
+  $("#sRem").textContent = fmt(Math.abs(rem));
+  $("#sRemL").textContent = over ? "Over" : "Remaining";
+  $("#summary").classList.toggle("over", over);
+  $("#sBar").classList.toggle("over", over);
+  $("#overMsg").hidden = !over;
+  if (over) $("#overMsg").innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M12 3l10 18H2z"/><path d="M12 10v5M12 18v.5"/></svg>${fmt(-rem)} kcal over your ${fmt(g.kcal)} kcal limit`;
+  $("#sBar>i").style.width = Math.min(100, g.kcal ? t.kcal / g.kcal * 100 : 0) + "%";
+  [["mP", "protein", ".m-p"], ["mC", "carbs", ".m-c"], ["mF", "fat", ".m-f"]].forEach(([id, key, cls]) => {
+    $("#" + id).textContent = `${fmt(t[key])} / ${fmt(g[key])} g`;
+    $(cls + " .bar>i").style.width = Math.min(100, g[key] ? t[key] / g[key] * 100 : 0) + "%";
+  });
+
+  const keys = weekKeys(), vals = keys.map(x => S.week[x] || 0);
+  const top = Math.max(g.kcal * 1.3, ...vals) || 1, overDays = vals.filter(v => v > g.kcal).length;
+  $("#weekNote").innerHTML = overDays ? `<b>Over limit on ${overDays} of 7 days</b>` : (vals.some(v => v) ? "Within limit every day" : "");
+  $("#week").innerHTML = keys.map((x, i) => {
+    const d = new Date(x + "T12:00:00"), v = vals[i];
+    return `<button class="wd ${v > g.kcal ? "over" : ""} ${x === k ? "sel" : ""}" data-day="${x}" aria-label="${d.toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "short" })}: ${fmt(v)} kcal">
+      <div class="wbar"><i style="height:${Math.min(100, v / top * 100)}%"></i><div class="lim" style="bottom:${g.kcal / top * 100}%"></div></div>
+      <span>${d.toLocaleDateString(undefined, { weekday: "narrow" })}</span></button>`;
+  }).join("");
+}
+function renderDishes() {
+  const list = Object.entries(cache.dishes).map(([id, d]) => ({ id, ...d })).sort((a, b) => (b.at || 0) - (a.at || 0)).slice(0, 4);
+  $("#dishes").innerHTML = list.length ? list.map(d => {
+    const per = d.portions ? d.kcal / d.portions : null;
+    const when = new Date(d.at || Date.now()).toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short" });
+    return `<div class="dish">
+      <div class="pot" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 10h16v6a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4z"/><path d="M2 10h20M9 6c0-1 1-1 1-2M14 6c0-1 1-1 1-2"/></svg></div>
+      <div class="nm"><b>${esc(d.name)}</b><small>${esc(memberName(d.by))} · ${esc(when)}${per ? ` · ${fmt(per)} kcal/portion` : ""}</small></div>
+      <button class="btn small primary" data-dish="${esc(d.id)}">Log portion</button></div>`;
+  }).join("") : `<div class="dish-empty"><span>Cooked something for everyone? Add the ingredients once, then each person logs how much they ate, in grams or portions.</span><button class="btn small" id="emptyDish">+ Create a dish</button></div>`;
+}
+function renderMeals() {
+  $("#meals").innerHTML = MEALS.map(m => {
+    const es = S.entries.filter(e => e.meal === m), mk = sum(es).kcal;
+    return `<section class="meal" aria-label="${m}">
+      <div class="meal-h"><h3>${m}</h3><span class="k">${es.length ? fmt(mk) + " kcal" : ""}</span><button class="add" data-add="${m}">+ Add</button></div>
+      ${es.length ? es.map(e => `
+        <button class="entry" data-entry="${e.id}" aria-expanded="${S.open === e.id}">
+          <span class="nm"><b>${esc(e.name)}</b><small>${esc([e.brand, e.qty].filter(Boolean).join(" · "))}</small></span>
+          <span class="kc">${fmt(e.kcal)}</span>
+        </button>
+        ${S.open === e.id ? `<div class="entry-actions">
+          <span class="note" style="margin-right:auto">P ${r1(e.protein)} · C ${r1(e.carbs)} · F ${r1(e.fat)} g</span>
+          ${(e.dishId && cache.dishes[e.dishId]) || (e.foodId && foodById(e.foodId)) ? `<button class="btn small" data-again="${e.id}">Log again</button>` : ""}
+          <button class="btn small danger" data-del="${e.id}">Remove</button></div>` : ""}
+      `).join("") : `<p class="empty">Nothing logged.</p>`}
+    </section>`;
+  }).join("");
+}
+function render() { renderHeader(); renderSummary(); renderDishes(); renderMeals(); }
+
+$("#meals").addEventListener("click", ev => {
+  const b = ev.target.closest("button"); if (!b) return;
+  if (b.dataset.add) openSearch({ meal: b.dataset.add });
+  else if (b.dataset.entry) { S.open = S.open === b.dataset.entry ? null : b.dataset.entry; renderMeals(); }
+  else if (b.dataset.del) {
+    const e = S.entries.find(x => x.id === b.dataset.del);
+    if (e && e.dishId && e.logId) Data.del(`dishes/${e.dishId}/logs`, e.logId);
+    S.entries = S.entries.filter(x => x.id !== b.dataset.del); S.open = null; saveDay(); render(); toast("Removed");
+  } else if (b.dataset.again) {
+    const e = S.entries.find(x => x.id === b.dataset.again);
+    if (e.dishId) openDish(e.dishId, { meal: e.meal }); else openFood({ ...foodById(e.foodId) }, { meal: e.meal });
+  }
+});
+$("#dishes").addEventListener("click", ev => {
+  const b = ev.target.closest("button"); if (!b) return;
+  if (b.dataset.dish) openDish(b.dataset.dish, { meal: mealForNow() });
+  else if (b.id === "emptyDish") openDishEditor();
+});
+$("#week").addEventListener("click", ev => { const b = ev.target.closest("[data-day]"); if (!b) return; S.date = new Date(b.dataset.day + "T12:00:00"); S.open = null; loadDay(); });
+$("#prevDay").onclick = () => { S.date.setDate(S.date.getDate() - 1); S.open = null; loadDay().then(loadWeek); };
+$("#nextDay").onclick = () => { S.date.setDate(S.date.getDate() + 1); S.open = null; loadDay().then(loadWeek); };
+$("#newDishBtn").onclick = () => openDishEditor();
+$("#scanBtn").onclick = () => startScan({ meal: mealForNow() });
+$("#searchBtn").onclick = () => openSearch({ meal: mealForNow() });
+$("#goalsBtn").onclick = openGoals;
+$("#limitBtn").onclick = openGoals;
+$("#famBtn").onclick = openFamily;
+
+/* =========================================================
+   Sheets
+   ========================================================= */
+let sheetBack = null, sheetCleanup = [];
+function openSheet(html, back = null) {
+  sheetCleanup.forEach(f => { try { f(); } catch (e) {} }); sheetCleanup = [];
+  sheetBack = back;
+  $("#sheetRoot").innerHTML = `<div class="shade" id="shade"><div class="sheet" role="dialog" aria-modal="true">${html}</div></div>`;
+  const a = $("#sheetRoot [data-autofocus]"); if (a) setTimeout(() => a.focus(), 60);
+  return $("#sheetRoot .sheet");
+}
+function closeSheet() { sheetCleanup.forEach(f => { try { f(); } catch (e) {} }); sheetCleanup = []; $("#sheetRoot").innerHTML = ""; sheetBack = null; }
+function dismiss() { const b = sheetBack; if (b) b(); else closeSheet(); }
+$("#sheetRoot").addEventListener("click", e => { if (e.target.id === "shade" || e.target.closest("[data-close]")) dismiss(); });
+document.addEventListener("keydown", e => { if (e.key === "Escape" && $("#shade")) dismiss(); });
+const head = (title, back) => `<div class="sheet-h"><h3>${title}</h3><button class="iconbtn" data-close aria-label="${back ? "Back" : "Close"}">${back ? "‹" : "✕"}</button></div>`;
+function chips(name, opts, sel) { return `<div class="chips" role="group" data-chips="${name}">${opts.map(([v, l]) => `<button class="chip" data-v="${esc(v)}" aria-pressed="${v === sel}">${esc(l)}</button>`).join("")}</div>`; }
+function wireChips(root, name, onPick) {
+  const g = root.querySelector(`[data-chips="${name}"]`); if (!g) return;
+  g.querySelectorAll(".chip").forEach(b => b.onclick = () => { g.querySelectorAll(".chip").forEach(x => x.setAttribute("aria-pressed", x === b)); onPick(b.dataset.v); });
+}
+const mealChips = sel => chips("meal", MEALS.map(m => [m, m]), sel);
+
+/* =========================================================
+   Search: common foods + family pantry + dishes + Open Food Facts
+   flow = { meal } when logging, or { pick(ingredient) } when building a dish
+   ========================================================= */
+function openSearch(flow) {
+  const pick = !!flow.pick;
+  const sh = openSheet(`${head(pick ? "Add ingredient" : "Search food", pick)}
+    ${pick ? "" : mealChips(flow.meal)}
+    <form id="sForm" role="search"><input id="sIn" type="search" placeholder="Search foods, brands, dishes" autocomplete="off" data-autofocus enterkeyhint="search"></form>
+    <div class="tools">
+      <button class="tool" id="tScan"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7V4h3M18 4h3v3M21 17v3h-3M6 20H3v-3"/><path d="M7 8v8M10 8v8M13 8v8M16 8v8" stroke-width="1.6"/></svg>Scan</button>
+      <button class="tool" id="tManual"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg>Enter manually</button>
+      ${pick ? `<button class="tool" id="tCode"><span class="code" style="font-size:15px;color:var(--accent)">123</span>Type barcode</button>` : `<button class="tool" id="tDish"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 10h16v6a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4z"/><path d="M2 10h20"/></svg>Create dish</button>`}
+    </div>
+    <div id="sRes" style="display:flex;flex-direction:column;gap:12px"></div>`, pick ? flow.back : null);
+  if (!pick) wireChips(sh, "meal", m => flow.meal = m);
+  const input = $("#sIn"), res = $("#sRes");
+  let offState = { q: "", items: null, loading: false, err: "" }, items = {};
+  const row = (f, right) => { items[f.id] = f; return `<button class="entry" data-pick="${esc(f.id)}"><span class="nm"><b>${esc(f.name)}</b><small>${esc([f.brand, f.servingLabel].filter(Boolean).join(" · "))}</small></span><span class="kc">${right}</span></button>`; };
+  const kcalRight = f => `${fmt(f.kcal)}<small>kcal</small>`;
+  function draw() {
+    items = {};
+    const q = norm(input.value.trim()), words = q.split(/\s+/).filter(Boolean);
+    const hit = s => words.every(w => s.includes(w));
+    let html = "";
+    if (!q) {
+      const rec = me.recent.map(foodById).filter(Boolean).slice(0, 12);
+      html += rec.length ? `<div class="grp">Recent</div><div class="list">${rec.map(f => row(f, kcalRight(f))).join("")}</div>`
+        : `<p class="note">Type a food like “chicken breast” or a brand. Results come from common foods, foods your family has added, and the Open Food Facts database.</p>`;
+    } else {
+      if (!pick) {
+        const ds = Object.entries(cache.dishes).filter(([, d]) => hit(norm(d.name))).slice(0, 6);
+        if (ds.length) html += `<div class="grp">Dishes</div><div class="list">${ds.map(([id, d]) => `<button class="entry" data-dishpick="${esc(id)}"><span class="nm"><b>${esc(d.name)}</b><small>${esc(memberName(d.by))} · ${d.portions || "?"} portions</small></span><span class="kc">${d.portions ? fmt(d.kcal / d.portions) : fmt(d.kcal)}<small>${d.portions ? "kcal/portion" : "kcal"}</small></span></button>`).join("")}</div>`;
+      }
+      const pan = Object.entries(cache.pantry).map(([id, f]) => ({ ...f, id })).filter(f => hit(norm(f.name + " " + (f.brand || "")))).slice(0, 15);
+      if (pan.length) html += `<div class="grp">${R.fam ? "Family foods" : "Your foods"}</div><div class="list">${pan.map(f => row(f, kcalRight(f))).join("")}</div>`;
+      const com = COMMON.filter(f => hit(f._n)).slice(0, 15);
+      if (com.length) html += `<div class="grp">Common foods</div><div class="list">${com.map(f => row(f, kcalRight(f))).join("")}</div>`;
+      html += `<div class="grp">Open Food Facts</div>`;
+      if (offState.q === q && offState.items) {
+        html += offState.items.length ? `<div class="list">${offState.items.map(f => row(f, kcalRight(f))).join("")}</div>` : `<p class="note">No products found for “${esc(input.value.trim())}”.</p>`;
+      } else if (offState.loading) html += `<p class="note"><span class="spin"></span>&nbsp; Searching millions of products…</p>`;
+      else html += `${offState.err ? `<p class="err">${esc(offState.err)}</p>` : ""}<button class="btn wide" id="offGo">Search packaged products for “${esc(input.value.trim())}”</button>`;
+    }
+    res.innerHTML = html;
+    const go = $("#offGo"); if (go) go.onclick = runOff;
+  }
+  async function runOff() {
+    const raw = input.value.trim(), q = norm(raw); if (!q) return;
+    offState = { q, items: null, loading: true, err: "" }; draw();
+    try { offState.items = await searchOFF(raw); }
+    catch (e) { offState.err = e.message || "Search failed. Check your connection and try again."; }
+    offState.loading = false; if (norm(input.value.trim()) === q) draw();
+  }
+  let t; input.oninput = () => { clearTimeout(t); t = setTimeout(draw, 120); };
+  $("#sForm").onsubmit = e => { e.preventDefault(); input.blur(); runOff(); };
+  draw();
+  res.onclick = e => {
+    const b = e.target.closest("button"); if (!b) return;
+    if (b.dataset.pick) openFood({ ...items[b.dataset.pick] }, { ...flow, back: () => openSearch(flow) });
+    else if (b.dataset.dishpick) openDish(b.dataset.dishpick, { meal: flow.meal });
+  };
+  $("#tScan").onclick = () => startScan(flow);
+  $("#tManual").onclick = () => openFood(blankFood(input.value.trim()), { ...flow, back: () => openSearch(flow) });
+  if ($("#tDish")) $("#tDish").onclick = () => openDishEditor();
+  if ($("#tCode")) $("#tCode").onclick = () => openCodeEntry(flow);
+}
+
+let offTimes = [];
+async function searchOFF(q) {
+  offTimes = offTimes.filter(x => Date.now() - x < 60000);
+  if (offTimes.length >= 9) throw new Error("Open Food Facts allows about 10 searches a minute. Wait a moment and try again.");
+  offTimes.push(Date.now());
+  const ctl = new AbortController(), tm = setTimeout(() => ctl.abort(), 12000);
+  try {
+    const u = `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(q)}&search_simple=1&action=process&json=1&page_size=25&sort_by=unique_scans_n&fields=code,product_name,product_name_en,product_name_es,brands,nutriments,serving_size,serving_quantity`;
+    const r = await fetch(u, { signal: ctl.signal });
+    if (!r.ok) throw new Error(r.status === 429 || r.status === 503 ? "Open Food Facts is busy. Try again in a minute." : "Search failed. Try again.");
+    const j = await r.json();
+    return (j.products || []).map(offToFood).filter(Boolean);
+  } catch (e) {
+    if (e.name === "AbortError") throw new Error("Open Food Facts took too long to answer. Try again.");
+    if (e instanceof TypeError) throw new Error("Couldn't reach Open Food Facts. Check your connection.");
+    throw e;
+  } finally { clearTimeout(tm); }
+}
+function offToFood(p) {
+  const n = p.nutriments || {};
+  let k100 = n["energy-kcal_100g"]; if (k100 == null && n["energy_100g"] != null) k100 = n["energy_100g"] / 4.184;
+  const name = p.product_name || p.product_name_en || p.product_name_es;
+  if (k100 == null || !name) return null;
+  const sq = parseFloat(p.serving_quantity), g = sq > 0 ? sq : 100, f = g / 100;
+  return { id: "bc-" + p.code, src: "off", code: String(p.code || ""), name, brand: (p.brands || "").split(",")[0].trim(),
+    servingLabel: sq > 0 ? (p.serving_size || `${sq} g`) : "100 g", servingGrams: g,
+    kcal: Math.round(k100 * f), protein: r1((n.proteins_100g || 0) * f), carbs: r1((n.carbohydrates_100g || 0) * f), fat: r1((n.fat_100g || 0) * f) };
+}
+async function fetchProduct(code) {
+  const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), 9000);
+  try {
+    const r = await fetch(`https://world.openfoodfacts.org/api/v2/product/${code}.json?fields=code,product_name,product_name_en,product_name_es,brands,nutriments,serving_size,serving_quantity`, { signal: ctl.signal });
+    if (!r.ok) return null;
+    const j = await r.json(); if (j.status !== 1 || !j.product) return null;
+    return offToFood({ ...j.product, code });
+  } catch (e) { return null; } finally { clearTimeout(t); }
+}
+function blankFood(name = "") { return { id: "tmp-" + rid(6), src: "manual", code: "", name, brand: "", servingLabel: "1 serving", servingGrams: null, kcal: "", protein: "", carbs: "", fat: "" }; }
+
+/* =========================================================
+   Food sheet: nutrition label + how much (grams or servings)
+   ========================================================= */
+function openFood(food, flow) {
+  const pick = !!flow.pick;
+  let meal = flow.meal || mealForNow();
+  let unit = food.servingGrams > 0 ? "g" : "serv";
+  const startAmt = unit === "g" ? food.servingGrams : 1;
+  const sh = openSheet(`${head(flow.unknown ? "New product" : pick ? "Add ingredient" : "Log food", !!flow.back)}
+    ${flow.unknown ? `<div class="banner"><span>Barcode <span class="code">${esc(food.code)}</span> isn't in Open Food Facts yet. Type the numbers from the nutrition panel once and it's saved for ${R.fam ? "the whole family" : "next time"}.</span></div>` : ""}
+    ${food.src === "off" ? `<p class="note">From Open Food Facts. Check against the pack if something looks off.</p>` : food.src === "db" ? `<p class="note">Typical values. Edit them to match your pack if you have it.</p>` : ""}
+    <div class="label">
+      <div class="title">Nutrition Facts</div>
+      <input class="nm-in" id="fName" type="text" placeholder="Food name" value="${esc(food.name)}" aria-label="Food name" ${food.name ? "" : "data-autofocus"}>
+      <input class="br-in" id="fBrand" type="text" placeholder="Brand (optional)" value="${esc(food.brand)}" aria-label="Brand">
+      ${food.code ? `<div class="note code" style="font-size:12px;padding-top:2px">${esc(food.code)}</div>` : ""}
+      <div class="rule-xl"></div>
+      <div class="serv"><span class="sub">Serving</span>
+        <input class="sz" id="fServ" type="text" value="${esc(food.servingLabel)}" aria-label="Serving description">
+        <input class="gr" id="fGrams" type="number" inputmode="decimal" min="0" step="any" placeholder="?" value="${food.servingGrams ?? ""}" aria-label="Grams per serving"><span class="sub">g</span></div>
+      <div class="rule-m"></div>
+      <div class="sub">Amount per serving</div>
+      <div class="ln cal first"><span class="k">Calories</span><input id="fK" type="number" inputmode="decimal" min="0" step="any" value="${food.kcal}" aria-label="Calories per serving"></div>
+      <div class="rule-m" style="margin:2px 0"></div>
+      <div class="ln first"><span class="k"><span class="dot" style="background:var(--protein)"></span>Protein (g)</span><input id="fP" type="number" inputmode="decimal" min="0" step="any" value="${food.protein}" aria-label="Protein grams"></div>
+      <div class="ln"><span class="k"><span class="dot" style="background:var(--carbs)"></span>Carbohydrate (g)</span><input id="fC" type="number" inputmode="decimal" min="0" step="any" value="${food.carbs}" aria-label="Carbohydrate grams"></div>
+      <div class="ln"><span class="k"><span class="dot" style="background:var(--fat)"></span>Total fat (g)</span><input id="fF" type="number" inputmode="decimal" min="0" step="any" value="${food.fat}" aria-label="Fat grams"></div>
+    </div>
+    <div class="field"><span class="lbl">How much ${pick ? "goes in the dish" : "did you eat"}</span>
+      <div class="amount"><input id="fAmt" type="number" inputmode="decimal" min="0" step="any" value="${startAmt}" aria-label="Amount">${chips("unit", [["g", "grams"], ["serv", "servings"]], unit)}</div>
+      <p class="note" id="fUnitHint" hidden>Enter the grams per serving on the label above to log by weight.</p>
+    </div>
+    ${pick ? "" : mealChips(meal)}
+    <div class="total"><span class="big" id="fTot">0 kcal</span><span class="mac" id="fMac"></span></div>
+    <p class="err" id="fErr" hidden></p>
+    <button class="btn primary wide" id="fAdd">${pick ? "Add to dish" : "Add to " + meal}</button>`, flow.back || null);
+  if (!pick) wireChips(sh, "meal", m => { meal = m; $("#fAdd").textContent = "Add to " + m; });
+  wireChips(sh, "unit", u => {
+    const g = num("fGrams"), amt = num("fAmt") || 0;
+    if (u === "g" && !(g > 0)) { $("#fUnitHint").hidden = false; setUnit(unit); return; }
+    // convert the typed amount so the total stays the same
+    if (u !== unit && g > 0) $("#fAmt").value = u === "g" ? r1(amt * g) : r1(amt / g);
+    unit = u; $("#fUnitHint").hidden = true; calc();
+  });
+  function setUnit(u) { sh.querySelectorAll('[data-chips="unit"] .chip').forEach(x => x.setAttribute("aria-pressed", x.dataset.v === u)); }
+  const num = id => { const x = parseFloat($("#" + id).value); return isNaN(x) ? null : x; };
+  function calc() {
+    const amt = num("fAmt") || 0, g = num("fGrams");
+    const mult = unit === "g" ? (g > 0 ? amt / g : 0) : amt;
+    const t = { kcal: (num("fK") || 0) * mult, protein: (num("fP") || 0) * mult, carbs: (num("fC") || 0) * mult, fat: (num("fF") || 0) * mult };
+    $("#fTot").textContent = fmt(t.kcal) + " kcal";
+    $("#fMac").textContent = `P ${r1(t.protein)} · C ${r1(t.carbs)} · F ${r1(t.fat)} g`;
+    return { t, amt, mult, g };
+  }
+  sh.addEventListener("input", calc); calc();
+  $("#fAdd").onclick = () => {
+    const err = m => { $("#fErr").textContent = m; $("#fErr").hidden = false; };
+    const f = { ...food, name: $("#fName").value.trim(), brand: $("#fBrand").value.trim(), servingLabel: $("#fServ").value.trim() || "1 serving",
+      servingGrams: num("fGrams") || null, kcal: num("fK"), protein: num("fP") || 0, carbs: num("fC") || 0, fat: num("fF") || 0 };
+    if (!f.name) return err("Give the food a name.");
+    if (f.kcal == null) return err("Enter the calories per serving.");
+    const { t, amt, g } = calc();
+    if (!(amt > 0)) return err("Enter how much.");
+    const edited = food.src === "db" && ["kcal", "protein", "carbs", "fat", "servingGrams", "name"].some(k => String(f[k] ?? "") !== String(food[k] ?? ""));
+    let id = food.src === "db" && !edited ? food.id : foodId({ ...f, id: food.src === "db" ? null : food.id });
+    if (food.src !== "db" || edited) {
+      const { _n, id: _i, ...rest } = f;
+      Data.put("pantry", id, { ...rest, src: food.src === "db" ? "manual" : food.src, by: food.by || me.pid, used: Date.now() });
+      cache.pantry[id] = { ...rest, used: Date.now() };
+    }
+    remember(id);
+    const grams = unit === "g" ? amt : (g > 0 ? amt * g : null);
+    const qty = unit === "g" ? `${r1(amt)} g` : `${r1(amt)} × ${f.servingLabel}`;
+    const out = { name: f.name, brand: f.brand, qty, grams, foodId: id, kcal: Math.round(t.kcal), protein: r1(t.protein), carbs: r1(t.carbs), fat: r1(t.fat) };
+    if (pick) { flow.pick(out); return; }
+    closeSheet(); addEntry({ ...out, meal });
+  };
+}
+
+/* =========================================================
+   Barcode scanning: live camera, or a photo as a fallback
+   ========================================================= */
+function normCode(s) { let c = String(s || "").replace(/\D/g, ""); if (c.length === 12) c = "0" + c; return c; }
+let ZX = null;
+function zx() {
+  if (ZX || !window.ZXing) return ZX;
+  const Z = window.ZXing, hints = new Map();
+  hints.set(Z.DecodeHintType.POSSIBLE_FORMATS, [Z.BarcodeFormat.EAN_13, Z.BarcodeFormat.EAN_8, Z.BarcodeFormat.UPC_A, Z.BarcodeFormat.UPC_E, Z.BarcodeFormat.CODE_128]);
+  const fast = new Z.MultiFormatReader(); fast.setHints(hints);
+  const hard = new Map(hints); hard.set(Z.DecodeHintType.TRY_HARDER, true);
+  const slow = new Z.MultiFormatReader(); slow.setHints(hard);
+  ZX = { Z, fast, slow, hints, hard }; return ZX;
+}
+function lumOf(ctx, w, h) {
+  const d = ctx.getImageData(0, 0, w, h).data, lum = new Uint8ClampedArray(w * h);
+  for (let i = 0, j = 0; i < lum.length; i++, j += 4) lum[i] = (d[j] * 306 + d[j + 1] * 601 + d[j + 2] * 117) >> 10;
+  return lum;
+}
+function zxDecode(lum, w, h, hard) {
+  const z = zx(); if (!z) return null; const { Z } = z;
+  for (const Bin of hard ? [Z.HybridBinarizer, Z.GlobalHistogramBinarizer] : [Z.HybridBinarizer]) {
+    try { const r = (hard ? z.slow : z.fast).decode(new Z.BinaryBitmap(new Bin(new Z.RGBLuminanceSource(lum, w, h))), hard ? z.hard : z.hints); if (r) return r.getText(); } catch (e) {}
+  }
+  return null;
+}
+let detector = null;
+try { if ("BarcodeDetector" in window) detector = new BarcodeDetector({ formats: ["ean_13", "ean_8", "upc_a", "upc_e", "code_128"] }); } catch (e) { detector = null; }
+
+let scanFlow = null;
+async function startScan(flow) {
+  scanFlow = flow;
+  const back = flow.pick ? flow.back : null;
+  const sh = openSheet(`${head("Scan a barcode", !!back)}
+    <div class="finder"><video id="vid" playsinline muted autoplay></video><div class="frame"></div><div class="laser"></div></div>
+    <p class="note" id="camMsg">Starting the camera…</p>
+    <div class="row"><button class="btn" id="usePhoto">Take a photo instead</button><button class="btn" id="typeCode">Type the number</button></div>`, back);
+  $("#usePhoto").onclick = () => { const f = $("#photoFile"); f.value = ""; f.click(); };
+  $("#typeCode").onclick = () => openCodeEntry(flow);
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { $("#camMsg").textContent = "This browser can't use the camera here. Take a photo instead."; return; }
+  let stream, stopped = false, frame = 0;
+  const stop = () => { stopped = true; if (stream) stream.getTracks().forEach(t => t.stop()); };
+  sheetCleanup.push(stop);
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: "environment" }, width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false });
+  } catch (e) {
+    $("#camMsg").textContent = e && e.name === "NotAllowedError" ? "Camera access was blocked. Allow it in Settings › Safari › Camera (or for this app), or take a photo instead." : "Couldn't start the camera. Take a photo instead.";
+    return;
+  }
+  if (stopped) { stream.getTracks().forEach(t => t.stop()); return; }
+  const v = $("#vid"); v.srcObject = stream;
+  try { await v.play(); } catch (e) {}
+  $("#camMsg").textContent = "Line the barcode up inside the box. Hold steady about 15 cm away.";
+  const c = document.createElement("canvas"), ctx = c.getContext("2d", { willReadFrequently: true });
+  const tick = async () => {
+    if (stopped) return;
+    frame++;
+    let code = null;
+    if (v.readyState >= 2 && v.videoWidth) {
+      if (detector) { try { const r = await detector.detect(v); if (r && r[0]) code = r[0].rawValue; } catch (e) {} }
+      if (!code) {
+        // centre band of the frame, where the box is
+        const vw = v.videoWidth, vh = v.videoHeight, cw = Math.round(vw * .8), ch = Math.round(vh * .5);
+        const sc = Math.min(1, 900 / cw), w = Math.round(cw * sc), h = Math.round(ch * sc);
+        c.width = w; c.height = h; ctx.drawImage(v, (vw - cw) / 2, (vh - ch) / 2, cw, ch, 0, 0, w, h);
+        code = zxDecode(lumOf(ctx, w, h), w, h, frame % 6 === 0);
+      }
+    }
+    if (code && !stopped) { stop(); if (navigator.vibrate) navigator.vibrate(60); lookup(normCode(code) || code, flow); return; }
+    setTimeout(tick, detector ? 120 : 160);
+  };
+  tick();
+}
+$("#photoFile").addEventListener("change", async e => {
+  const file = e.target.files && e.target.files[0]; if (!file || !scanFlow) return;
+  const flow = scanFlow, u = URL.createObjectURL(file);
+  openSheet(`${head("Reading barcode")}<div class="finder"><img src="${u}" alt="Your photo"><div class="laser"></div></div><p class="note">Looking for the bars…</p>`, flow.pick ? flow.back : null);
+  let code = null; try { code = await decodePhoto(file); } catch (err) {}
+  URL.revokeObjectURL(u);
+  if (code) return lookup(code, flow);
+  const sh = openSheet(`${head("No barcode found", !!flow.pick)}<p>Couldn't read a barcode in that photo. Get closer so the bars fill most of the picture, in good light.</p>
+    <div class="row"><button class="btn primary" id="again">Scan again</button><button class="btn" id="typ">Type the number</button></div>`, flow.pick ? flow.back : null);
+  $("#again").onclick = () => startScan(flow); $("#typ").onclick = () => openCodeEntry(flow);
+});
+async function decodePhoto(file) {
+  const img = await new Promise((res, rej) => { const i = new Image(), u = URL.createObjectURL(file); i.onload = () => res(i); i.onerror = rej; i.src = u; });
+  if (detector) { try { const r = await detector.detect(img); if (r && r[0]) return normCode(r[0].rawValue) || r[0].rawValue; } catch (e) {} }
+  for (const [max, rot, crop] of [[1280, 0, 1], [900, 0, 1], [1280, 0, .6], [1280, 1, 1], [1800, 0, 1], [900, 1, .6]]) {
+    await new Promise(r => setTimeout(r));
+    const sw = img.naturalWidth, shh = img.naturalHeight, cw = sw * crop, ch = shh * crop, sc = Math.min(1, max / Math.max(cw, ch));
+    const w0 = Math.round(cw * sc), h0 = Math.round(ch * sc), w = rot ? h0 : w0, h = rot ? w0 : h0;
+    const c = document.createElement("canvas"); c.width = w; c.height = h; const x = c.getContext("2d", { willReadFrequently: true });
+    if (rot) { x.translate(w, 0); x.rotate(Math.PI / 2); }
+    x.drawImage(img, (sw - cw) / 2, (shh - ch) / 2, cw, ch, 0, 0, w0, h0);
+    const code = zxDecode(lumOf(x, w, h), w, h, true);
+    if (code) return normCode(code) || code;
+  }
+  return null;
+}
+function openCodeEntry(flow) {
+  openSheet(`${head("Type the barcode", true)}
+    <form id="cForm" class="field"><label for="cIn">The digits under the bars</label><input id="cIn" type="text" inputmode="numeric" class="code" placeholder="8410000000000" data-autofocus></form>
+    <button class="btn primary wide" id="cGo">Look up</button>`, () => flow.pick ? openSearch(flow) : startScan(flow));
+  const go = () => { const c = normCode($("#cIn").value); if (c.length >= 6) lookup(c, flow); else toast("Enter the digits under the barcode", true); };
+  $("#cForm").onsubmit = e => { e.preventDefault(); go(); }; $("#cGo").onclick = go;
+}
+async function lookup(code, flow) {
+  const back = () => openSearch(flow);
+  const mine = cache.pantry["bc-" + code];
+  if (mine) return openFood({ ...mine, id: "bc-" + code }, { ...flow, back });
+  openSheet(`${head("Looking up")}<p class="code" style="font-size:18px;text-align:center">${esc(code)}</p><p class="note"><span class="spin"></span>&nbsp; Checking Open Food Facts…</p>`, flow.pick ? flow.back : null);
+  const food = await fetchProduct(code);
+  if (food) return openFood(food, { ...flow, back });
+  openFood({ ...blankFood(), id: "bc-" + code, src: "scan", code }, { ...flow, back, unknown: true });
+}
+
+/* =========================================================
+   Dishes: build once, everyone logs their own portion
+   ========================================================= */
+let draft = null;
+function newDraft() { return { id: "d-" + rid(10), name: "", portions: 4, cookedGrams: null, ingredients: [], isNew: true }; }
+function dishTotals(d) { return sum(d.ingredients); }
+function openDishEditor(existing) {
+  if (existing) draft = JSON.parse(JSON.stringify(existing));
+  if (!draft) draft = newDraft();
+  const d = draft, t = dishTotals(d);
+  const sh = openSheet(`${head(d.isNew ? "Create a dish" : "Edit dish")}
+    <div class="field"><label for="dName">Dish name</label><input id="dName" type="text" placeholder="Spaghetti bolognese" value="${esc(d.name)}" ${d.name ? "" : "data-autofocus"}></div>
+    <div class="grp">Ingredients (raw weights)</div>
+    <div class="list" id="dIngs">${d.ingredients.length ? d.ingredients.map((g, i) => `<div class="entry"><span class="nm"><b>${esc(g.name)}</b><small>${esc(g.qty)}</small></span><span class="kc">${fmt(g.kcal)}<small>kcal</small></span><button class="x" data-rm="${i}" aria-label="Remove ${esc(g.name)}">✕</button></div>`).join("") : `<p class="empty" style="padding:12px 14px">Add everything that went in the pot: mince, pasta, onion, oil…</p>`}</div>
+    <button class="btn wide" id="dAddIng">+ Add ingredient</button>
+    <div class="row">
+      <div class="field"><label for="dPor">Portions it makes</label><input id="dPor" type="number" inputmode="numeric" min="1" step="1" value="${d.portions || ""}"></div>
+      <div class="field"><label for="dW">Cooked weight (g)</label><input id="dW" type="number" inputmode="numeric" min="0" step="any" placeholder="optional" value="${d.cookedGrams || ""}"></div>
+    </div>
+    <p class="note">Weigh the finished food, minus the pot's own weight, so everyone can log their portion in grams. Without it, people log by portions.</p>
+    <div class="stats"><div><b id="dT">${fmt(t.kcal)}</b><small>kcal total</small></div><div><b id="dPP">–</b><small>per portion</small></div><div><b id="d100">–</b><small>per 100 g</small></div></div>
+    <p class="err" id="dErr" hidden></p>
+    <div class="row">${d.isNew && (d.name || d.ingredients.length) ? `<button class="btn ghost" id="dReset">Start over</button>` : ""}<button class="btn primary" id="dSave">${d.isNew ? "Save dish" : "Save changes"}</button></div>`);
+  const upd = () => {
+    d.name = $("#dName").value; d.portions = parseFloat($("#dPor").value) || null; d.cookedGrams = parseFloat($("#dW").value) || null;
+    $("#dPP").textContent = d.portions ? fmt(t.kcal / d.portions) : "–";
+    $("#d100").textContent = d.cookedGrams ? fmt(t.kcal / d.cookedGrams * 100) : "–";
+  };
+  sh.addEventListener("input", upd); upd();
+  $("#dIngs").onclick = e => { const b = e.target.closest("[data-rm]"); if (b) { d.ingredients.splice(+b.dataset.rm, 1); openDishEditor(); } };
+  $("#dAddIng").onclick = () => { upd(); openSearch({ pick: ing => { d.ingredients.push(ing); openDishEditor(); }, back: () => openDishEditor() }); };
+  if ($("#dReset")) $("#dReset").onclick = () => { draft = newDraft(); openDishEditor(); };
+  $("#dSave").onclick = () => {
+    upd();
+    const err = m => { $("#dErr").textContent = m; $("#dErr").hidden = false; };
+    if (!d.name.trim()) return err("Give the dish a name.");
+    if (!d.ingredients.length) return err("Add at least one ingredient.");
+    if (!(d.portions > 0)) return err("Enter how many portions it makes.");
+    const tt = dishTotals(d), { isNew, id, ...rest } = d;
+    const doc = { ...rest, name: d.name.trim(), kcal: Math.round(tt.kcal), protein: r1(tt.protein), carbs: r1(tt.carbs), fat: r1(tt.fat),
+      by: d.by || me.pid, at: d.at || Date.now(), edited: Date.now() };
+    cache.dishes[id] = doc; Data.put("dishes", id, doc);
+    draft = null; renderDishes();
+    toast(isNew ? `Saved “${doc.name}”${R.fam ? " for the family" : ""}` : "Dish updated");
+    openDish(id, { meal: mealForNow() });
+  };
+}
+function openDish(id, flow) {
+  const d = cache.dishes[id];
+  if (!d) { toast("That dish was deleted.", true); closeSheet(); return; }
+  let meal = flow.meal || mealForNow();
+  const hasW = d.cookedGrams > 0, portionG = hasW ? d.cookedGrams / d.portions : null;
+  let unit = hasW ? "g" : "portion";
+  const when = new Date(d.at).toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "short" });
+  const sh = openSheet(`${head(esc(d.name))}
+    <p class="note">Made by ${esc(memberName(d.by))} · ${esc(when)} · ${d.ingredients.length} ingredients</p>
+    <div class="stats"><div><b>${fmt(d.kcal)}</b><small>whole dish</small></div><div><b>${fmt(d.kcal / d.portions)}</b><small>per portion</small></div><div><b>${hasW ? fmt(d.kcal / d.cookedGrams * 100) : "–"}</b><small>per 100 g</small></div></div>
+    <div class="pot-meter"><div class="lbl" id="potTxt">Who's had some</div><div class="bar"><i id="potBar" style="width:0%"></i></div><div class="list" id="logs"></div></div>
+    <div class="field"><span class="lbl">How much did you eat</span>
+      <div class="amount"><input id="aAmt" type="number" inputmode="decimal" min="0" step="any" value="${hasW ? Math.round(portionG) : 1}" aria-label="Amount">${chips("unit", hasW ? [["g", "grams"], ["portion", "portions"]] : [["portion", "portions"]], unit)}</div>
+      ${hasW ? `<p class="note">One portion is about ${fmt(portionG)} g. Weigh your plate for the most accurate number.</p>` : `<p class="note">Add the cooked weight to this dish to log by grams.</p>`}
+    </div>
+    ${mealChips(meal)}
+    <div class="total"><span class="big" id="aTot">0 kcal</span><span class="mac" id="aMac"></span></div>
+    <button class="btn primary wide" id="aLog">Log my portion to ${meal}</button>
+    <details><summary class="note" style="cursor:pointer">Ingredients</summary><div class="list" style="margin-top:8px">${d.ingredients.map(g => `<div class="entry"><span class="nm"><b>${esc(g.name)}</b><small>${esc(g.qty)}</small></span><span class="kc">${fmt(g.kcal)}<small>kcal</small></span></div>`).join("")}</div></details>
+    <div class="row"><button class="btn small" id="aEdit">Edit dish</button>${d.by === me.pid ? `<button class="btn small danger" id="aDel">Delete dish</button>` : ""}</div>`);
+  wireChips(sh, "meal", m => { meal = m; $("#aLog").textContent = "Log my portion to " + m; });
+  wireChips(sh, "unit", u => {
+    const amt = parseFloat($("#aAmt").value) || 0;
+    if (u !== unit) $("#aAmt").value = u === "g" ? Math.round(amt * portionG) : r1(amt / portionG);
+    unit = u; calc();
+  });
+  function calc() {
+    const amt = parseFloat($("#aAmt").value) || 0;
+    const frac = unit === "g" ? amt / d.cookedGrams : amt / d.portions;
+    const t = { kcal: d.kcal * frac, protein: d.protein * frac, carbs: d.carbs * frac, fat: d.fat * frac };
+    $("#aTot").textContent = fmt(t.kcal) + " kcal";
+    $("#aMac").textContent = `P ${r1(t.protein)} · C ${r1(t.carbs)} · F ${r1(t.fat)} g`;
+    return { t, amt, frac };
+  }
+  sh.addEventListener("input", calc); calc();
+  sheetCleanup.push(Data.watchPath(`dishes/${id}/logs`, logs => {
+    const arr = Object.values(logs).sort((a, b) => a.at - b.at);
+    const eaten = arr.reduce((s, l) => s + (+l.frac || 0), 0);
+    const el = $("#logs"); if (!el) return;
+    $("#potBar").style.width = Math.min(100, eaten * 100) + "%";
+    const left = Math.max(0, 1 - eaten);
+    $("#potTxt").textContent = arr.length ? (hasW ? `About ${fmt(left * d.cookedGrams)} g left (${r1(left * d.portions)} portions)` : `About ${r1(left * d.portions)} of ${d.portions} portions left`) : "Nobody has logged this yet";
+    el.innerHTML = arr.map(l => `<div class="entry"><span class="nm"><b>${esc(memberName(l.who))}</b><small>${esc(l.qty)} · ${esc(l.meal || "")}</small></span><span class="kc">${fmt(l.kcal)}<small>kcal</small></span></div>`).join("");
+    el.hidden = !arr.length;
+  }));
+  $("#aLog").onclick = () => {
+    const { t, amt, frac } = calc();
+    if (!(amt > 0)) return toast("Enter how much you ate", true);
+    const qty = unit === "g" ? `${fmt(amt)} g` : `${r1(amt)} portion${amt === 1 ? "" : "s"}`;
+    const logId = rid(12);
+    Data.put(`dishes/${id}/logs`, logId, { who: me.pid, qty, frac, kcal: Math.round(t.kcal), meal, day: dayKey(S.date), at: Date.now() });
+    closeSheet();
+    addEntry({ meal, name: d.name, brand: "", qty, dishId: id, logId, kcal: Math.round(t.kcal), protein: r1(t.protein), carbs: r1(t.carbs), fat: r1(t.fat) });
+  };
+  $("#aEdit").onclick = () => openDishEditor({ ...d, id, isNew: false });
+  if ($("#aDel")) {
+    let armed = false;
+    $("#aDel").onclick = () => {
+      if (!armed) { armed = true; $("#aDel").textContent = "Tap again to delete"; return; }
+      delete cache.dishes[id]; Data.del("dishes", id); closeSheet(); renderDishes(); toast("Dish deleted");
+    };
+  }
+}
+
+/* =========================================================
+   Limit & goals
+   ========================================================= */
+function openGoals() {
+  const g = me.goals;
+  const sh = openSheet(`${head("Daily limit")}
+    <div class="field"><label for="gK">Calorie limit per day (kcal)</label><input id="gK" type="number" inputmode="numeric" value="${g.kcal}" style="font-size:22px;font-weight:800"></div>
+    <p class="note">You'll see a red warning when a day goes over this, and the 7-day strip marks the days you went over.</p>
+    <div class="grp">Macro goals</div>
+    <div class="row">
+      <div class="field"><label for="gP">Protein (g)</label><input id="gP" type="number" inputmode="numeric" value="${g.protein}"></div>
+      <div class="field"><label for="gC">Carbs (g)</label><input id="gC" type="number" inputmode="numeric" value="${g.carbs}"></div>
+      <div class="field"><label for="gF">Fat (g)</label><input id="gF" type="number" inputmode="numeric" value="${g.fat}"></div>
+    </div>
+    <p class="note" id="gHint"></p>
+    <button class="btn primary wide" id="gSave">Save</button>`);
+  const hint = () => { const k = 4 * (+$("#gP").value || 0) + 4 * (+$("#gC").value || 0) + 9 * (+$("#gF").value || 0); $("#gHint").textContent = `Those macros add up to ${fmt(k)} kcal (4 per gram of protein or carbs, 9 per gram of fat).`; };
+  sh.addEventListener("input", hint); hint();
+  $("#gSave").onclick = () => {
+    const n = (id, d) => { const x = Math.round(+$("#" + id).value); return x > 0 ? x : d; };
+    me.goals = { kcal: n("gK", 2000), protein: n("gP", 150), carbs: n("gC", 200), fat: n("gF", 65) };
+    Data.saveMe(); closeSheet(); render(); toast("Saved");
+  };
+}
+
+/* =========================================================
+   Accounts
+   ========================================================= */
+const AUTH_ERR = {
+  "auth/invalid-credential": "That email and password don't match. Check them, or reset your password.",
+  "auth/wrong-password": "That email and password don't match. Check them, or reset your password.",
+  "auth/user-not-found": "There's no account with that email yet. Create one instead.",
+  "auth/email-already-in-use": "There's already an account with that email. Sign in instead.",
+  "auth/weak-password": "Use a password of at least 6 characters.",
+  "auth/invalid-email": "That doesn't look like an email address.",
+  "auth/missing-password": "Enter your password.",
+  "auth/network-request-failed": "No connection. Check your internet and try again.",
+  "auth/too-many-requests": "Too many attempts. Wait a few minutes and try again.",
+  "auth/operation-not-allowed": "Email sign-in isn't switched on in Firebase yet (Authentication › Sign-in method › Email/Password)."
+};
+function renderAccount() {
+  $("#famName").textContent = R.fam && S.famInfo ? S.famInfo.name : R.user ? (me.name || "Account") : (R.fs ? "Sign in" : "Family");
+}
+function openAuth(mode = "in") {
+  const create = mode === "up";
+  const sh = openSheet(`${head(create ? "Create your account" : "Sign in")}
+    <p class="note">${create ? "Your diary, limit, foods and dishes are saved to your account, so they're there on every phone and iPad you sign in on." : "Sign in to get your diary on this device. You stay signed in until you sign out."}</p>
+    ${chips("mode", [["in", "Sign in"], ["up", "Create account"]], mode)}
+    <form id="authForm" style="display:flex;flex-direction:column;gap:12px">
+      ${create ? `<div class="field"><label for="aName">Your name</label><input id="aName" type="text" autocomplete="name" value="${esc(me.name)}" placeholder="Charles"></div>` : ""}
+      <div class="field"><label for="aEmail">Email</label><input id="aEmail" type="email" autocomplete="email" autocapitalize="none" inputmode="email" data-autofocus></div>
+      <div class="field"><label for="aPass">Password</label><input id="aPass" type="password" autocomplete="${create ? "new-password" : "current-password"}" minlength="6" placeholder="${create ? "At least 6 characters" : ""}"></div>
+      <p class="err" id="aErr" hidden></p>
+      <button class="btn primary wide" id="aGo">${create ? "Create account" : "Sign in"}</button>
+    </form>
+    ${create ? "" : `<button class="btn ghost small" id="aReset" style="align-self:flex-start">Forgot your password?</button>`}
+    ${!R.user ? `<button class="btn ghost small" data-close style="align-self:flex-start;color:var(--muted)">Not now, keep it on this device only</button>` : ""}`);
+  wireChips(sh, "mode", m => openAuth(m));
+  const err = m => { $("#aErr").textContent = m; $("#aErr").hidden = false; };
+  $("#authForm").onsubmit = async e => {
+    e.preventDefault();
+    const email = $("#aEmail").value.trim(), pass = $("#aPass").value, name = create ? $("#aName").value.trim() : "";
+    if (create && !name) return err("Add your name so your family knows who logged what.");
+    if (!email) return err("Enter your email.");
+    const go = $("#aGo"); go.disabled = true; go.innerHTML = `<span class="spin"></span> ${create ? "Creating…" : "Signing in…"}`;
+    try {
+      if (create) {
+        const cred = await firebase.auth().createUserWithEmailAndPassword(email, pass);
+        try { await cred.user.updateProfile({ displayName: name }); } catch (x) {}
+        me.name = name; LS.set("me", me);
+      } else await firebase.auth().signInWithEmailAndPassword(email, pass);
+      LS.set("skipAuth", false, true);
+      // onAuthStateChanged takes it from here
+    } catch (x) {
+      go.disabled = false; go.textContent = create ? "Create account" : "Sign in";
+      err(AUTH_ERR[x.code] || x.message || "That didn't work. Try again.");
+    }
+  };
+  if ($("#aReset")) $("#aReset").onclick = async () => {
+    const email = $("#aEmail").value.trim(); if (!email) return err("Enter your email above first, then tap this again.");
+    try { await firebase.auth().sendPasswordResetEmail(email); toast("Reset link sent. Check your email."); }
+    catch (x) { err(AUTH_ERR[x.code] || "Couldn't send the reset email. Check the address."); }
+  };
+  if (!R.user) sheetBack = () => { LS.set("skipAuth", true, true); closeSheet(); };
+}
+
+/* =========================================================
+   Family
+   ========================================================= */
+function inviteLink(code) { const u = new URL(location.href); u.search = ""; u.hash = ""; u.searchParams.set("family", code); return u.href; }
+function copyBtn(id, text) {
+  const b = $("#" + id); if (!b) return;
+  b.onclick = async () => {
+    try { await navigator.clipboard.writeText(text); toast("Copied"); }
+    catch (e) { const r = document.createRange(), el = b.previousElementSibling; if (el) { r.selectNodeContents(el); const s = getSelection(); s.removeAllRanges(); s.addRange(r); } toast("Select and copy the text above", true); }
+  };
+}
+function accountRow() {
+  return `<div class="banner" style="flex-direction:row;align-items:center;border-style:solid"><span style="flex:1;min-width:0"><b>${esc(me.name || "Signed in")}</b><br><span class="note" style="word-break:break-all">${esc(R.user.email || "")}</span></span><button class="btn small" id="signOut" style="flex:none">Sign out</button></div>`;
+}
+function wireSignOut() {
+  let armed = false;
+  const b = $("#signOut"); if (!b) return;
+  b.onclick = async () => {
+    if (!armed) { armed = true; b.textContent = "Tap to confirm"; return; }
+    closeSheet(); await firebase.auth().signOut(); toast("Signed out");
+  };
+}
+function memListHtml() {
+  const members = Object.entries(cache.members).sort((a, b) => (a[1].joined || 0) - (b[1].joined || 0));
+  return members.map(([pid, m]) => `<div class="entry"><span class="nm"><b>${esc(pid === me.pid ? (m.name || "You") + " (you)" : m.name || "Someone")}</b></span></div>`).join("") || `<p class="empty" style="padding:12px 14px">Just you so far.</p>`;
+}
+function openFamily() {
+  if (!window.FIREBASE_CONFIG) {
+    openSheet(`${head("Family & accounts")}<p>Accounts and family sharing aren't switched on for this website yet. Until they are, this device keeps its own diary, foods and dishes.</p>
+      <p class="note">Whoever set up the site turns them on by creating a free Firebase project and pasting its settings into <span class="code">config.js</span>. The steps are in the README that came with the app.</p>`);
+    return;
+  }
+  if (!R.fs) {
+    openSheet(`${head("Family & accounts")}<p class="err">Couldn't connect to your account${R.err ? `: ${esc(R.err)}` : ""}.</p><p class="note">Check your connection and reopen the app.</p>`);
+    return;
+  }
+  if (!R.user) {
+    openSheet(`${head("Family & accounts")}
+      <p>Sign in to keep your diary on every device and share dishes with your family. Everyone keeps their own diary and limit, and logs their own portion of shared dishes.</p>
+      ${joinCode ? `<div class="banner">You've been invited to a family. Sign in or create an account to join.</div>` : ""}
+      <div class="row"><button class="btn primary" id="toUp">Create account</button><button class="btn" id="toIn">Sign in</button></div>`);
+    $("#toUp").onclick = () => openAuth("up"); $("#toIn").onclick = () => openAuth("in");
+    return;
+  }
+  if (!R.fam) {
+    const sh = openSheet(`${head("Family")}
+      ${accountRow()}
+      <p>Share dishes and foods with your family. Everyone keeps their own private diary and limit, and logs their own portion of shared dishes.</p>
+      ${joinCode ? `<div class="grp">You've been invited</div>
+        <div class="row"><div class="field"><label for="jc">Family code</label><input id="jc" type="text" class="code" autocapitalize="none" autocomplete="off" value="${esc(joinCode)}"></div><button class="btn primary" id="jn" style="flex:none">Join</button></div>` : `
+      <div class="grp">Start a family</div>
+      <div class="row"><div class="field"><label for="fn">Family name</label><input id="fn" type="text" placeholder="The Rehns"></div><button class="btn primary" id="mk" style="flex:none">Create</button></div>
+      <div class="grp">Or join one</div>
+      <div class="row"><div class="field"><label for="jc">Family code</label><input id="jc" type="text" class="code" autocapitalize="none" autocomplete="off" placeholder="from the invite"></div><button class="btn" id="jn" style="flex:none">Join</button></div>`}
+      <p class="err" id="famErr" hidden></p>`);
+    wireSignOut();
+    const go = async (create) => {
+      const err = m => { $("#famErr").textContent = m; $("#famErr").hidden = false; };
+      const code = create ? rid(10) : $("#jc").value.replace(/[^a-z0-9]/gi, "").toLowerCase();
+      if (!create && code.length < 6) return err("Enter the family code from the invite.");
+      try {
+        sh.querySelectorAll("button").forEach(b => b.disabled = true);
+        await connectFamily(code, { create, name: create ? $("#fn").value.trim() : "" });
+        await loadDay(); openFamily(); toast(create ? "Family created" : "You've joined the family");
+      } catch (e) { sh.querySelectorAll("button").forEach(b => b.disabled = false); err(e.message || "Couldn't connect. Try again."); }
+    };
+    if ($("#mk")) $("#mk").onclick = () => go(true);
+    $("#jn").onclick = () => go(false);
+    return;
+  }
+  openSheet(`${head(esc(S.famInfo?.name || "Family"))}
+    ${accountRow()}
+    <div class="field"><label for="fnm">Family name</label><input id="fnm" type="text" value="${esc(S.famInfo?.name || "")}"></div>
+    <div class="field"><label for="myName2">Your name</label><input id="myName2" type="text" value="${esc(me.name)}"></div>
+    <div class="grp">Members</div>
+    <div class="list" id="memList">${memListHtml()}</div>
+    <div class="grp">Invite someone</div>
+    <p class="note">Send them this link. They open it in Safari, add it to their Home Screen, create an account and join. Or they can type the code in the Family screen.</p>
+    <div class="banner"><span class="code" style="word-break:break-all;user-select:all">${esc(inviteLink(me.family))}</span><button class="btn small" id="cpLink" style="align-self:flex-start">Copy invite link</button></div>
+    <div class="bigcode">${esc(me.family)}</div>
+    <button class="btn primary wide" id="famSave">Save names</button>
+    <button class="btn ghost small danger" id="leave">Leave this family</button>`);
+  copyBtn("cpLink", inviteLink(me.family)); wireSignOut();
+  $("#famSave").onclick = () => {
+    const fn = $("#fnm").value.trim(), mn = $("#myName2").value.trim();
+    if (fn && fn !== S.famInfo?.name) R.fam.set({ name: fn }, { merge: true }).catch(remoteFail);
+    if (mn) { me.name = mn; Data.saveMe(); renderAccount(); }
+    closeSheet(); toast("Saved");
+  };
+  let armed = false;
+  $("#leave").onclick = () => {
+    if (!armed) { armed = true; $("#leave").textContent = "Tap again to leave. Your diary stays in your account."; return; }
+    if (R.fam) R.fam.collection("members").doc(me.pid).delete().catch(() => {});
+    stopRemote(); me.family = null; Data.saveMe(); startWatches(); closeSheet(); render(); renderAccount(); toast("You've left the family");
+  };
+}
+
+/* =========================================================
+   Install hint (iPhone/iPad Safari, not yet on the Home Screen)
+   ========================================================= */
+const standalone = window.navigator.standalone === true || matchMedia("(display-mode: standalone)").matches;
+const ios = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+if (ios && !standalone && !LS.get("installTipX", false, true)) $("#installTip").hidden = false;
+$("#installX").onclick = () => { $("#installTip").hidden = true; LS.set("installTipX", true, true); };
+if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js").catch(() => {});
+
+/* =========================================================
+   Boot
+   ========================================================= */
+startWatches();
+render();
+loadDay().then(loadWeek);
+(async () => {
+  const note = $("#storeNote");
+  const ok = await initRemote();
+  if (!ok) { note.textContent = window.FIREBASE_CONFIG ? "Couldn't reach your account, so this device is saving on its own for now." : "Your diary is saved on this device."; renderAccount(); return; }
+  renderAccount();
+  let first = true;
+  firebase.auth().onAuthStateChanged(async user => {
+    const wasFirst = first; first = false;
+    if (user) {
+      if (R.user && R.user.uid === user.uid) return;
+      note.textContent = "Loading your account…";
+      await signedIn(user);
+      note.textContent = R.fam ? `Signed in as ${user.email}. Sharing with ${S.famInfo?.name || "your family"}.` : `Signed in as ${user.email}. Your diary syncs to every device you sign in on.`;
+    } else {
+      if (R.user) signedOut();
+      note.textContent = "Saved on this device only. Sign in to keep it on all your devices.";
+      renderAccount();
+      if (wasFirst && (!LS.get("skipAuth", false, true) || joinCode)) openAuth(joinCode || !LS.get("everSignedIn", false, true) ? "up" : "in");
+    }
+  });
+})();
+})();
+</script>
+</body>
+</html>
