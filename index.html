@@ -2108,9 +2108,10 @@ async function startScan(flow) {
     <p class="note" id="camMsg">Starting the camera…</p>
     <div class="row"><button class="btn" id="usePhoto">Take a photo instead</button><button class="btn" id="typeCode">Type the number</button></div>
     <button class="btn ghost" id="useLabel">No barcode? Photograph the nutrition label</button>
-    ${flow.pick ? "" : `<button class="btn ghost" id="useMeal">Or photograph a meal to estimate it</button>`}`, back);
+    ${flow.pick ? "" : `<div class="row"><button class="btn ghost" id="useMeal">Photograph a meal</button><button class="btn ghost" id="descMeal">Describe a meal</button></div>`}`, back);
   $("#useLabel").onclick = () => openLabel(flow);
   if ($("#useMeal")) $("#useMeal").onclick = () => openMealPhoto(flow);
+  if ($("#descMeal")) $("#descMeal").onclick = () => openDescribeMeal(flow);
   $("#usePhoto").onclick = () => { const f = $("#photoFile"); f.value = ""; f.click(); };
   $("#typeCode").onclick = () => openCodeEntry(flow);
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { $("#camMsg").textContent = "This browser can't use the camera here. Take a photo instead."; return; }
@@ -2751,19 +2752,27 @@ $("#labelPhoto").addEventListener("change", e => { const f = e.target.files && e
    names the foods and estimates portions, calories and macros.
    ========================================================= */
 const FB_MOD = "https://www.gstatic.com/firebasejs/12.19.0/";
-const MEAL_MODELS = ["gemini-3.8-flash", "gemini-2.5-flash"];
 let mealAI = null;
 async function getMealAI() {
   if (mealAI) return mealAI;
   const cfg = window.FIREBASE_CONFIG, siteKey = window.RECAPTCHA_SITE_KEY;
   if (!cfg) throw Object.assign(new Error("Accounts aren't switched on for this website."), { code: "nocfg" });
   if (!siteKey) throw Object.assign(new Error("Meal photos aren't set up yet."), { code: "nokey" });
-  const [{ initializeApp, getApps }, { initializeAppCheck, ReCaptchaEnterpriseProvider }, { getAI, getGenerativeModel, GoogleAIBackend }] = await Promise.all([
+  const [{ initializeApp, getApps }, { initializeAppCheck, ReCaptchaEnterpriseProvider }, AIM] = await Promise.all([
     import(FB_MOD + "firebase-app.js"), import(FB_MOD + "firebase-app-check.js"), import(FB_MOD + "firebase-ai.js")]);
   const app = getApps().find(a => a.name === "meal-ai") || initializeApp(cfg, "meal-ai");
   initializeAppCheck(app, { provider: new ReCaptchaEnterpriseProvider(siteKey), isTokenAutoRefreshEnabled: true });
-  const ai = getAI(app, { backend: new GoogleAIBackend() });
-  mealAI = { models: MEAL_MODELS.map(m => getGenerativeModel(ai, { model: m, generationConfig: { responseMimeType: "application/json", temperature: 0.2 } })) };
+  const ai = AIM.getAI(app, { backend: new AIM.GoogleAIBackend() });
+  // Ask for an exact shape so numbers come back as numbers
+  let schema = null;
+  try {
+    const Sc = AIM.Schema;
+    schema = Sc.object({ properties: {
+      items: Sc.array({ items: Sc.object({ properties: { name: Sc.string(), grams: Sc.number(), kcal: Sc.number(), protein: Sc.number(), carbs: Sc.number(), fat: Sc.number() } }) }),
+      confidence: Sc.enumString({ enum: ["low", "medium", "high"] }), note: Sc.string() }, optionalProperties: ["note"] });
+  } catch (e) { schema = null; }
+  const make = (model, useSchema) => AIM.getGenerativeModel(ai, { model, generationConfig: { responseMimeType: "application/json", temperature: 0.3, ...(useSchema && schema ? { responseSchema: schema } : {}) } });
+  mealAI = { tries: [make("gemini-3.8-flash", true), make("gemini-3.8-flash", false), make("gemini-2.5-flash", true), make("gemini-2.5-flash", false)] };
   return mealAI;
 }
 function photoToJpeg(file, maxSide) {
@@ -2773,33 +2782,63 @@ function photoToJpeg(file, maxSide) {
       const sc = Math.min(1, maxSide / Math.max(img.naturalWidth, img.naturalHeight)), c = document.createElement("canvas");
       c.width = Math.round(img.naturalWidth * sc); c.height = Math.round(img.naturalHeight * sc);
       c.getContext("2d").drawImage(img, 0, 0, c.width, c.height); URL.revokeObjectURL(u);
-      res(c.toDataURL("image/jpeg", maxSide > 200 ? 0.82 : 0.7));
+      res(c.toDataURL("image/jpeg", maxSide > 200 ? 0.85 : 0.7));
     };
     img.onerror = () => { URL.revokeObjectURL(u); rej(new Error("That photo couldn't be opened.")); };
     img.src = u;
   });
 }
-const MEAL_PROMPT = `You are a nutrition assistant for a UK family's calorie tracker. Look at the photo of a meal or food.
-Identify each distinct food or drink you can see. Estimate the portion actually on the plate in grams (use the plate, cutlery and packaging for scale), and its calories, protein, carbohydrate and fat for that portion. Use UK food names and typical UK recipes. Include likely hidden calories such as cooking oil, butter or sauces as their own item when they are probably there.
-Reply with ONLY JSON in exactly this shape:
-{"items":[{"name":"short food name","grams":number,"kcal":number,"protein":number,"carbs":number,"fat":number}],"confidence":"low"|"medium"|"high","note":"one short sentence about anything uncertain"}
-If the photo does not show food, reply {"items":[],"confidence":"low","note":"No food found"}.`;
-async function estimateMeal(dataUrl) {
-  const { models } = await getMealAI();
-  const part = { inlineData: { mimeType: "image/jpeg", data: dataUrl.split(",")[1] } };
+const MEAL_SHAPE = `Reply with ONLY JSON in exactly this shape, with plain numbers (no units):
+{"items":[{"name":"short food name","grams":350,"kcal":520,"protein":28,"carbs":62,"fat":16}],"confidence":"low","note":"one short sentence"}`;
+function mealPrompt(hint, hasPhoto, nudge) {
+  return `You are a nutrition assistant for a UK family's calorie tracker.
+${hasPhoto ? `Look at the photo. Identify every food and drink in it. Estimate the portion actually shown in grams, using the plate, bowl, cutlery, hands or packaging for scale.` : `The person described what they ate (below). Use typical UK portion sizes unless they give amounts.`}
+For each item give grams, calories (kcal), protein, carbohydrate and fat for that portion. Use UK food names and typical UK recipes, and count likely hidden calories such as cooking oil, butter, dressings or sauces as their own items when they are probably there.
+${hasPhoto ? `If it is a packaged product, estimate the amount shown. ` : ""}Always give your best estimate, even when unsure: list at least one item if there is any food or drink at all, and set "confidence" to "low" when unsure. Only return an empty list if there is clearly no food or drink.${nudge ? `\nA previous attempt returned nothing. Look again and give your best guess.` : ""}
+${hint ? `The person says: "${hint.replace(/"/g, "'").slice(0, 300)}". Trust this over what you see.` : ""}
+${MEAL_SHAPE}`;
+}
+// Read the answer generously: "350 g", "calories", "carbohydrates", nested lists
+const numOf = v => typeof v === "number" ? v : (m => m ? parseFloat(m[0]) : 0)(String(v == null ? "" : v).replace(",", ".").match(/\d+(\.\d+)?/));
+const pickKey = (o, keys) => { for (const k of keys) if (o && o[k] != null) return o[k]; return undefined; };
+function readMealAnswer(txt) {
+  const t = String(txt || "").replace(/```(json)?/g, "").trim();
+  const start = t.search(/[[{]/), end = Math.max(t.lastIndexOf("}"), t.lastIndexOf("]"));
+  const j = JSON.parse(t.slice(start, end + 1));
+  const list = Array.isArray(j) ? j : (pickKey(j, ["items", "foods", "food_items", "meal_items", "dishes", "food"]) || []);
+  let items = (Array.isArray(list) ? list : [list]).map(x => {
+    const g = k => numOf(pickKey(x, k));
+    const it = { name: String(pickKey(x, ["name", "food", "item", "dish", "description"]) || "Food").slice(0, 60),
+      grams: Math.max(0, g(["grams", "weight_g", "portion_grams", "grams_estimate", "weight", "portion_g", "quantity_g", "serving_grams"])),
+      kcal: Math.max(0, Math.round(g(["kcal", "calories", "energy_kcal", "cal", "energy"]))),
+      protein: r1(Math.max(0, g(["protein", "protein_g"]))), carbs: r1(Math.max(0, g(["carbs", "carbohydrates", "carbohydrate", "carbs_g", "carbohydrate_g"]))), fat: r1(Math.max(0, g(["fat", "fat_g", "total_fat"]))) };
+    if (!it.kcal && (it.protein || it.carbs || it.fat)) it.kcal = Math.round(4 * it.protein + 4 * it.carbs + 9 * it.fat);
+    return it;
+  }).filter(x => x.kcal > 0 || x.grams > 0);
+  const tot = !Array.isArray(j) && pickKey(j, ["total", "totals"]);
+  if (!items.length && tot && numOf(pickKey(tot, ["kcal", "calories"])) > 0)
+    items = [{ name: "Meal", grams: numOf(pickKey(tot, ["grams"])), kcal: Math.round(numOf(pickKey(tot, ["kcal", "calories"]))), protein: r1(numOf(tot.protein)), carbs: r1(numOf(pickKey(tot, ["carbs", "carbohydrates"]))), fat: r1(numOf(tot.fat)) }];
+  return { items, confidence: (!Array.isArray(j) && j.confidence) || "medium", note: String((!Array.isArray(j) && j.note) || "") };
+}
+async function estimateMeal(dataUrl, hint) {
+  const { tries } = await getMealAI();
+  const part = dataUrl ? { inlineData: { mimeType: "image/jpeg", data: dataUrl.split(",")[1] } } : null;
+  const ask = async (m, nudge) => {
+    const parts = [mealPrompt(hint, !!part, nudge)]; if (part) parts.push(part);
+    const r = await Promise.race([m.generateContent(parts), new Promise((_, rej) => setTimeout(() => rej(Object.assign(new Error("slow"), { code: "slow" })), 60000))]);
+    return readMealAnswer(r.response.text());
+  };
   let lastErr = null;
-  for (const m of models) {
+  for (const m of tries) {
     try {
-      const r = await Promise.race([m.generateContent([MEAL_PROMPT, part]), new Promise((_, rej) => setTimeout(() => rej(Object.assign(new Error("slow"), { code: "slow" })), 45000))]);
-      const txt = r.response.text().replace(/^```(json)?|```$/g, "").trim();
-      const j = JSON.parse(txt.slice(txt.indexOf("{"), txt.lastIndexOf("}") + 1));
-      const items = (Array.isArray(j.items) ? j.items : []).map(x => ({ name: String(x.name || "Food").slice(0, 60), grams: Math.max(0, +x.grams || 0),
-        kcal: Math.max(0, Math.round(+x.kcal || 0)), protein: r1(Math.max(0, +x.protein || 0)), carbs: r1(Math.max(0, +x.carbs || 0)), fat: r1(Math.max(0, +x.fat || 0)) })).filter(x => x.kcal > 0 || x.grams > 0);
-      return { items, confidence: j.confidence || "medium", note: String(j.note || "") };
+      let res = await ask(m, false);
+      if (!res.items.length) res = await ask(m, true);   // one more look before giving up
+      return res;
     } catch (e) {
       lastErr = e;
       const msg = String(e && (e.message || e.code) || "");
-      if (!/not found|404|not supported|unsupported model|is not available/i.test(msg)) break;   // only try the next model if this one doesn't exist
+      // move on to the next setup only if this model or answer format isn't accepted, or the answer was garbled
+      if (!(e instanceof SyntaxError) && !/not found|404|not supported|unsupported|is not available|schema|invalid argument|400|INVALID_ARGUMENT/i.test(msg)) break;
     }
   }
   throw lastErr || new Error("No answer");
@@ -2812,9 +2851,9 @@ function mealError(e) {
   if (/app.?check|attestation|recaptcha|appCheck/i.test(m)) return "The security check didn't pass. Try again in a moment; if it keeps happening, the reCAPTCHA key or App Check setup needs a look.";
   if (/quota|429|resource.?exhausted|rate/i.test(m)) return "Too many photos in a short time. Wait a minute and try again.";
   if (/api.*(not been used|disabled)|PERMISSION_DENIED|403/i.test(m)) return "The AI service isn't switched on in Firebase yet (AI Logic › Get started).";
-  if (e instanceof SyntaxError) return "The answer came back garbled. Try again, ideally with the whole plate in view.";
+  if (e instanceof SyntaxError) return "The answer came back garbled. Try again, or describe the meal below.";
   if (/network|fetch|failed to load|import/i.test(m)) return "Couldn't reach the AI service. Check your connection.";
-  return "Couldn't estimate that meal. Try again with the whole plate in view.";
+  return "Couldn't estimate that meal. Try again, or describe it below.";
 }
 let mealFlow = null;
 function openMealPhoto(flow) {
@@ -2822,41 +2861,56 @@ function openMealPhoto(flow) {
   getMealAI().catch(() => {});
   const f = $("#mealPhoto"); f.value = ""; f.click();
 }
+async function runMeal(flow, big, small, hint) {
+  openSheet(`${head(big ? "Looking at your meal" : "Working it out")}${big ? `<div class="finder"><img src="${big}" alt="Your meal"><div class="laser"></div></div>` : ""}
+    <p class="note" id="mealMsg"><span class="spin"></span>&nbsp; ${big ? "Working out what's on the plate…" : "Estimating from your description…"}</p>`);
+  const slow = setTimeout(() => { const el = $("#mealMsg"); if (el) el.innerHTML = `<span class="spin"></span>&nbsp; Still thinking. Detailed photos can take up to half a minute…`; }, 9000);
+  let res = null, err = null;
+  try { res = await estimateMeal(big, hint); } catch (e) { err = e; }
+  clearTimeout(slow);
+  if (!$("#mealMsg")) return; // closed meanwhile
+  if (err || !res || !res.items.length) { mealFailed(flow, big, small, hint, err); return; }
+  haptic();
+  showMealResult(res, flow, small, big, hint);
+}
+function mealFailed(flow, big, small, hint, err, describe) {
+  const detail = err ? String(err.code || err.message || err).slice(0, 160) : "";
+  openSheet(`${head(describe ? "Describe your meal" : "Couldn't estimate that")}
+    ${describe ? "" : `<p>${esc(err ? mealError(err) : big ? "No food was found in that photo. Try again with the whole plate in view, from a little above, or say what it is below." : "Nothing to estimate in that description. Try naming the foods and roughly how much.")}</p>`}
+    <div class="field"><label for="mHint0">${describe ? "What did you eat? Include rough amounts if you know them" : big ? "Say what it is and try again" : "What did you eat?"}</label><textarea id="mHint0" placeholder="e.g. chicken tikka masala with pilau rice and a naan, takeaway size">${esc(hint || "")}</textarea></div>
+    <button class="btn primary wide" id="mDesc">${big ? "Estimate the photo again" : "Estimate calories"}</button>
+    <div class="row"><button class="btn" id="mAgain">${big ? "Take another photo" : "Use a photo"}</button><button class="btn" id="mSearch">Search instead</button></div>
+    ${detail ? `<p class="note" style="font-size:11px;font-family:var(--mono)">${esc(detail)}</p>` : ""}`);
+  $("#mDesc").onclick = () => { const h = $("#mHint0").value.trim(); if (!h && !big) return toast("Describe what you ate first", true); runMeal(flow, big, small, h); };
+  $("#mAgain").onclick = () => openMealPhoto(flow); $("#mSearch").onclick = () => openSearch(flow);
+}
 async function readMealFile(file) {
   const flow = mealFlow || { meal: mealForNow() };
   let big, small;
-  try { [big, small] = await Promise.all([photoToJpeg(file, 1024), photoToJpeg(file, 120)]); }
+  try { [big, small] = await Promise.all([photoToJpeg(file, 1280), photoToJpeg(file, 120)]); }
   catch (e) { toast(e.message, true); return; }
-  openSheet(`${head("Looking at your meal")}<div class="finder"><img src="${big}" alt="Your meal"><div class="laser"></div></div>
-    <p class="note" id="mealMsg"><span class="spin"></span>&nbsp; Working out what's on the plate…</p>`);
-  let res = null, err = null;
-  try { res = await estimateMeal(big); } catch (e) { err = e; }
-  if (!$("#mealMsg")) return; // closed meanwhile
-  if (err || !res || !res.items.length) {
-    const sh = openSheet(`${head("Couldn't estimate that")}<p>${esc(err ? mealError(err) : "No food was found in that photo. Try again with the whole plate in view, from a little above.")}</p>
-      <div class="row"><button class="btn primary" id="mAgain">Take another photo</button><button class="btn" id="mSearch">Search instead</button></div>`);
-    $("#mAgain").onclick = () => openMealPhoto(flow); $("#mSearch").onclick = () => openSearch(flow);
-    return;
-  }
-  haptic();
-  showMealResult(res, flow, small, big);
+  runMeal(flow, big, small, "");
 }
-function showMealResult(res, flow, thumbUrl, bigUrl) {
+function openDescribeMeal(flow) { mealFlow = { ...flow }; getMealAI().catch(() => {}); mealFailed({ ...flow, meal: flow.meal || mealForNow() }, null, null, "", null, true); }
+function showMealResult(res, flow, thumbUrl, bigUrl, hint) {
   let meal = flow.meal || mealForNow(), scale = 1;
   const items = res.items.map((x, i) => ({ ...x, i, on: true }));
-  const conf = { low: "Low confidence", medium: "Medium confidence", high: "High confidence" }[res.confidence] || "";
+  const conf = { low: "low confidence", medium: "medium confidence", high: "high confidence" }[res.confidence] || "";
   const sh = openSheet(`${head("Your meal")}
-    <img class="fimg" src="${bigUrl}" alt="Your meal" style="width:100%;height:auto;max-height:220px;object-fit:cover;background:var(--surface-2)">
-    <div class="banner" style="border-style:solid;border-color:rgba(255,122,61,.5)"><span><b>AI estimate${conf ? ` · ${esc(conf.toLowerCase())}` : ""}.</b> Photos can't show oil, butter or what's underneath, so treat this as a rough guide and adjust if you know better.${res.note ? `<br>${esc(res.note)}` : ""}</span></div>
+    ${bigUrl ? `<img class="fimg" src="${bigUrl}" alt="Your meal" style="width:100%;height:auto;max-height:220px;object-fit:cover;background:var(--surface-2)">` : ""}
+    <div class="banner" style="border-style:solid;border-color:rgba(255,122,61,.5)"><span><b>AI estimate${conf ? ` · ${esc(conf)}` : ""}.</b> ${bigUrl ? "Photos can't show oil, butter or what's underneath, so" : "Based on your description, so"} treat this as a rough guide.${res.note ? `<br>${esc(res.note)}` : ""}</span></div>
     <div class="list" id="mItems"></div>
-    <div><div class="lbl" style="margin-bottom:6px">Your portion compared to the photo</div>${chips("scale", [["0.5", "Half"], ["0.75", "Smaller"], ["1", "Same"], ["1.25", "Bigger"], ["1.5", "Much bigger"]], "1")}</div>
+    <div><div class="lbl" style="margin-bottom:6px">Your portion compared to ${bigUrl ? "the photo" : "this"}</div>${chips("scale", [["0.5", "Half"], ["0.75", "Smaller"], ["1", "Same"], ["1.25", "Bigger"], ["1.5", "Much bigger"]], "1")}</div>
     ${mealChips(meal)}
     <div class="total"><span class="big" id="mTot">0 kcal</span><span class="mac" id="mMac"></span></div>
-    <button class="btn primary wide" id="mAdd">Add to ${meal}</button>`);
+    <button class="btn primary wide" id="mAdd">Add to ${meal}</button>
+    <details${hint ? " open" : ""}><summary class="note" style="cursor:pointer">Not right? Tell it what you're eating</summary>
+      <div class="field" style="margin-top:8px"><textarea id="mHint" placeholder="e.g. it's a chicken katsu curry, about half the plate is rice">${esc(hint || "")}</textarea></div>
+      <button class="btn wide" id="mRedo" style="margin-top:8px">Estimate again</button></details>`);
   const draw = () => {
     $("#mItems").innerHTML = items.map(x => `<label class="est" style="display:flex;align-items:center;gap:10px;padding:11px 14px;border-top:1px solid var(--line)">
       <input type="checkbox" data-i="${x.i}" ${x.on ? "checked" : ""} style="width:20px;height:20px;accent-color:var(--flame-2);flex:none">
-      <span class="nm" style="flex:1;min-width:0"><b style="display:block;font-weight:650">${esc(x.name)}</b><small style="color:var(--muted);font-size:12px">about ${esc(fmtW(x.grams * scale))} · P ${r1(x.protein * scale)} · C ${r1(x.carbs * scale)} · F ${r1(x.fat * scale)} g</small></span>
+      <span class="nm" style="flex:1;min-width:0"><b style="display:block;font-weight:650">${esc(x.name)}</b><small style="color:var(--muted);font-size:12px">${x.grams ? `about ${esc(fmtW(x.grams * scale))} · ` : ""}P ${r1(x.protein * scale)} · C ${r1(x.carbs * scale)} · F ${r1(x.fat * scale)} g</small></span>
       <span class="kc" style="font-weight:850">${fmt(x.kcal * scale)}<small style="display:block;font-size:11px;color:var(--muted);font-weight:600">kcal</small></span></label>`).join("");
     const on = items.filter(x => x.on), t = on.reduce((a, x) => ({ k: a.k + x.kcal, p: a.p + x.protein, c: a.c + x.carbs, f: a.f + x.fat }), { k: 0, p: 0, c: 0, f: 0 });
     $("#mTot").textContent = fmt(t.k * scale) + " kcal";
@@ -2866,12 +2920,13 @@ function showMealResult(res, flow, thumbUrl, bigUrl) {
   $("#mItems").addEventListener("change", e => { const c = e.target.closest("[data-i]"); if (c) { items[+c.dataset.i].on = c.checked; draw(); } });
   wireChips(sh, "scale", v => { scale = +v; draw(); });
   wireChips(sh, "meal", m => { meal = m; $("#mAdd").textContent = "Add to " + m; });
+  $("#mRedo").onclick = () => { const h = $("#mHint").value.trim(); if (!h) return toast("Type what it is first", true); runMeal({ ...flow, meal }, bigUrl, thumbUrl, h); };
   draw();
   $("#mAdd").onclick = () => {
     const on = items.filter(x => x.on); if (!on.length) return;
     closeSheet();
-    on.forEach(x => S.entries.push({ id: rid(10), at: Date.now(), meal, name: x.name, brand: "photo estimate", qty: "about " + fmtW(x.grams * scale), grams: Math.round(x.grams * scale),
-      img: thumbUrl, kcal: Math.round(x.kcal * scale), protein: r1(x.protein * scale), carbs: r1(x.carbs * scale), fat: r1(x.fat * scale) }));
+    on.forEach(x => S.entries.push({ id: rid(10), at: Date.now(), meal, name: x.name, brand: bigUrl ? "photo estimate" : "estimate", qty: x.grams ? "about " + fmtW(x.grams * scale) : (scale === 1 ? "1 portion" : `${scale} portion`), grams: Math.round(x.grams * scale),
+      img: thumbUrl || "", kcal: Math.round(x.kcal * scale), protein: r1(x.protein * scale), carbs: r1(x.carbs * scale), fat: r1(x.fat * scale) }));
     const total = Math.round(on.reduce((a, x) => a + x.kcal, 0) * scale);
     S.fresh = null; saveDay(); render(); haptic();
     const left = me.goals.kcal + burnedOf(S.workouts) - sum(S.entries).kcal;
