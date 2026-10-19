@@ -1,5 +1,6 @@
 # Builds the app's own copy of the Open Food Facts product database every week
 # and publishes it on the "data" branch, which the app reads from.
+# A short log of each run is kept on the "buildlog" branch.
 name: Build product database
 on:
   push:
@@ -16,19 +17,33 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    timeout-minutes: 120
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
       - name: Download and build
+        id: build
         run: |
-          curl -fL --retry 5 --retry-delay 20 -A "CalorieScanner-family-app/1.0 (github.com/${{ github.repository }})" \
-            -o products.csv.gz https://static.openfoodfacts.org/data/en.openfoodfacts.org.products.csv.gz
-          ls -lh products.csv.gz
-          python tools/build_products.py products.csv.gz out
-          du -sh out
+          set -o pipefail
+          UA="CalorieScanner-family-app/1.0 (github.com/${{ github.repository }})"
+          ok=""
+          for url in \
+            https://static.openfoodfacts.org/data/en.openfoodfacts.org.products.csv.gz \
+            https://openfoodfacts-ds.s3.eu-west-3.amazonaws.com/en.openfoodfacts.org.products.csv.gz \
+            https://world.openfoodfacts.org/data/en.openfoodfacts.org.products.csv.gz; do
+            echo "== trying $url" | tee -a build.log
+            if curl -fL --retry 3 --retry-delay 15 -A "$UA" -o products.csv.gz -w "http %{http_code}, %{size_download} bytes, %{time_total}s\n" "$url" 2>&1 | tail -3 | tee -a build.log; then
+              if gzip -t products.csv.gz 2>>build.log; then ok=1; break; fi
+              echo "not a complete gzip file" | tee -a build.log
+            fi
+          done
+          ls -l products.csv.gz 2>&1 | tee -a build.log
+          [ -n "$ok" ] || { echo "download failed" | tee -a build.log; exit 1; }
+          zcat products.csv.gz | head -1 | tr '\t' '\n' | head -200 | tr '\n' ' ' >> build.log; echo >> build.log
+          python tools/build_products.py products.csv.gz out 2>&1 | tee -a build.log
+          du -sh out | tee -a build.log
       - name: Publish to the data branch
         run: |
           cd out
@@ -39,3 +54,12 @@ jobs:
           git add -A
           git commit -q -m "Product database $(date -u +%Y-%m-%d)"
           git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" data
+      - name: Save the log
+        if: always()
+        run: |
+          mkdir -p logdir && cp build.log logdir/ 2>/dev/null || echo "no log" > logdir/build.log
+          date -u >> logdir/build.log
+          cd logdir && git init -q -b buildlog
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A && git commit -q -m "Build log" && git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" buildlog
