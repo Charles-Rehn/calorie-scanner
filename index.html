@@ -517,6 +517,13 @@ input[type=text],input[type=email],input[type=password],input[type=number],input
 .nb.kcal input{font-size:24px;font-weight:850;padding-right:44px}
 .nb em{position:absolute;right:12px;bottom:11px;font-style:normal;font-size:13px;color:var(--muted);font-weight:600;pointer-events:none}
 .nb.kcal em{bottom:13px}
+.skel .entry{pointer-events:none}
+.skel .thumb{background:var(--surface-2)}
+.skel b,.skel small{display:block;height:12px;border-radius:6px;background:var(--surface-2);width:62%;animation:shim 1.2s ease-in-out infinite}
+.skel small{width:36%;height:10px;margin-top:7px}
+@keyframes shim{50%{opacity:.45}}
+.offload{gap:12px;color:var(--muted);pointer-events:none}
+.offload .spin{width:14px;height:14px;margin:0 12px}
 .cantfind{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:4px 0 8px}
 .cantfind span{font-size:13px;color:var(--muted);font-weight:600;margin-right:4px}
 .coachpill{display:flex;align-items:center;gap:10px;width:100%;border:1px solid rgba(255,140,80,.22);border-radius:16px;padding:12px 12px 12px 14px;color:var(--ink);font-weight:700;font-size:15px;text-align:left;
@@ -877,7 +884,43 @@ Cola, regular|42|0|10.6|0|1 can (330 ml)|330
 Beer, lager|43|0.5|3.6|0|1 caña (200 ml)|200
 Red wine|85|0.1|2.6|0|1 glass (150 ml)|150
 White wine|82|0.1|2.6|0|1 glass (150 ml)|150
-Coffee, black|2|0.3|0|0|1 cup (240 ml)|240`
+Coffee, black|2|0.3|0|0|1 cup (240 ml)|240
+Spaghetti bolognese|130|7|15|4.5|1 plate (400 g)|400
+Chilli con carne with rice|140|7|17|4.5|1 plate (400 g)|400
+Chilli con carne|120|9|8|6|1 bowl (250 g)|250
+Shepherd's pie|110|6|10|5|1 portion (350 g)|350
+Cottage pie|115|6.5|10|5.3|1 portion (350 g)|350
+Lasagne|150|8|13|7.5|1 portion (350 g)|350
+Chicken tikka masala|150|12|5|9|1 portion (300 g)|300
+Chicken curry|120|11|5|6.5|1 portion (300 g)|300
+Pilau rice|170|3.5|30|4|1 portion (200 g)|200
+Fish and chips|210|9|21|10.5|1 chippy portion (450 g)|450
+Beans on toast|125|5.5|20|2.5|2 slices, half a tin (300 g)|300
+Cheese on toast|290|13|25|15|2 slices (150 g)|150
+Jacket potato with beans|105|4|21|0.8|1 potato with beans (400 g)|400
+Jacket potato with cheese|150|6|17|6.5|1 potato with cheese (350 g)|350
+Full English breakfast|200|10|10|13|1 plate (450 g)|450
+Bacon sandwich|280|14|28|12|1 sandwich (130 g)|130
+Sausage sandwich|290|11|28|15|1 sandwich (150 g)|150
+Cheese sandwich|300|12|28|16|1 sandwich (140 g)|140
+Ham sandwich|230|12|28|7.5|1 sandwich (140 g)|140
+Tuna mayo sandwich|240|11|24|11|1 sandwich (170 g)|170
+Scrambled eggs on toast|190|10|14|10|2 eggs on 2 slices (230 g)|230
+Cheese omelette|200|13|1|16|2-egg omelette (150 g)|150
+Chicken stir fry with noodles|130|9|15|3.5|1 plate (400 g)|400
+Chicken fajitas|170|11|18|6|2 fajitas (300 g)|300
+Macaroni cheese|165|7|17|8|1 portion (350 g)|350
+Toad in the hole|230|9|18|14|1 portion (250 g)|250
+Sausage and mash|150|5.5|13|8.5|1 plate (400 g)|400
+Pasta bake|150|7|16|6|1 portion (350 g)|350
+Spaghetti carbonara|170|7.5|18|7.5|1 plate (350 g)|350
+Pesto pasta|190|5.5|24|8|1 bowl (300 g)|300
+Tomato soup|50|1|7|2|1 bowl (300 g)|300
+Roast chicken dinner|130|10|11|5|1 plate (550 g)|550
+Roast beef dinner|135|10|11|5.5|1 plate (550 g)|550
+Chicken Caesar salad|140|11|6|8|1 bowl (300 g)|300
+Oven chips|160|2.5|25|5|1 portion (150 g)|150
+Boiled egg|143|12.6|0.7|9.5|1 egg (50 g)|50`
   .split("\n").map((line, i) => {
     const [name, k, p, c, f, sl, sg] = line.split("|");
     const g = +sg || 100, m = g / 100;
@@ -1374,7 +1417,7 @@ const EMO = [
   [/chocolate|kitkat|kit kat|mars\b|snickers|twix|dairy milk|galaxy|maltesers|buttons|bounty|aero|wispa|twirl|crunchie|freddo|m&m|protein bar|cereal bar|\bbar\b/, "🍫"],
   [/sweets|haribo|candy|jelly|gummy|skittles|starburst|fruit pastilles|wine gums|percy pig|lolly|toffee|fudge|marshmallow/, "🍬"], [/popcorn/, "🍿"], [/pretzel/, "🥨"],
   [/crisps|walkers|pringles|doritos|kettle chips|monster munch|quavers|wotsits|hula hoops|mini cheddars|skips|frazzles|sensations/, "🥔"],
-  [/cereal|cornflakes|corn flakes|flakes\b|muesli|granola|weetabix|cheerios|shreddies|bran|krispies|coco pops|frosties|crunchy nut|special k|shredded wheat|porridge|\boats?\b|oatmeal|ready brek/, "🥣"],
+  [/cereal|cornflakes|corn flakes|flakes\b|muesli|granola|weetabix|cheerios|shreddies|\\bbran\\b|krispies|coco pops|frosties|crunchy nut|special k|shredded wheat|porridge|\boats?\b|oatmeal|ready brek/, "🥣"],
   [/yoghurt|yogurt|skyr|fromage frais|kefir|custard/, "🥛"], [/\bmilk\b|oat drink|almond drink|soya drink/, "🥛"], [/cheese|cheddar|mozzarella|brie|parmesan|feta|halloumi|camembert|stilton|gouda|edam|babybel|cream cheese/, "🧀"],
   [/fries|chips\b|wedges|hash brown/, "🍟"], [/nugget|wing|drumstick|popcorn chicken|fried chicken|zinger|chicken strip|tender/, "🍗"],
   [/bacon/, "🥓"], [/sausage|frankfurter|chorizo|salami|pepperoni|hot dog/, "🌭"], [/omelette|fried egg|scrambled|poached egg|\beggs?\b/, "🥚"],
@@ -2052,12 +2095,126 @@ const mealChips = sel => chips("meal", MEALS.map(m => [m, m]), sel);
    Search: common foods + family pantry + dishes + Open Food Facts
    flow = { meal } when logging, or { pick(ingredient) } when building a dish
    ========================================================= */
+/* =========================================================
+   Search engine: everything in one ranked list. Copes with typos ("chiken"),
+   plurals, British/American words and half-typed words, and lifts foods you
+   log often, the brand or restaurant you name, and popular UK products.
+   ========================================================= */
+function editNear(a, b, max) { // Damerau-Levenshtein distance <= max, stopping early
+  const la = a.length, lb = b.length; if (Math.abs(la - lb) > max) return false;
+  let p2 = null, p = Array.from({ length: lb + 1 }, (_, j) => j);
+  for (let i = 1; i <= la; i++) {
+    const c = [i]; let lo = i;
+    for (let j = 1; j <= lb; j++) {
+      let v = Math.min(p[j] + 1, c[j - 1] + 1, p[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+      if (p2 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1]) v = Math.min(v, p2[j - 2] + 1);
+      c.push(v); if (v < lo) lo = v;
+    }
+    if (lo > max) return false;
+    p2 = p; p = c;
+  }
+  return p[lb] <= max;
+}
+const typoMax = w => w.length >= 8 ? 2 : w.length >= 4 ? 1 : 0;
+const stemW = w => w.length < 4 ? w : /ies$/.test(w) ? w.slice(0, -3) + "y" : /(oes|ches|shes|xes|sses)$/.test(w) ? w.slice(0, -2) : /[^s]s$/.test(w) ? w.slice(0, -1) : w;
+function wordMatch(w, toks, last) {
+  const ws = stemW(w), syn = SYN[w] || [], mx = typoMax(w);
+  let best = 0;
+  for (const t of toks) {
+    let s = 0;
+    if (t === w) s = 3;
+    else if (stemW(t) === ws) s = 2.8;
+    else if (syn.includes(t)) s = 2.5;
+    else if (t.startsWith(w)) s = last ? 2.3 : 1.8;
+    else if (w.length >= 3 && t.includes(w)) s = 1.3;
+    else if (mx && (t[0] === w[0] || t[1] === w[1]) && editNear(w, t, mx)) s = 1.8;
+    else if (last && w.length >= 4 && t.length > w.length && t[0] === w[0] && editNear(w, t.slice(0, w.length), 1)) s = 1.2;
+    else if (mx && t.length > w.length + 1 && t.includes(w.slice(0, 3)) && (editNear(w, t.slice(-w.length), mx) || editNear(w, t.slice(-w.length - 1), mx))) s = 1.5;
+    if (s > best) { best = s; if (s === 3) break; }
+  }
+  return best;
+}
+const foodToks = f => f._t || (f._t = [...new Set(snorm([f.name, f.brand, f._n].filter(Boolean).join(" ")).split(" ").filter(Boolean))]);
+const SHOP_WORDS = new Map(); SHOP_BRANDS.forEach(b => b.aliases.forEach(a => snorm(a).split(" ").forEach(w => w.length > 1 && SHOP_WORDS.set(w, b))));
+const CHAIN_GENERIC = new Set("piri chicken pizza burger burgers kitchen grill express cafe caffe coffee house kebab doner sushi the and bar co company fried chips street food shack bakery deli diner restaurant noodle noodles wok wings taco tacos sub subs bagel bagels hut king".split(" "));
+let CHAIN_WORDS = null;
+const chainWordSet = () => CHAIN_WORDS || (CHAIN_WORDS = new Set(RCHAINS.flatMap(c => snorm(c + " " + (CHAIN_ALIAS[c] || "")).split(" ")).filter(w => w.length > 1)));
+function makeQuery(raw) {
+  const q = snorm(raw), words = q.split(" ").filter(Boolean), det = detectBrand(raw);
+  const shopWords = det ? new Set(snorm(det.brand.aliases.find(a => (" " + q + " ").includes(" " + snorm(a) + " ")) || "").split(" ")) : new Set();
+  const chain = RCHAINS.find(c => { const cw = snorm(c + " " + (CHAIN_ALIAS[c] || "")).split(" ").filter(w => !CHAIN_GENERIC.has(w)); return words.some(w => w.length > 2 && cw.some(c => c === w || (w.length > 4 && c.length > 4 && c[0] === w[0] && editNear(w, c, typoMax(w))))); }) || null;
+  return { raw, q, words, det, shopWords, chain, itemWords: words.filter(w => !shopWords.has(w)) };
+}
+function scoreFood(f, Q) {
+  const toks = foodToks(f), nm = f._nm || (f._nm = snorm(f.name)), head = f._hd || (f._hd = snorm(String(f.name).split(",")[0]));
+  const ws = f.src === "off" && f._shop ? Q.itemWords : Q.words.filter(w => !(Q.shopWords.has(w) && !f._mine));
+  if (!ws.length) return f.src === "off" && f._shop ? 4 : -1;
+  let s = 0, inHead = 0;
+  for (let i = 0; i < ws.length; i++) {
+    const w = ws[i]; let m = wordMatch(w, toks, i === ws.length - 1);
+    if (!m && (SYN[w] || []).some(v => v.includes(" ") && nm.includes(v))) m = 2.2;
+    if (!m) return -1;
+    s += m; if ((" " + head).includes(" " + w.slice(0, 4))) inHead++;
+  }
+  const st = x => x.split(" ").map(stemW).join(" "), qj = st(ws.join(" ")), sn = f._sn || (f._sn = st(nm)), sh = f._sh || (f._sh = st(head));
+  if (sn === qj || sh === qj) s += 5; else if (sh.startsWith(qj)) s += 3.5; else if (sn.startsWith(qj)) s += 3; else if (sn.includes(qj)) s += 1.5;
+  if (inHead === ws.length) s += 1.5;
+  s -= Math.min(3, nm.length / 30);
+  if (f._mine) s += 3;
+  else if (f.src === "db") s += 3;
+  else if (f.src === "rest") s += Q.chain ? (f.brand === Q.chain ? 6 : -4) : -1.2;
+  else if (f.src === "usda") { s -= 0.35 * ((f.name.match(/,/g) || []).length); if (/\braw\b/.test(nm) && !Q.words.includes("raw")) s -= 0.6; if (/baby ?food|infant|industrial|commercially|usda commodity/.test(nm)) s -= 4; }
+  else if (f.src === "off") { s += -0.4 + Math.min(1.2, Math.log10(1 + (f.scans || 0)) * 0.4) + (f.uk ? 0.5 : 0) + (f.img ? 0.2 : 0) + (f._shop ? 7.5 : 0); if (f.protein === 0 && f.carbs === 0 && f.fat === 0) s -= 1; }
+  const r = (me.freq || {})[f.id]; if (r && r.n) s += Math.min(5, 1.6 * Math.log2(1 + r.n));
+  if (me.recent.indexOf(f.id) >= 0 && me.recent.indexOf(f.id) < 15) s += 1;
+  return s;
+}
+function searchLocal(Q, { pick, off }) {
+  const pool = [];
+  for (const [id, f] of Object.entries(cache.pantry)) pool.push(Object.assign({ ...f, id }, { _mine: true }));
+  pool.push(...COMMON);
+  if (!pick) pool.push(...RESTAURANTS);
+  if (FOODDB) pool.push(...FOODDB);
+  if (off) pool.push(...off);
+  const seen = new Map();
+  for (const f of pool) {
+    const s = scoreFood(f, Q); if (s < 0) continue;
+    const key = snorm(f.name) + "|" + snorm(f.brand || "") + "|" + Math.round((+f.kcal || 0) / 10);
+    const was = seen.get(key); if (!was || was.s < s) seen.set(key, { f, s });
+  }
+  return [...seen.values()].sort((a, b) => b.s - a.s).map(x => x.f);
+}
+// For the online product search: fix obvious typos using the words in the app's own food lists
+let VOCAB = null;
+function correctWords(words) {
+  if (!VOCAB) { VOCAB = new Map(); const add = s => snorm(s).split(" ").forEach(t => t.length > 2 && VOCAB.set(t, (VOCAB.get(t) || 0) + 1)); COMMON.forEach(f => add(f.name)); RESTAURANTS.forEach(f => add(f.name + " " + f.brand)); SHOP_WORDS.forEach((b, w) => VOCAB.set(w, 50)); }
+  if (FOODDB && !VOCAB.has("__db")) { VOCAB.set("__db", 0); FOODDB.forEach(f => snorm(f.name).split(" ").forEach(t => t.length > 2 && VOCAB.set(t, (VOCAB.get(t) || 0) + 1))); }
+  return words.map(w => {
+    if (w.length < 4 || VOCAB.has(w) || VOCAB.has(stemW(w)) || [...VOCAB.keys()].some(t => t.startsWith(w) && t.length - w.length < 4)) return w;
+    let best = null, bn = 0;
+    for (const [t, n] of VOCAB) if (n > bn && (t[0] === w[0] || t[1] === w[1]) && editNear(w, t, typoMax(w))) { best = t; bn = n; }
+    return best || w;
+  });
+}
+// Quick product lookup while typing: the fast search only, the older one as a fallback
+const offQuickCache = new Map();
+async function searchOFFQuick(Q) {
+  const b = Q.det ? Q.det.brand : null, terms = correctWords(Q.itemWords).join(" ");
+  const key = (b ? b.tag : "") + "|" + terms;
+  if (offQuickCache.has(key)) return offQuickCache.get(key);
+  let items;
+  try { items = await salFetch(terms, b); }
+  catch (e) { items = await searchOFF(terms, b); }
+  items = items.map(f => b ? { ...f, _shop: true } : f);
+  offQuickCache.set(key, items);
+  return items;
+}
+
 function openSearch(flow) {
   const pick = !!flow.pick;
-  let chain = null, brand = null; // shops and restaurants are found by typing their name
   const sh = openSheet(`${head(pick ? "Add ingredient" : "Search food", pick)}
     ${pick ? "" : mealChips(flow.meal)}
-    <form id="sForm" role="search"><input id="sIn" type="search" placeholder="Food, brand or restaurant" autocomplete="off" data-autofocus enterkeyhint="search" value="${esc(flow.q || "")}"></form>
+    <form id="sForm" role="search"><input id="sIn" type="search" placeholder="Food, brand or restaurant" autocomplete="off" autocorrect="off" spellcheck="false" data-autofocus enterkeyhint="search" value="${esc(flow.q || "")}"></form>
     <div class="tools">
       <button class="tool" id="tScan"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7V4h3M18 4h3v3M21 17v3h-3M6 20H3v-3"/><path d="M7 8v8M10 8v8M13 8v8M16 8v8" stroke-width="1.6"/></svg>Scan</button>
       <button class="tool" id="tLabel"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>Label photo</button>
@@ -2066,118 +2223,80 @@ function openSearch(flow) {
     </div>
     <div id="sRes" style="display:flex;flex-direction:column;gap:12px"></div>`, pick ? flow.back : null);
   const input = $("#sIn"), res = $("#sRes");
-  let offState = flow.off || { key: "", items: null, loading: false, err: "" }, items = {};
+  let items = {}, shown = 25, lastQ = "", pinned = [], typedAt = 0;
+  const off = { key: "", items: null, loading: false, err: "", timer: 0, gen: 0 };
   if (!pick) wireChips(sh, "meal", m => { flow.meal = m; draw(); });
   const tidy = f => { if (f.src !== "usda" || !f.name.includes(",")) return [f.name, ""]; const [a, ...b] = f.name.split(", "); return [a, b.join(", ")]; };
   const row = (f, right, extra = "") => { items[f.id] = f; const [nm, det] = tidy(f); return `<button class="entry" data-pick="${esc(f.id)}" ${extra}>${thumb(f)}<span class="nm"><b>${esc(nm)}</b><small>${esc([f.brand, det, f.servingLabel].filter(Boolean).join(" · "))}</small></span><span class="kc">${right}</span></button>`; };
   const qrow = (f, inner) => `<div class="qrow">${inner}<button class="qadd" data-quick="${esc(f.id)}" aria-label="Add ${esc(f.name)} now">${PLUS}</button></div>`;
   const kcalRight = f => `${fmt(f.kcal)}<small>kcal</small>`;
-  const list = fs => `<div class="list">${fs.map(f => row(f, kcalRight(f))).join("")}</div>`;
   const usualRow = (f, r) => { items[f.id] = f; const u = usualQty(f, r); return qrow(f, `<button class="entry" data-pick="${esc(f.id)}" data-usual="1">${thumb(f)}<span class="nm"><b>${esc(tidy(f)[0])}</b><small>${esc([f.brand, "usually " + u.qty].filter(Boolean).join(" · "))}</small></span><span class="kc">${fmt(f.kcal * u.mult)}<small>kcal</small></span></button>`); };
-  const offKey = () => snorm(input.value) + "|" + (brand || "");
-  function sync() {
-    sh.querySelectorAll("[data-chain]").forEach(b => b.setAttribute("aria-pressed", b.dataset.chain === chain));
-    sh.querySelectorAll("[data-brand]").forEach(b => b.setAttribute("aria-pressed", b.dataset.brand === brand));
-    const bo = brandObj(brand);
-    input.placeholder = "Food, brand or restaurant";
-    flow.chain = chain; flow.brand = brand;
-    const er = $("#expR"), eb = $("#expB");
-    if (er) { er.querySelector("span").textContent = chain || "Restaurants"; er.classList.toggle("picked", !!chain); }
-    if (eb) { eb.querySelector("span").textContent = bo ? bo.label : "Supermarkets"; eb.classList.toggle("picked", !!bo); }
+  // a food you've logged before gets the one-tap + with your usual amount
+  const resultRow = f => { const r = !pick && (me.freq || {})[f.id]; return r && r.n && foodById(f.id) ? usualRow(f, r) : row(f, kcalRight(f)); };
+  const skel = n => `<div class="list skel">${Array.from({ length: n }, () => `<div class="entry"><span class="thumb"></span><span class="nm"><b></b><small></small></span></div>`).join("")}</div>`;
+  function startOff(Q) {
+    clearTimeout(off.timer);
+    const key = (Q.det ? Q.det.brand.tag : "") + "|" + Q.itemWords.join(" ");
+    if (off.key === key) return;
+    off.key = key; off.items = null; off.err = ""; off.loading = Q.q.replace(/\s/g, "").length >= 3 && !/^\d{6,}$/.test(Q.q);
+    if (!off.loading) return;
+    const gen = ++off.gen;
+    off.timer = setTimeout(async () => {
+      try { const r = await searchOFFQuick(Q); if (gen === off.gen) { off.items = r; } }
+      catch (e) { if (gen === off.gen) off.err = e.message || "Couldn't reach the product database."; }
+      if (gen === off.gen) { off.loading = false; if (input.isConnected) draw(true); }
+    }, offQuickCache.size && offQuickCache.has(key) ? 0 : 320);
   }
-  function offBlock(label) {
-    const key = offKey();
-    if (offState.key === key && offState.items) return offState.items.length ? list(offState.items) : `<p class="note">No products found. Try fewer words, or scan the barcode.</p>`;
-    if (offState.key === key && offState.loading) return `<p class="note"><span class="spin"></span>&nbsp; Searching…</p>`;
-    return `${offState.key === key && offState.err ? `<p class="err">${esc(offState.err)}</p>${offState.diag ? `<p class="note" style="font-size:11px;font-family:var(--mono)">${esc(offState.diag)}</p>` : ""}` : ""}<button class="btn wide" id="offGo">${esc(label)}</button>`;
-  }
-  function draw() {
+  function draw(fromOff) {
     items = {};
-    const raw = input.value.trim(), q = snorm(raw), words = q.split(" ").filter(Boolean);
-    sh.classList.toggle("typing", !!q && !chain && !brand);
-    const hit = s => words.every(w => wordHits(s, w));
+    const raw = input.value.trim(), Q = makeQuery(raw);
+    sh.classList.toggle("typing", !!Q.q);
     flow.q = raw;
+    if (Q.q !== lastQ) { shown = 25; pinned = []; lastQ = Q.q; }
     let html = "";
-    if (chain) {
-      const menu = RESTAURANTS.filter(r => r.brand === chain && hit(r._n));
-      const added = Object.entries(cache.pantry).map(([id, f]) => ({ ...f, id })).filter(f => snorm(f.brand || "") === snorm(chain) && hit(snorm(f.name)));
-      html += `<div class="grp">${esc(chain)} menu</div>${menu.length ? list(menu) : `<p class="note">Nothing on the ${esc(chain)} menu matches “${esc(raw)}”.</p>`}
-        ${added.length ? `<div class="grp">Added by ${R.fam ? "your family" : "you"}</div>${list(added)}` : ""}
-        <button class="btn wide" id="addChainItem">+ Add a ${esc(chain)} item that's missing</button>
-        <p class="note">${esc(chainNote(chain))}</p>`;
-    } else if (brand) {
-      const bo = brandObj(brand), bn = snorm(bo.label);
-      const pan = Object.entries(cache.pantry).map(([id, f]) => ({ ...f, id })).filter(f => snorm(f.brand || "").includes(bn) && hit(snorm(f.name + " " + f.brand))).slice(0, 10);
-      if (pan.length) html += `<div class="grp">${R.fam ? "Family" : "Your"} ${esc(bo.label)} foods</div>${list(pan)}`;
-      html += `<div class="grp">${esc(bo.label)} products</div>${offBlock(raw ? `Search ${bo.label} for “${raw}”` : `Show popular ${bo.label} products`)}`;
-    } else if (!q) {
+    if (!Q.q) {
+      clearTimeout(off.timer); off.key = ""; off.gen++;
       const usual = pick ? [] : suggestions(flow.meal, 6);
       if (usual.length) html += `<div class="grp">Your usual ${esc((flow.meal || "").toLowerCase())} <small>tap + to add in one go</small></div><div class="list">${usual.map(x => usualRow(foodById(x.id), x.r)).join("")}</div>`;
       const seen = new Set(usual.map(x => x.id));
       const rec = me.recent.filter(id => !seen.has(id)).map(foodById).filter(Boolean).slice(0, 10);
       if (rec.length) html += `<div class="grp">Recent</div><div class="list">${rec.map(f => pick ? row(f, kcalRight(f)) : usualRow(f, (me.freq || {})[f.id])).join("")}</div>`;
       if (!usual.length && !rec.length) html += `<p class="note">Type a food, or a shop or restaurant with what you had, like “Tesco ham” or “McDonald's nuggets”. Foods you log often will show up here first.</p>`;
-    } else {
-      if (!pick) {
-        const ds = Object.entries(cache.dishes).filter(([, d]) => hit(snorm(d.name))).slice(0, 6);
-        if (ds.length) html += `<div class="grp">Dishes</div><div class="list">${ds.map(([id, d]) => `<button class="entry" data-dishpick="${esc(id)}">${thumb({ dish: true })}<span class="nm"><b>${esc(d.name)}</b><small>${esc(memberName(d.by))} · ${d.portions || "?"} portions</small></span><span class="kc">${d.portions ? fmt(d.kcal / d.portions) : fmt(d.kcal)}<small>${d.portions ? "kcal/portion" : "kcal"}</small></span></button>`).join("")}</div>`;
-      }
-      const pan = rankFoods(Object.entries(cache.pantry).map(([id, f]) => ({ ...f, id, _n: snorm(f.name + " " + (f.brand || "")) })).filter(f => hit(f._n)), words).slice(0, 12);
-      if (pan.length) html += `<div class="grp">${R.fam ? "Family foods" : "Your foods"}</div>${list(pan)}`;
-      // Restaurants first only when the search names a restaurant ("nandos chips"); otherwise plain foods come first
-      const chainWords = new Set(RCHAINS.flatMap(c => snorm(c + " " + (CHAIN_ALIAS[c] || "")).split(" ")));
-      const allRs = pick ? [] : RESTAURANTS.filter(r => hit(r._n));
-      const namesChain = allRs.length && words.some(w => chainWords.has(w));
-      const itemWords = words.filter(w => !chainWords.has(w));
-      const rs = (itemWords.length ? rankFoods(allRs, itemWords) : allRs).slice(0, namesChain ? 80 : 10);
-      const com = rankFoods(COMMON.filter(f => hit(f._n)), words).slice(0, 12);
-      const chainsHit = [...new Set(rs.map(r => r.brand))];
-      const rsHtml = rs.length ? `<div class="grp">${chainsHit.length === 1 ? esc(chainsHit[0]) : "Restaurants"}</div>${list(rs)}` : "", comHtml = com.length ? `<div class="grp">Common foods</div>${list(com)}` : "";
-      let dbHtml = "";
-      if (FOODDB) { const more = rankFoods(FOODDB.filter(f => hit(f._n)), words).slice(0, 25); if (more.length) dbHtml = `<div class="grp">More foods</div>${list(more)}`; }
-      else { dbHtml = `<p class="note"><span class="spin"></span>&nbsp; Loading more foods…</p>`; loadFoodDb().then(() => { if (input.isConnected) draw(); }); }
-      html += namesChain ? rsHtml + comHtml + dbHtml : comHtml + dbHtml + rsHtml;
-      const det = detectBrand(raw);
-      // a shop named, or little found here: look up packaged products straight away
-      const localHits = rs.length + com.length + pan.length + (FOODDB ? FOODDB.filter(f => hit(f._n)).length : 0);
-      { clearTimeout(draw.auto); if ((det || (FOODDB && localHits < 3)) && words.join("").length >= 3 && offState.key !== offKey()) draw.auto = setTimeout(() => { if (input.isConnected && offState.key !== offKey()) runOff(); }, 550); }
-      html += `<div class="grp">${det ? esc(det.brand.label) + " products" : "Packaged products"}</div>${offBlock(det ? `Search ${det.brand.label}${det.rest ? ` for “${det.rest}”` : ""}` : `Search packaged products for “${raw}”`)}`;
-      html += `<div class="cantfind"><span>Can't find it?</span><button class="btn small" data-tool="tManual">Type it in</button><button class="btn small" data-tool="tScan">Scan</button><button class="btn small" data-tool="tLabel">Label photo</button></div>`;
+      res.innerHTML = html; return;
     }
+    if (!fromOff) startOff(Q);
+    if (/^\d{8,14}$/.test(Q.q)) html += `<div class="list"><button class="entry" data-code="${esc(Q.q)}"><span class="thumb ph" style="--h:30"><span class="code" style="font-size:11px">123</span></span><span class="nm"><b>Look up barcode</b><small class="code">${esc(Q.q)}</small></span></button></div>`;
+    if (!pick) {
+      const ds = Object.entries(cache.dishes).filter(([, d]) => Q.words.every(w => wordMatch(w, snorm(d.name).split(" "), true))).slice(0, 4);
+      if (ds.length) html += `<div class="grp">Dishes</div><div class="list">${ds.map(([id, d]) => `<button class="entry" data-dishpick="${esc(id)}">${thumb({ dish: true })}<span class="nm"><b>${esc(d.name)}</b><small>${esc(memberName(d.by))} · ${d.portions || "?"} portions</small></span><span class="kc">${d.portions ? fmt(d.kcal / d.portions) : fmt(d.kcal)}<small>${d.portions ? "kcal/portion" : "kcal"}</small></span></button>`).join("")}</div>`;
+    }
+    let list = searchLocal(Q, { pick, off: off.items });
+    // keep what was already on screen at the top when shop products arrive, so nothing jumps under your thumb
+    if (fromOff && pinned.length && Date.now() - typedAt > 1500 && !Q.det && !Q.chain) { const top = pinned.map(id => list.find(f => f.id === id)).filter(Boolean); list = top.concat(list.filter(f => !pinned.includes(f.id))); }
+    else pinned = list.slice(0, 3).map(f => f.id);
+    if (!FOODDB) loadFoodDb().then(() => { if (input.isConnected) draw(true); });
+    const fixed = correctWords(Q.itemWords).join(" ");
+    if (list.length && fixed !== Q.itemWords.join(" ") && !list.slice(0, 3).some(f => Q.itemWords.every(w => foodToks(f).some(t => t.startsWith(w))))) html += `<p class="note">Showing matches for “${esc(fixed)}”</p>`;
+    if (list.length) {
+      const label = Q.chain && list[0].brand === Q.chain ? Q.chain : Q.det ? `${Q.det.brand.label} and more` : "Best matches";
+      html += `<div class="grp">${esc(label)}</div><div class="list">${list.slice(0, shown).map(resultRow).join("")}${off.loading ? `<div class="entry offload"><span class="spin"></span><span class="nm"><small>Looking for ${Q.det ? esc(Q.det.brand.label) + " " : ""}products…</small></span></div>` : ""}</div>`;
+      if (list.length > shown) html += `<button class="btn wide" id="sMore">Show more (${fmt(list.length - shown)})</button>`;
+    } else if (off.loading || !FOODDB) html += skel(5);
+    else if (/^\d{8,14}$/.test(Q.q)) {}
+    else html += `<p class="note">Nothing found for “${esc(raw)}”. Try fewer words, or check the spelling.</p>`;
+    if (off.err && !off.loading) html += `<p class="note">${esc(off.err)} <button class="btn small" id="offRetry">Try again</button></p>`;
+    html += `<div class="cantfind"><span>Can't find it?</span><button class="btn small" data-tool="tManual">Type it in</button><button class="btn small" data-tool="tScan">Scan</button><button class="btn small" data-tool="tLabel">Label photo</button></div>`;
     res.innerHTML = html;
-    const go = $("#offGo"); if (go) go.onclick = runOff;
-    const ac = $("#addChainItem"); if (ac) ac.onclick = () => openFood({ ...blankFood(input.value.trim()), brand: chain }, { ...flow, back: () => openSearch(flow) });
+    const more = $("#sMore"); if (more) more.onclick = () => { shown += 25; draw(true); };
+    const rt = $("#offRetry"); if (rt) rt.onclick = () => { off.key = ""; offQuickCache.clear(); draw(); };
   }
-  async function runOff() {
-    const raw = input.value.trim(), key = offKey();
-    let b = brandObj(brand), terms = raw;
-    if (!b) { const det = detectBrand(raw); if (det) { b = det.brand; terms = det.rest; } }
-    if (!b && !snorm(raw)) return;
-    offState = { key, items: null, loading: true, err: "" }; flow.off = offState; draw();
-    try { offState.items = await searchOFF(terms, b); }
-    catch (e) { offState.err = e.message || "Search failed. Check your connection and try again."; offState.diag = e.diag || ""; }
-    offState.loading = false; if (offKey() === key && input.isConnected) draw();
-  }
-  sh.querySelectorAll("[data-chain]").forEach(b => b.onclick = () => { haptic(); chain = chain === b.dataset.chain ? null : b.dataset.chain; brand = null; sync(); draw(); });
-  const other = sh.querySelector("[data-other]");
-  if (other) other.onclick = () => { haptic(); openFood({ ...blankFood(input.value.trim()), brand: "" }, { ...flow, back: () => openSearch(flow) }); };
-  function setExp(which, open) {
-    const b = $(which === "r" ? "#expR" : "#expB"), row = $(which === "r" ? "#chainRow" : "#brandRow"); if (!b || !row) return;
-    b.setAttribute("aria-expanded", open); row.hidden = !open; flow[which === "r" ? "showR" : "showB"] = open;
-  }
-  if ($("#expR")) $("#expR").onclick = () => { haptic(); setExp("r", $("#chainRow").hidden); };
-  if ($("#expB")) $("#expB").onclick = () => { haptic(); setExp("b", $("#brandRow").hidden); };
-  setExp("r", !!(chain || flow.showR)); setExp("b", !!(brand || flow.showB));
-  sh.querySelectorAll("[data-brand]").forEach(b => b.onclick = () => {
-    haptic(); brand = brand === b.dataset.brand ? null : b.dataset.brand; chain = null; sync(); draw();
-    if (brand && !(offState.key === offKey() && offState.items)) runOff();
-  });
-  let t; input.oninput = () => { clearTimeout(t); t = setTimeout(draw, 120); };
-  $("#sForm").onsubmit = e => { e.preventDefault(); input.blur(); if (!chain) runOff(); };
-  sync(); draw();
+  let raf = 0; input.oninput = () => { typedAt = Date.now(); cancelAnimationFrame(raf); raf = requestAnimationFrame(() => draw()); };
+  $("#sForm").onsubmit = e => { e.preventDefault(); input.blur(); };
+  draw();
   res.onclick = e => {
     const b = e.target.closest("button"); if (!b) return;
     if (b.dataset.tool) { const t = $("#" + b.dataset.tool); if (t) t.click(); return; }
+    if (b.dataset.code) { lookup(b.dataset.code, flow); return; }
     if (b.dataset.quick) {
       if (b.classList.contains("done")) return;
       quickLog(b.dataset.quick, flow.meal || mealForNow());
@@ -2196,7 +2315,7 @@ function openSearch(flow) {
 }
 
 let offTimes = [];
-const OFF_FIELDS = "code,product_name,product_name_en,product_name_es,generic_name,brands,nutriments,serving_size,serving_quantity,image_front_small_url,image_small_url,image_front_thumb_url";
+const OFF_FIELDS = "code,product_name,product_name_en,product_name_es,generic_name,brands,nutriments,serving_size,serving_quantity,image_front_small_url,image_small_url,image_front_thumb_url,countries_tags,unique_scans_n";
 const offCache = new Map();
 function offRate() {
   offTimes = offTimes.filter(x => Date.now() - x < 60000);
@@ -2270,7 +2389,8 @@ function offToFood(p) {
   const img = p.image_front_small_url || p.image_small_url || p.image_front_thumb_url || "";
   return { id: "bc-" + p.code, src: "off", code: String(p.code || ""), name, brand: pickText(p.brands).split(",")[0].trim(), img: /^https:\/\//.test(img) ? img : "",
     servingLabel: sq > 0 ? (pickText(p.serving_size) || `${sq} g`) : "100 g", servingGrams: g,
-    kcal: Math.round(+k100 * f), protein: r1((+n.proteins_100g || 0) * f), carbs: r1((+n.carbohydrates_100g || 0) * f), fat: r1((+n.fat_100g || 0) * f) };
+    kcal: Math.round(+k100 * f), protein: r1((+n.proteins_100g || 0) * f), carbs: r1((+n.carbohydrates_100g || 0) * f), fat: r1((+n.fat_100g || 0) * f),
+    uk: (Array.isArray(p.countries_tags) ? p.countries_tags : []).includes("en:united-kingdom"), scans: +p.unique_scans_n || 0 };
 }
 async function fetchProduct(code) {
   const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), 9000);
@@ -2356,6 +2476,7 @@ function openFood(food, flow) {
     let id = builtin && !edited ? food.id : foodId({ ...f, id: builtin ? null : food.id });
     if (!builtin || edited) {
       const { _n, id: _i, ...rest } = f;
+      Object.keys(rest).forEach(k => { if (k[0] === "_" || k === "uk" || k === "scans") delete rest[k]; });
       Data.put("pantry", id, { ...rest, src: builtin ? "manual" : food.src, by: food.by || me.pid, used: Date.now() });
       cache.pantry[id] = { ...rest, used: Date.now() };
     }
@@ -3055,15 +3176,28 @@ $("#labelPhoto").addEventListener("change", e => { const f = e.target.files && e
    ========================================================= */
 const FB_MOD = "https://www.gstatic.com/firebasejs/12.19.0/";
 let mealAI = null;
+// One request, with a quiet second try if the connection drops (but not for real refusals like quota or a missing model)
+async function aiCall(fn, ms) {
+  const once = () => Promise.race([fn(), new Promise((_, rej) => setTimeout(() => rej(Object.assign(new Error("slow"), { code: "slow" })), ms))]);
+  try { return await once(); }
+  catch (e) {
+    const m = String(e && (e.message || e.code) || "");
+    if (e && e.code === "slow" || /not found|404|400|INVALID_ARGUMENT|schema|quota|429|exhausted|PERMISSION_DENIED|403/i.test(m)) throw e;
+    await new Promise(r => setTimeout(r, 1200));
+    return once();
+  }
+}
 async function getMealAI() {
   if (mealAI) return mealAI;
   const cfg = window.FIREBASE_CONFIG, siteKey = window.RECAPTCHA_SITE_KEY;
   if (!cfg) throw Object.assign(new Error("Accounts aren't switched on for this website."), { code: "nocfg" });
   if (!siteKey) throw Object.assign(new Error("Meal photos aren't set up yet."), { code: "nokey" });
-  const [{ initializeApp, getApps }, { initializeAppCheck, ReCaptchaEnterpriseProvider }, AIM] = await Promise.all([
+  const [{ initializeApp, getApps }, { initializeAppCheck, ReCaptchaEnterpriseProvider, getToken }, AIM] = await Promise.all([
     import(FB_MOD + "firebase-app.js"), import(FB_MOD + "firebase-app-check.js"), import(FB_MOD + "firebase-ai.js")]);
   const app = getApps().find(a => a.name === "meal-ai") || initializeApp(cfg, "meal-ai");
-  initializeAppCheck(app, { provider: new ReCaptchaEnterpriseProvider(siteKey), isTokenAutoRefreshEnabled: true });
+  const appCheck = initializeAppCheck(app, { provider: new ReCaptchaEnterpriseProvider(siteKey), isTokenAutoRefreshEnabled: true });
+  // Get the security token before the first question; asking too early is what made the first try fail
+  const ready = typeof getToken === "function" ? Promise.race([getToken(appCheck).catch(() => null), new Promise(r => setTimeout(r, 8000))]) : Promise.resolve();
   const ai = AIM.getAI(app, { backend: new AIM.GoogleAIBackend() });
   // Ask for an exact shape so numbers come back as numbers
   let schema = null;
@@ -3074,7 +3208,7 @@ async function getMealAI() {
       confidence: Sc.enumString({ enum: ["low", "medium", "high"] }), note: Sc.string() }, optionalProperties: ["note"] });
   } catch (e) { schema = null; }
   const make = (model, useSchema) => AIM.getGenerativeModel(ai, { model, generationConfig: { responseMimeType: "application/json", temperature: 0.3, ...(useSchema && schema ? { responseSchema: schema } : {}) } });
-  mealAI = { ai, AIM, tries: [make("gemini-3.8-flash", true), make("gemini-3.8-flash", false), make("gemini-2.5-flash", true), make("gemini-2.5-flash", false)] };
+  mealAI = { ai, AIM, ready, tries: [make("gemini-3.8-flash", true), make("gemini-3.8-flash", false), make("gemini-2.5-flash", true), make("gemini-2.5-flash", false)] };
   return mealAI;
 }
 function photoToJpeg(file, maxSide) {
@@ -3123,11 +3257,11 @@ function readMealAnswer(txt) {
   return { items, confidence: (!Array.isArray(j) && j.confidence) || "medium", note: String((!Array.isArray(j) && j.note) || "") };
 }
 async function estimateMeal(dataUrl, hint) {
-  const { tries } = await getMealAI();
+  const { tries, ready } = await getMealAI(); await ready;
   const part = dataUrl ? { inlineData: { mimeType: "image/jpeg", data: dataUrl.split(",")[1] } } : null;
   const ask = async (m, nudge) => {
     const parts = [mealPrompt(hint, !!part, nudge)]; if (part) parts.push(part);
-    const r = await Promise.race([m.generateContent(parts), new Promise((_, rej) => setTimeout(() => rej(Object.assign(new Error("slow"), { code: "slow" })), 60000))]);
+    const r = await aiCall(() => m.generateContent(parts), 60000);
     return readMealAnswer(r.response.text());
   };
   let lastErr = null;
@@ -3151,7 +3285,7 @@ function mealError(e) {
   if (e && e.code === "nocfg") return "Accounts need to be switched on for this website first.";
   if (e && e.code === "slow") return "That took too long. Check your connection and try again.";
   if (/app.?check|attestation|recaptcha|appCheck/i.test(m)) return "The security check didn't pass. Try again in a moment; if it keeps happening, the reCAPTCHA key or App Check setup needs a look.";
-  if (/quota|429|resource.?exhausted|rate/i.test(m)) return "Too many requests in a short time. Wait a minute and try again.";
+  if (/quota|429|resource.?exhausted|rate.?limit|too many requests/i.test(m)) return "Too many requests in a short time. Wait a minute and try again.";
   if (/api.*(not been used|disabled)|PERMISSION_DENIED|403/i.test(m)) return "The AI service isn't switched on in Firebase yet (AI Logic › Get started).";
   if (e instanceof SyntaxError) return "The answer came back garbled. Try again, or describe the meal below.";
   if (/network|fetch|failed to load|import/i.test(m)) return "Couldn't reach the AI service. Check your connection.";
@@ -3244,14 +3378,14 @@ $("#mealPhoto").addEventListener("change", e => { const f = e.target.files && e.
 let coachAI = null;
 async function getCoachAI() {
   if (coachAI) return coachAI;
-  const { ai, AIM } = await getMealAI();
+  const { ai, AIM, ready } = await getMealAI();
   let schema = null;
   try {
     const Sc = AIM.Schema, item = Sc.object({ properties: { name: Sc.string(), grams: Sc.number(), kcal: Sc.number(), protein: Sc.number(), carbs: Sc.number(), fat: Sc.number() } });
     schema = Sc.object({ properties: { reply: Sc.string(), ideas: Sc.array({ items: Sc.object({ properties: { meal: Sc.enumString({ enum: MEALS }), title: Sc.string(), why: Sc.string(), items: Sc.array({ items: item }) }, optionalProperties: ["why"] }) }) } });
   } catch (e) { schema = null; }
   const make = (model, useSchema) => AIM.getGenerativeModel(ai, { model, generationConfig: { responseMimeType: "application/json", temperature: 0.8, ...(useSchema && schema ? { responseSchema: schema } : {}) } });
-  coachAI = { tries: [make("gemini-3.8-flash", true), make("gemini-3.8-flash", false), make("gemini-2.5-flash", true), make("gemini-2.5-flash", false)] };
+  coachAI = { ready, tries: [make("gemini-3.8-flash", true), make("gemini-3.8-flash", false), make("gemini-2.5-flash", true), make("gemini-2.5-flash", false)] };
   return coachAI;
 }
 const coachReady = () => !!(window.FIREBASE_CONFIG && window.RECAPTCHA_SITE_KEY);
@@ -3309,13 +3443,13 @@ function readCoachAnswer(txt) {
   return { reply, ideas };
 }
 async function askCoach(text) {
-  const { tries } = await getCoachAI();
+  const { tries, ready } = await getCoachAI(); await ready;
   const past = coach.msgs.slice(-10).map(m => m.role === "user" ? `Them: ${m.text}` : `You: ${m.reply}${m.ideas && m.ideas.length ? ` [ideas: ${m.ideas.map(i => `${i.meal}: ${i.title}, ${Math.round(i.items.reduce((a, y) => a + y.kcal, 0))} kcal`).join("; ")}]` : ""}`).join("\n");
   const prompt = `${COACH_RULES}\n\nWhere they are today:\n${coachContext()}\n${past ? `\nConversation so far:\n${past}\n` : ""}\nTheir message: ${text.slice(0, 600)}`;
   let lastErr = null;
   for (const m of tries) {
     try {
-      const r = await Promise.race([m.generateContent([prompt]), new Promise((_, rej) => setTimeout(() => rej(Object.assign(new Error("slow"), { code: "slow" })), 45000))]);
+      const r = await aiCall(() => m.generateContent([prompt]), 45000);
       const res = readCoachAnswer(r.response.text());
       if (!res.reply && !res.ideas.length) throw new SyntaxError("empty");
       return res;
@@ -3342,7 +3476,7 @@ function openCoach() {
     <div class="coach-sum" id="cSum"></div>
     <div class="coach-log" id="cLog" aria-live="polite"></div>
     <div class="coach-foot"><div class="hscroll" id="cQuick"></div>
-    <form class="coach-in" id="cForm"><textarea id="cIn" rows="1" placeholder="Ask anything, e.g. dinner with chicken under 600 kcal" enterkeyhint="send"></textarea>
+    <form class="coach-in" id="cForm"><textarea id="cIn" rows="1" placeholder="Ask for meal ideas…" enterkeyhint="send"></textarea>
       <button class="cgo" id="cGo" aria-label="Send">${ICON('<path d="M5 12h14M13 6l6 6-6 6"/>')}</button></form></div>`);
   sh.classList.add("coach");
   const sumLine = () => {
