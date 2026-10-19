@@ -2270,7 +2270,7 @@ const own = { meta: null, metaAt: 0, shards: new Map(), chunks: new Map() };
 async function ownMeta() {
   if (own.meta && Date.now() - own.metaAt < 6 * 3600e3) return own.meta;
   try {
-    const r = await fetch(PRODUCTS_URL + "meta.json", { cache: "no-cache" });
+    const r = await fetch(PRODUCTS_URL + "meta.json?t=" + Math.floor(Date.now() / 60000), { cache: "no-cache" });
     if (r.ok) { own.meta = await r.json(); own.metaAt = Date.now(); LS.set("ownMeta", own.meta, true); }
     else if (r.status === 404) { own.metaAt = Date.now(); throw Object.assign(new Error("not built yet"), { status: 404 }); }
   } catch (e) { if (!own.meta) own.meta = LS.get("ownMeta", null, true); if (!own.meta) throw e; }
@@ -2291,17 +2291,18 @@ function ownToFood(r, rank) {
 }
 // Scanned barcode: our copy first, so scanning works even when Open Food Facts doesn't answer
 async function ownByCode(code) {
-  const m = await ownMeta(); if (!m.barcodes) return null;
+  let m = await ownMeta(); if (!m.barcodes) return null;
   const sh = await ownJSON(`${m.v}/b/${code.slice(-2)}.json`, own.shards); if (!sh) return null;
   const i = [code, code.replace(/^0+/, ""), code.padStart(13, "0")].map(c => sh[c]).find(x => x != null); if (i == null) return null;
   const ch = await ownJSON(`${m.v}/p/${Math.floor(i / m.chunk)}.json`, own.chunks), rec = ch && ch[i % m.chunk];
   return rec ? ownToFood(rec, i) : null;
 }
-async function searchOwn(Q) {
+async function searchOwn(Q, again) {
   const m = await ownMeta(), v = m.v;
   const words = [...new Set(Q.words)].slice(0, 5); if (!words.length) return [];
   const key = w => w.length >= 2 ? w.slice(0, 2) : w + "_";
   const shards = await Promise.all(words.map(w => ownJSON(`${v}/t/${key(w)}.json`, own.shards)));
+  if (!again && shards.every(x => x === null)) { own.metaAt = 0; own.meta = null; return searchOwn(Q, true); }
   const sets = words.map((w, i) => {
     const sh = shards[i] || {}, ws = stemW(w), mx = typoMax(w), last = i === words.length - 1, set = new Set();
     let capped = false;
@@ -2320,6 +2321,7 @@ async function searchOwn(Q) {
   cand.sort((a, b) => a - b); cand = cand.slice(0, 120);
   const chunks = [...new Set(cand.map(i => Math.floor(i / m.chunk)))];
   const data = await Promise.all(chunks.map(c => ownJSON(`${v}/p/${c}.json`, own.chunks)));
+  if (chunks.length && data.every(d => !d) && !again) { own.metaAt = 0; own.meta = null; return searchOwn(Q, true); } // a newer copy was published: reload the version list
   const byChunk = new Map(chunks.map((c, i) => [c, data[i] || []]));
   const shopNames = Q.det ? Q.det.brand.names.map(snorm) : null;
   const seen = new Set();

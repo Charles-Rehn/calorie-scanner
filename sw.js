@@ -1,6 +1,6 @@
 // Opens instantly from the saved copy, then quietly fetches any update in the
 // background so the next launch has it.
-const CACHE = "calorie-scanner-v25";
+const CACHE = "calorie-scanner-v26";
 const DATA = "calorie-products"; // kept across app updates
 const SHELL = ["./", "./index.html", "./config.js", "./manifest.webmanifest", "./icon-180.png", "./icon-192.png", "./icon-512.png", "./foods.json"];
 
@@ -18,7 +18,7 @@ self.addEventListener("fetch", e => {
   if (/openfoodfacts|firestore|googleapis\.com\/identitytoolkit|securetoken|firebasevertexai|firebaseappcheck|recaptcha|google\.com/.test(url.href)) return;
   // Our copy of the product database: versioned files never change, so keep them; the version list is checked online
   if (url.hostname === "raw.githubusercontent.com" && url.pathname.includes("/calorie-scanner/data/")) {
-    if (url.pathname.endsWith("/meta.json")) { e.respondWith(fetch(req).then(res => { if (res.ok) { const copy = res.clone(); caches.open(DATA).then(c => c.put(req, copy)); } return res; }).catch(() => caches.match(req))); return; }
+    if (url.pathname.endsWith("/meta.json")) { const key = url.origin + url.pathname; e.respondWith(fetch(req).then(res => { if (res.ok) { const copy = res.clone(); caches.open(DATA).then(c => c.put(key, copy)); } return res; }).catch(() => caches.match(key))); return; }
     e.respondWith(caches.open(DATA).then(c => c.match(req).then(hit => hit || fetch(req).then(res => { if (res.ok) c.put(req, res.clone()); return res; }))));
     return;
   }

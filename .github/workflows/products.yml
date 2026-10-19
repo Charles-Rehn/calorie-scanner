@@ -46,6 +46,12 @@ jobs:
           du -sh out | tee -a build.log
       - name: Publish to the data branch
         run: |
+          # keep last week's copy too, so phones still holding the old version list don't break mid-update
+          if git clone -q --depth 1 -b data "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" prev 2>/dev/null; then
+            old=$(python -c "import json;print(json.load(open('prev/meta.json'))['v'])" 2>/dev/null || true)
+            new=$(python -c "import json;print(json.load(open('out/meta.json'))['v'])")
+            if [ -n "$old" ] && [ "$old" != "$new" ] && [ -d "prev/$old" ]; then cp -r "prev/$old" "out/$old"; echo "kept $old"; fi
+          fi
           cd out
           printf "Product data from Open Food Facts (https://world.openfoodfacts.org), ODbL 1.0.\nBuilt automatically by .github/workflows/products.yml\n" > README.md
           git init -q -b data
