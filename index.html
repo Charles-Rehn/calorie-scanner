@@ -1188,7 +1188,8 @@ function detectBrand(raw) {
 }
 
 /* Workouts: [name, MET moderate, easy, hard]. Steps use their own formula. */
-const WORKOUTS = [["Gym", 5, 3.5, 6], ["Running", 9.8, 8.3, 11.5], ["Walking", 3.5, 2.8, 4.8], ["Steps", 0, 0, 0], ["Cycling", 7.5, 5.8, 10],
+const WATCH = "Watch / WHOOP";
+const WORKOUTS = [[WATCH, 0, 0, 0], ["Gym", 5, 3.5, 6], ["Running", 9.8, 8.3, 11.5], ["Walking", 3.5, 2.8, 4.8], ["Steps", 0, 0, 0], ["Cycling", 7.5, 5.8, 10],
   ["Swimming", 7, 5.8, 9.8], ["Football", 7, 5, 10], ["Padel", 6, 4.5, 7.5], ["Tennis", 7.3, 5, 8], ["HIIT", 8, 6, 10],
   ["Yoga", 2.5, 2, 4], ["Dancing", 5, 4, 7.3], ["Hiking", 6, 5.3, 7.8], ["Other", 5, 3.5, 8]];
 const burnedOf = ws => (ws || []).reduce((s, w) => s + (+w.kcal || 0), 0);
@@ -2276,9 +2277,7 @@ function openWorkout() {
     ${me.weight ? "" : `<div class="field"><label for="wWeight">Your weight in ${imperial() ? "pounds" : "kg"}, for better estimates</label><input id="wWeight" type="number" inputmode="decimal" min="20" placeholder="${imperial() ? 165 : 75}"></div>`}
     <p class="note" id="wHint"></p>
     <p class="err" id="wErr" hidden></p>
-    <button class="btn primary wide" id="wAdd">Add workout</button>
-    <button class="btn ghost small" id="wHealth" style="align-self:center">${me.healthKey ? "Apple Health is connected" : "Sync workouts from Apple Health or WHOOP"}</button>`);
-  $("#wHealth").onclick = () => openHealth();
+    <button class="btn primary wide" id="wAdd">Add workout</button>`);
   const typedKg = () => { const w = parseFloat(($("#wWeight") || {}).value); return w > 20 ? (imperial() ? w * 0.453592 : w) : null; };
   const kg = () => me.weight || typedKg() || 75;
   function est() {
@@ -2288,6 +2287,9 @@ function openWorkout() {
     return met * kg() * amt / 60;
   }
   function update() {
+    const watch = type === WATCH;
+    $("#wAmt").closest(".field").hidden = watch; $("#wLevel").hidden = watch || type === "Steps";
+    if (watch) { if (!touched) $("#wKcal").value = ""; $("#wHint").textContent = "Type the active calories your Apple Watch, WHOOP or the Health app shows for today. Adding it again later replaces the earlier number."; return; }
     if (!touched) $("#wKcal").value = Math.round(est());
     $("#wHint").textContent = `Estimated for ${fmtBody(kg())}${me.weight || typedKg() ? "" : " (add your weight for a better estimate)"}. If your watch or phone shows calories burned, type that number instead.`;
   }
@@ -2296,7 +2298,7 @@ function openWorkout() {
     $("#wAmtL").textContent = type === "Steps" ? "Steps" : "Minutes";
     if (type === "Steps" && !wasSteps) $("#wAmt").value = 8000;
     if (type !== "Steps" && wasSteps) $("#wAmt").value = 30;
-    $("#wLevel").hidden = type === "Steps"; update();
+    update(); if (type === WATCH) setTimeout(() => $("#wKcal").focus(), 50);
   });
   wireChips(sh, "wlevel", v => { level = v; touched = false; update(); });
   $("#wKcal").addEventListener("input", () => { touched = true; });
@@ -2311,8 +2313,9 @@ function openWorkout() {
     const ww = typedKg(); if (ww) me.weight = r1(ww);
     me.lastWorkout = type; Data.saveMe();
     const lv = { easy: "easy", mod: "", hard: "hard" }[level];
-    const detail = type === "Steps" ? `${fmt(amt)} steps` : `${fmt(amt)} min${lv ? " · " + lv : ""}`;
+    const detail = type === WATCH ? "Active calories from your watch" : type === "Steps" ? `${fmt(amt)} steps` : `${fmt(amt)} min${lv ? " · " + lv : ""}`;
     const id = rid(10); S.freshW = id;
+    if (type === WATCH) S.workouts = S.workouts.filter(w => w.type !== WATCH);
     S.workouts.push({ id, type, detail, kcal, at: Date.now() });
     saveDay(); closeSheet(); render(); haptic();
     toast(`${type}: ${fmt(kcal)} kcal burned, added to your day`);
@@ -2509,7 +2512,6 @@ function openGoals() {
   const stLb = kg => { const t = kg * 2.20462; let st = Math.floor(t / 14), lb = Math.round(t - st * 14); if (lb === 14) { st++; lb = 0; } return [st, lb]; };
   const [ft0, in0] = pr.heightCm ? ftIn(pr.heightCm) : ["", ""], [st0, lb0] = pr.weightKg ? stLb(pr.weightKg) : ["", ""];
   const sh = openSheet(`${head("Settings")}
-    <button class="plan" id="toHealth"><span class="nm"><b>Apple Health & WHOOP</b><small>${me.healthKey ? "Connected: steps and active calories sync automatically" : "Bring in your steps and workouts automatically"}</small></span><span class="chev">›</span></button>
     <div class="grp">Units</div>
     ${chips("units", [["metric", "Metric: kg, cm, grams"], ["imperial", "Imperial: st, ft, ounces"]], units)}
     <p class="note">Nutrition labels stay in grams, as printed on the pack. Calories are always kcal.</p>
@@ -2580,7 +2582,7 @@ function openGoals() {
   $("#gK").addEventListener("input", () => { pace = null; $("#plans").querySelectorAll(".plan").forEach(x => x.setAttribute("aria-pressed", "false")); });
   ["gP", "gC", "gF"].forEach(id => $("#" + id).addEventListener("input", hint));
   showUnits(); calc(); hint();
-  $("#toHealth").onclick = () => { haptic(); openHealth(); };
+
   $("#gSave").onclick = () => {
     const n = (id, d) => { const x = Math.round(+$("#" + id).value); return x > 0 ? x : d; };
     const ok = calc(), cm = getCm(), kg = getKg(), age = v("pAge");

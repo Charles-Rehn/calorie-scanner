@@ -55,15 +55,9 @@ Then, in the app:
 - In the Family screen, **Copy invite link** and send it to everyone else. They open it, add it to the Home Screen, create their account and tap **Join**. Anyone who installed the app first can join by typing the family code instead.
 - Forgot a password? Tap **Forgot your password?** on the sign-in screen and Firebase emails a reset link.
 
-## Apple Health and WHOOP
+## Apple Watch and WHOOP
 
-Websites can't read Apple Health directly, so the app uses a Shortcut on the iPhone that sends today's steps and active calories to your account. WHOOP writes its workouts into Apple Health, so they come along too.
-
-1. Whoever set up Firebase: paste the contents of `firestore.rules` into Firestore Database › Rules again and Publish (it now includes the Apple Health part).
-2. In the app open Settings › Apple Health & WHOOP › Set up. The screen walks through building the Shortcut, with copy buttons for the text and link it needs.
-3. Add a daily Time of Day automation in Shortcuts set to Run Immediately.
-
-The steps and active calories show in the Workouts card as "Apple Health". A switch in that screen chooses whether active calories count toward your day.
+In Workouts, choose **Watch / WHOOP** and type the active calories your watch or the Health app shows for today. Adding it again later in the day replaces the earlier number.
 
 ## How dishes work
 
