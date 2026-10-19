@@ -203,7 +203,8 @@ button.hstat .l::after{content:"Edit";text-transform:none;letter-spacing:0;color
 .chips{display:flex;gap:6px;flex-wrap:wrap}
 .chip{border:1px solid var(--line-2);border-radius:99px;padding:8px 14px;background:var(--surface-2);font-size:13px;font-weight:750;color:var(--muted)}
 .chip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
-.tools{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.tools{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.tools .tool{font-size:12px;padding:10px 4px}
 .tool{border:1px solid var(--line);border-radius:18px;background:var(--surface-2);padding:12px 8px;display:flex;flex-direction:column;align-items:center;gap:6px;font-weight:750;font-size:13px;text-align:center;color:var(--ink)}
 .tool svg{color:var(--flame-1)}
 .field{display:flex;flex-direction:column;gap:5px;min-width:0}
@@ -453,6 +454,7 @@ ol.steps li::marker{color:var(--flame-1);font-weight:800}
 </div>
 
 <input type="file" accept="image/*" capture="environment" id="photoFile" class="vh" tabindex="-1" aria-hidden="true">
+<input type="file" accept="image/*" id="labelPhoto" class="vh" tabindex="-1" aria-hidden="true">
 <div id="sheetRoot"></div>
 <div id="toast" role="status" hidden></div>
 
@@ -1773,7 +1775,8 @@ function openSearch(flow) {
     <div class="hscroll" id="brandRow" hidden>${SHOP_BRANDS.map(b => `<button class="chip" data-brand="${b.tag}" aria-pressed="${b.tag === brand}">${esc(b.label)}</button>`).join("")}</div>
     <div class="tools">
       <button class="tool" id="tScan"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7V4h3M18 4h3v3M21 17v3h-3M6 20H3v-3"/><path d="M7 8v8M10 8v8M13 8v8M16 8v8" stroke-width="1.6"/></svg>Scan</button>
-      <button class="tool" id="tManual"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg>Enter manually</button>
+      <button class="tool" id="tLabel"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>Label photo</button>
+      <button class="tool" id="tManual"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg>Type it in</button>
       ${pick ? `<button class="tool" id="tCode"><span class="code" style="font-size:15px;color:var(--accent)">123</span>Type barcode</button>` : `<button class="tool" id="tDish"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 10h16v6a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4z"/><path d="M2 10h20"/></svg>Create dish</button>`}
     </div>
     <div id="sRes" style="display:flex;flex-direction:column;gap:12px"></div>`, pick ? flow.back : null);
@@ -1884,6 +1887,7 @@ function openSearch(flow) {
     } else if (b.dataset.dishpick) openDish(b.dataset.dishpick, { meal: flow.meal });
   };
   $("#tScan").onclick = () => startScan(flow);
+  $("#tLabel").onclick = () => openLabel(flow);
   $("#tManual").onclick = () => openFood(blankFood(input.value.trim()), { ...flow, back: () => openSearch(flow) });
   if ($("#tDish")) $("#tDish").onclick = () => openDishEditor();
   if ($("#tCode")) $("#tCode").onclick = () => openCodeEntry(flow);
@@ -1991,12 +1995,13 @@ function openFood(food, flow) {
   }
   const builtin = food.src === "db" || food.src === "rest" || food.src === "usda";
   const sh = openSheet(`${head(flow.unknown ? "New product" : pick ? "Add ingredient" : "Log food", !!flow.back)}
-    ${flow.unknown ? `<div class="banner"><span>Barcode <span class="code">${esc(food.code)}</span> isn't in Open Food Facts yet. Type the numbers from the nutrition panel once and it's saved for ${R.fam ? "the whole family" : "next time"}.</span></div>` : ""}
+    ${flow.unknown ? `<div class="banner"><span>Barcode <span class="code">${esc(food.code)}</span> isn't in Open Food Facts yet. Photograph the nutrition label or type the numbers once, and it's saved for ${R.fam ? "the whole family" : "next time"}.</span><button class="btn primary small" id="fLabel" style="align-self:flex-start">Photograph the label</button></div>` : ""}
+    ${flow.fromLabel ? `<div class="banner" style="border-style:solid;border-color:rgba(255,122,61,.5)"><span><b>Read from your photo.</b> Check the numbers match the label, then tap Add.${flow.fromLabel.length ? "<br>" + flow.fromLabel.map(esc).join("<br>") : ""}</span></div>` : ""}
     ${food.src === "off" ? `<p class="note">From Open Food Facts. Check against the pack if something looks off.</p>` : food.src === "db" ? `<p class="note">Typical values. Edit them to match your pack if you have it.</p>` : food.src === "rest" ? `<p class="note">${esc(chainNote(food.brand, food))}</p>` : food.src === "usda" ? `<p class="note">Values per 100 g from the USDA food database. Weigh it, or use the label if you have the pack.</p>` : ""}
     ${food.img ? `<img class="fimg" src="${esc(food.img)}" alt="${esc(food.name)}" onerror="this.remove()">` : ""}
     <div class="label">
       <div class="title">Nutrition Facts</div>
-      <input class="nm-in" id="fName" type="text" placeholder="Food name" value="${esc(food.name)}" aria-label="Food name" ${food.name ? "" : "data-autofocus"}>
+      <input class="nm-in" id="fName" type="text" placeholder="${flow.fromLabel ? "What is it? (optional)" : "Food name"}" value="${esc(food.name)}" aria-label="Food name" ${food.name ? "" : "data-autofocus"}>
       <input class="br-in" id="fBrand" type="text" placeholder="Brand (optional)" value="${esc(food.brand)}" aria-label="Brand">
       ${food.code ? `<div class="note code" style="font-size:12px;padding-top:2px">${esc(food.code)}</div>` : ""}
       <div class="rule-xl"></div>
@@ -2038,11 +2043,12 @@ function openFood(food, flow) {
     return { t, amt, mult, g };
   }
   sh.addEventListener("input", calc); calc();
+  if ($("#fLabel")) $("#fLabel").onclick = () => openLabel(flow, { ...food });
   $("#fAdd").onclick = () => {
     const err = m => { $("#fErr").textContent = m; $("#fErr").hidden = false; };
     const f = { ...food, name: $("#fName").value.trim(), brand: $("#fBrand").value.trim(), servingLabel: $("#fServ").value.trim() || "1 serving",
       servingGrams: num("fGrams") || null, kcal: num("fK"), protein: num("fP") || 0, carbs: num("fC") || 0, fat: num("fF") || 0 };
-    if (!f.name) return err("Give the food a name.");
+    if (!f.name) { if (flow.fromLabel) f.name = "Food from label"; else return err("Give the food a name."); }
     if (f.kcal == null) return err("Enter the calories per serving.");
     const { t, amt, g } = calc();
     if (!(amt > 0)) return err("Enter how much.");
@@ -2099,7 +2105,9 @@ async function startScan(flow) {
   const sh = openSheet(`${head("Scan a barcode", !!back)}
     <div class="finder"><video id="vid" playsinline muted autoplay></video><div class="frame"></div><div class="laser"></div></div>
     <p class="note" id="camMsg">Starting the camera…</p>
-    <div class="row"><button class="btn" id="usePhoto">Take a photo instead</button><button class="btn" id="typeCode">Type the number</button></div>`, back);
+    <div class="row"><button class="btn" id="usePhoto">Take a photo instead</button><button class="btn" id="typeCode">Type the number</button></div>
+    <button class="btn ghost" id="useLabel">No barcode? Photograph the nutrition label</button>`, back);
+  $("#useLabel").onclick = () => openLabel(flow);
   $("#usePhoto").onclick = () => { const f = $("#photoFile"); f.value = ""; f.click(); };
   $("#typeCode").onclick = () => openCodeEntry(flow);
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { $("#camMsg").textContent = "This browser can't use the camera here. Take a photo instead."; return; }
@@ -2532,6 +2540,208 @@ function openHealth() {
   };
   status();
 }
+
+/* =========================================================
+   Photo of a nutrition label: read it on the phone (Tesseract), then pick out
+   energy, fat, carbs, protein and the serving size. Tuned for UK labels
+   ("per 100g" first, then "per serving"), and also reads US labels and
+   Spanish, French, German, Italian, Dutch and Portuguese ones.
+   ========================================================= */
+const OCR_BASE = { workerPath: "https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/worker.min.js",
+  corePath: "https://cdn.jsdelivr.net/npm/tesseract.js-core@5.1.1", langPath: "https://cdn.jsdelivr.net/npm/@tesseract.js-data/eng@1.0.0/4.0.0_best_int" };
+let ocrWorker = null, ocrProgress = null;
+function loadScript(src) { return new Promise((res, rej) => { const s = document.createElement("script"); s.src = src; s.onload = res; s.onerror = () => rej(new Error("load")); document.head.appendChild(s); }); }
+let ocrStarting = null;
+function getOcr() {
+  if (ocrWorker) return Promise.resolve(ocrWorker);
+  if (!ocrStarting) ocrStarting = (async () => {
+    if (!window.Tesseract) await loadScript("https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js");
+    ocrWorker = await Tesseract.createWorker("eng", 1, { ...OCR_BASE, logger: m => ocrProgress && ocrProgress(m) });
+    return ocrWorker;
+  })().finally(() => { ocrStarting = null; });
+  return ocrStarting;
+}
+function imageToCanvas(img, rot = 0, maxSide = 2000) {
+  const w0 = img.naturalWidth || img.width, h0 = img.naturalHeight || img.height, sc = Math.min(1, maxSide / Math.max(w0, h0)) * (Math.max(w0, h0) < 900 ? 1.8 : 1);
+  const w = Math.round(w0 * sc), h = Math.round(h0 * sc), c = document.createElement("canvas"), side = rot % 180 !== 0;
+  c.width = side ? h : w; c.height = side ? w : h;
+  const x = c.getContext("2d", { willReadFrequently: true });
+  x.translate(c.width / 2, c.height / 2); x.rotate(rot * Math.PI / 180); x.drawImage(img, -w / 2, -h / 2, w, h);
+  // grey and stretch the contrast so faint print reads better
+  const d = x.getImageData(0, 0, c.width, c.height), p = d.data; let lo = 255, hi = 0;
+  for (let i = 0; i < p.length; i += 4) { const g = (p[i] * 306 + p[i + 1] * 601 + p[i + 2] * 117) >> 10; p[i] = g; if (g < lo) lo = g; if (g > hi) hi = g; }
+  const k = hi > lo ? 255 / (hi - lo) : 1;
+  for (let i = 0; i < p.length; i += 4) { const g = Math.max(0, Math.min(255, (p[i] - lo) * k)); p[i] = p[i + 1] = p[i + 2] = g; }
+  x.putImageData(d, 0, 0);
+  return c;
+}
+
+const LBL = {
+  kcal: null,
+  fat: { keys: ["total fat", "fat", "fett", "grasas", "grasa", "matieres grasses", "matiere grasse", "lipides", "grassi", "lipidos", "gordura", "vetten", " vet "],
+    not: ["saturat", "satur", "of which", "davon", "dont", "de las cuales", "di cui", "waarvan", "das quais", "gesattigt", "trans", "mono", "poly", "acidos", "acides", "acidi", "fatty"] },
+  carbs: { keys: ["total carbohydrate", "carbohydrate", "carbohydrates", "carbs", "kohlenhydrat", "hidratos de carbono", "hidratos", "glucides", "carboidrati", "koolhydraten", "carbo"],
+    not: ["sugar", "azucar", "zucker", "sucres", "zuccheri", "suikers", "acucar", "of which", "davon", "dont", "di cui", "waarvan", "das quais", "polyol", "de los cuales"] },
+  protein: { keys: ["protein", "eiweiss", "eiweis", "proteinas", "proteines", "proteine", "eiwitten", "eiwit", "protei"], not: [] }
+};
+// Each number the reader saw, with the other ways it could have been misread ("6.29" = "6.2g", "859" = "8,5 g")
+function numCands(tok) {
+  const raw = tok.s.replace(",", "."), out = [], add = (v, cost) => { if (isFinite(v) && v >= 0 && !out.some(o => Math.abs(o.v - v) < 1e-9 && o.cost <= cost)) out.push({ v, cost }); };
+  if (tok.lt) { add(0, 0); return out; }
+  const twoDec9 = !tok.u && /^\d+\.\d[9q]$/.test(raw); // "6.29": a "g" read as "9"
+  add(parseFloat(raw), tok.u ? 0 : twoDec9 ? 1.5 : 0.3);
+  const insert = s => s.includes(".") || s.length < 2 ? null : parseFloat(s.slice(0, -1) + "." + s.slice(-1));
+  if (!tok.u) {
+    if (/[9q0g8]$/.test(raw) && raw.length > 1) { const d = raw.slice(0, -1).replace(/\.$/, ""); add(parseFloat(d), twoDec9 ? 0.2 : 1); const i = insert(d); if (i != null) add(i, 2.2); }
+    const i = insert(raw); if (i != null) add(i, 1.6);
+  } else { const i = insert(raw); if (i != null && parseFloat(raw) >= 10) add(i, 2); }
+  return out;
+}
+function parseLabel(rawText) {
+  const t = norm(rawText)
+    .replace(/(\d)\s+[.,]\s*(\d)/g, "$1.$2").replace(/(\d)[·]\s*(\d)/g, "$1.$2")
+    .replace(/\bo(\d)/g, "0$1").replace(/(\d)o\b/g, "$10")
+    .replace(/kca[l1i|]/g, "kcal").replace(/\bk[j1]\b/g, "kj")
+    .replace(/(\d)\s+[9q](?=\s|\)|$)/gm, "$1g");   // "58 9" was "58 g"
+  const lines = t.split(/\n+/).map(l => l.replace(/[|:;"“”]/g, " ").replace(/\s+/g, " ").trim()).filter(Boolean);
+  const toks = l => [...l.matchAll(/(<\s*)?(\d+(?:[.,]\d+)?)\s*(kcal|kj|mg|g|ml|%)?/g)].map(m => ({ s: m[2], u: m[3] || "", lt: !!m[1] }));
+  const out = { per100: {}, perServ: {}, warn: [] };
+  const base100 = /100\s*(g|ml|9)\b/.test(t) || /per 100\b|por 100\b|pour 100\b|pro 100\b|per100|por100/.test(t);
+  // serving size from the column heading or "Serving size ... (55g)"
+  let serving = null;
+  for (const l of lines) {
+    if (!/(serv|portion|porci|raci|porcao|portie|each|per |pack|slice|biscuit|bar|pot|cup|contains|tranche|scheibe|unidad|stuck|piece|pieza)/.test(l)) continue;
+    for (const m of l.matchAll(/(\d+(?:[.,]\d+)?)\s*(g|ml|9)\b\)?/g)) { const v = parseFloat(m[1].replace(",", ".")); if (v !== 100 && v >= 3 && v <= 1500) { serving = v; break; } }
+    if (serving) break;
+  }
+  const ratio = base100 && serving ? serving / 100 : null;
+  // a nutrient row: numbers after the word, not % reference intakes
+  const rowToks = def => {
+    for (const l of lines) {
+      const at = def.keys.map(k => l.indexOf(k)).filter(i => i >= 0);
+      if (!at.length || def.not.some(x => l.includes(x))) continue;
+      const ts = toks(l.slice(Math.min(...at))).filter(x => !["%", "kj", "kcal", "mg"].includes(x.u));
+      if (ts.length) return ts.slice(0, 3);
+    }
+    return null;
+  };
+  // pick per-100g and per-serving readings that agree with each other
+  const choose = ts => {
+    if (!ts) return null;
+    const A = numCands(ts[0]), B = ts[1] ? numCands(ts[1]) : null;
+    if (ratio && B) {
+      // every per-100g / per-serving pair that agrees; the energy check below picks between them
+      const pairs = [];
+      for (const a of A) for (const b of B) {
+        const exp = a.v * ratio, err = Math.abs(b.v - exp) / Math.max(exp, 0.3);
+        if (err < 0.2) pairs.push({ v: a.v, serv: b.v, cost: a.cost + b.cost + err * 10 });
+      }
+      if (pairs.length) return { opts: pairs.sort((x, y) => x.cost - y.cost) };
+    }
+    const sb = B ? B.sort((x, y) => x.cost - y.cost)[0].v : null;
+    return { opts: A.sort((x, y) => x.cost - y.cost).map(a => ({ ...a, serv: sb })) };
+  };
+  const rows = { fat: choose(rowToks(LBL.fat)), carbs: choose(rowToks(LBL.carbs)), protein: choose(rowToks(LBL.protein)) };
+  // energy
+  let kc = [...t.matchAll(/(\d{1,4}(?:[.,]\d+)?)\s*kcal/g)].map(m => parseFloat(m[1].replace(",", ".")));
+  if (!kc.length) { const l = lines.find(x => /\bcalories\b/.test(x) && !/from fat/.test(x)); if (l) kc = toks(l.slice(l.indexOf("calories"))).filter(x => !x.u).map(x => parseFloat(x.s)); }
+  const kj = [...t.matchAll(/(\d{2,5}(?:[.,]\d+)?)\s*kj/g)].map(m => parseFloat(m[1].replace(",", "."))).filter(v => v !== 8400);
+  kc = kc.filter(v => v !== 2000);
+  let kcal = kc.length ? kc[0] : kj.length ? Math.round(kj[0] / 4.184) : null;
+  let kcalServ = kc.length > 1 ? kc[1] : kj.length > 1 ? Math.round(kj[1] / 4.184) : null;
+  // pick the readings of fat, carbs and protein that best match the energy
+  const opt = k => rows[k] ? rows[k].opts.slice(0, 8) : [null];
+  let best = null;
+  for (const f of opt("fat")) for (const c of opt("carbs")) for (const p of opt("protein")) {
+    const cost = (f ? f.cost : 0) + (c ? c.cost : 0) + (p ? p.cost : 0);
+    let mis = 0;
+    if (kcal != null && f && c && p) { const calc = 9 * f.v + 4 * c.v + 4 * p.v; mis = Math.abs(calc - kcal) / Math.max(kcal, 20); }
+    const sc = cost + mis * 8;
+    if (!best || sc < best.sc) best = { sc, f, c, p, mis };
+  }
+  const src = base100 ? out.per100 : out.perServ;
+  if (best.f) src.fat = best.f.v; if (best.c) src.carbs = best.c.v; if (best.p) src.protein = best.p.v;
+  const fib = base100 ? choose(rowToks({ keys: ["fibre", "fiber", "fibra", "ballaststoffe", "fibres", "vezels", "fibre alimentaire"], not: [] })) : null;
+  const calc = 9 * (src.fat || 0) + 4 * (src.carbs || 0) + 4 * (src.protein || 0) + (fib && fib.opts[0] ? 2 * fib.opts[0].v : 0);
+  const haveMacros = src.fat != null && src.carbs != null && src.protein != null;
+  if (kcal != null && haveMacros && kcal > 20 && Math.abs(calc - kcal) / kcal > 0.25) {
+    // the energy line was misread more often than three separate rows agreeing
+    src.kcal = Math.round(calc); out.warn.push("Calories worked out from fat, carbs and protein, as the energy line was hard to read.");
+  } else if (kcal != null) src.kcal = kcal;
+  else if (src.fat != null || src.carbs != null || src.protein != null) { src.kcal = Math.round(calc); out.warn.push("Calories worked out from fat, carbs and protein."); }
+  if (base100) {
+    const chosen = { fat: best.f, carbs: best.c, protein: best.p };
+    ["fat", "carbs", "protein"].forEach(k => { if (chosen[k] && chosen[k].serv != null) out.perServ[k] = chosen[k].serv; });
+    if (kcalServ != null) out.perServ.kcal = kcalServ;
+  }
+  ["fat", "carbs", "protein"].forEach(k => { if (src[k] == null) out.warn.push(`Couldn't read ${k === "carbs" ? "carbohydrate" : k}.`); });
+  out.base100 = base100; out.serving = serving; out.found = Object.keys(src).length;
+  return out;
+}
+function labelToFood(r, base) {
+  const f = { ...(base || blankFood()), src: base && base.src === "scan" ? "scan" : "label" };
+  if (r.base100) {
+    const g = r.serving || 100, m = g / 100, p = r.per100;
+    const per = k => p[k] != null ? r1(p[k] * m) : (r.perServ[k] != null && r.serving ? r1(r.perServ[k]) : "");
+    Object.assign(f, { servingLabel: r.serving ? `${r.serving} g` : "100 g", servingGrams: g, kcal: p.kcal != null ? Math.round(p.kcal * m) : (r.perServ.kcal != null ? Math.round(r.perServ.kcal) : ""),
+      protein: per("protein"), carbs: per("carbs"), fat: per("fat") });
+  } else {
+    const p = r.perServ;
+    Object.assign(f, { servingLabel: r.serving ? `1 serving (${r.serving} g)` : "1 serving", servingGrams: r.serving || null,
+      kcal: p.kcal != null ? Math.round(p.kcal) : "", protein: p.protein ?? "", carbs: p.carbs ?? "", fat: p.fat ?? "" });
+  }
+  return f;
+}
+
+let labelFlow = null;
+function openLabel(flow, base) {
+  labelFlow = { flow: { ...flow }, base: base || null };
+  getOcr().catch(() => {}); // start downloading the reader while the camera is open
+  const f = $("#labelPhoto"); f.value = ""; f.click();
+}
+async function readLabelFile(file) {
+  const { flow, base } = labelFlow || { flow: { meal: mealForNow() } };
+  const u = URL.createObjectURL(file);
+  openSheet(`${head("Reading the label")}<div class="finder"><img src="${u}" alt="Your photo of the label"><div class="laser"></div></div>
+    <p class="note" id="ocrMsg"><span class="spin"></span>&nbsp; Getting ready…</p>`, flow.pick ? flow.back : null);
+  const msg = t => { const el = $("#ocrMsg"); if (el) el.innerHTML = `<span class="spin"></span>&nbsp; ${esc(t)}`; };
+  ocrProgress = m => {
+    if (/loading|initializ/.test(m.status || "")) msg("Downloading the label reader (first time only, about 4 MB)…");
+    else if (m.status === "recognizing text") msg(`Reading the label… ${Math.round((m.progress || 0) * 100)}%`);
+  };
+  let best = null;
+  try {
+    const img = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = u; });
+    const w = await getOcr();
+    for (const rot of [0, 90, 270]) {
+      if (!$("#ocrMsg")) return; // closed
+      if (rot) msg("Trying the photo the other way round…");
+      const cv = imageToCanvas(img, rot);
+      const read = async psm => { await w.setParameters({ tessedit_pageseg_mode: psm }); const { data } = await Promise.race([w.recognize(cv), new Promise((_, rej) => setTimeout(() => rej(new Error("slow")), 40000))]); return data.text || ""; };
+      const a = await read("3");             // normal page layout
+      let r = parseLabel(a);
+      if (r.found < 4) {                      // something missing: read it again as a table and combine
+        const b = await read("6"), r2 = parseLabel(a + "\n" + b);
+        if (r2.found >= r.found) r = r2;
+      }
+      if (!best || r.found > best.found) best = r;
+      if (r.found >= 3) break;
+    }
+  } catch (e) { if (!best) best = null; if (e && e.message === "slow" && ocrWorker) { try { ocrWorker.terminate(); } catch (x) {} ocrWorker = null; } }
+  URL.revokeObjectURL(u);
+  if (!$("#ocrMsg")) return;
+  if (!best || best.found < 2) {
+    openSheet(`${head("Couldn't read that label", !!flow.pick)}<p>Try again with the label flat, filling most of the photo, in good light and without glare. Straight on works best.</p>
+      <div class="row"><button class="btn primary" id="lAgain">Take another photo</button><button class="btn" id="lType">Type it in</button></div>`, flow.pick ? flow.back : null);
+    $("#lAgain").onclick = () => openLabel(flow, base);
+    $("#lType").onclick = () => openFood(base || blankFood(), { ...flow, back: flow.back || (() => openSearch(flow)) });
+    return;
+  }
+  haptic();
+  openFood(labelToFood(best, base), { ...flow, fromLabel: best.warn, back: flow.back || (() => openSearch(flow)) });
+}
+window.__label = { getOcr, imageToCanvas, parseLabel }; // used by the label-reading tests
+$("#labelPhoto").addEventListener("change", e => { const f = e.target.files && e.target.files[0]; if (f) readLabelFile(f); });
 
 /* =========================================================
    Limit & goals

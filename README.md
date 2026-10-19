@@ -10,6 +10,7 @@ A free calorie tracker that installs on iPhone and iPad from a website, with no 
 - Family feed: see what everyone in the family has eaten today, and their workouts (each person can switch sharing off)
 - Suggestions: foods you have often show first, with your usual amount filled in
 - Shops and restaurants: search one supermarket's products (Tesco, Sainsbury's, Asda, Aldi, Lidl, M&S and more) or pick from built-in menus for McDonald's, Burger King, KFC, Subway, Starbucks, Costa, Nando's, Greggs, Domino's, Five Guys and Taco Bell (approximate published values)
+- Nutrition label photos: snap the label (UK, US and most European layouts) and the numbers fill themselves in; reading happens on the phone
 - Settings: metric or imperial, plus a calorie plan from your height, weight, age and activity with three weight-loss speeds
 - Accounts: sign in with email and password and your diary is on every phone and iPad you use; you stay signed in until you sign out
 - Family: share dishes and foods, so everyone logs their own portion of the same meal and sees how much is left in the pot
