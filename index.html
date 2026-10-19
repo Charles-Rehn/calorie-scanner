@@ -1794,9 +1794,12 @@ function openSearch(flow) {
       }
       const pan = Object.entries(cache.pantry).map(([id, f]) => ({ ...f, id })).filter(f => hit(snorm(f.name + " " + (f.brand || "")))).slice(0, 12);
       if (pan.length) html += `<div class="grp">${R.fam ? "Family foods" : "Your foods"}</div>${list(pan)}`;
-      if (!pick) { const rs = RESTAURANTS.filter(r => hit(r._n)).slice(0, 10); if (rs.length) html += `<div class="grp">Restaurants</div>${list(rs)}`; }
+      // Restaurants first only when the search names a restaurant ("nandos chips"); otherwise plain foods come first
+      const rs = pick ? [] : RESTAURANTS.filter(r => hit(r._n)).slice(0, 10);
+      const namesChain = rs.length && RCHAINS.some(c => words.some(w => snorm(c + " " + (CHAIN_ALIAS[c] || "")).split(" ").includes(w)));
       const com = COMMON.filter(f => hit(f._n)).slice(0, 12);
-      if (com.length) html += `<div class="grp">Common foods</div>${list(com)}`;
+      const rsHtml = rs.length ? `<div class="grp">Restaurants</div>${list(rs)}` : "", comHtml = com.length ? `<div class="grp">Common foods</div>${list(com)}` : "";
+      html += namesChain ? rsHtml + comHtml : comHtml + rsHtml;
       const det = detectBrand(raw);
       html += `<div class="grp">Packaged products</div>${offBlock(det ? `Search ${det.brand.label}${det.rest ? ` for “${det.rest}”` : ""}` : `Search packaged products for “${raw}”`)}`;
     }
