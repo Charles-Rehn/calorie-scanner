@@ -2462,8 +2462,8 @@ function openHealth() {
       <li><b>Only once, for whoever set up Firebase:</b> in the Firebase console open Firestore Database › Rules, replace everything with this, and tap Publish.
         <pre class="copy" id="cpRules">${esc(HEALTH_RULES)}</pre><button class="btn small" id="bRules">Copy rules</button></li>
       <li>Open the <b>Shortcuts</b> app, tap <b>+</b> and name it <b>Calorie sync</b>.</li>
-      <li>Add <b>Find Health Samples</b>. Set Type to <b>Steps</b>, add the filter <b>Start Date is Today</b>, and set <b>Group By</b> to <b>Day</b>. Then add <b>Calculate Statistics</b> (Sum), <b>Round Number</b>, and <b>Set Variable</b> named <b>Steps</b>.</li>
-      <li>Do the same again with Type <b>Active Energy</b>, and name the variable <b>Active</b>.</li>
+      <li>Add <b>Find Health Samples</b>. Set Type to <b>Steps</b>, add the filter <b>Start Date is Today</b>, set <b>Group By</b> to <b>Day</b>, and leave <b>Fill Missing</b> off. Then add <b>Calculate Statistics</b> (Sum), <b>Round Number</b>, and <b>Set Variable</b> named <b>Steps</b>.</li>
+      <li>Do the same again with Type <b>Active Calories</b>, and name the variable <b>Active</b>.</li>
       <li>Add <b>Format Date</b> with <b>Current Date</b>, Date Format <b>Custom</b>: <span class="code">yyyy-MM-dd</span>. Add <b>Set Variable</b> named <b>Day</b>.</li>
       <li>Add a <b>Text</b> action and paste this. Then replace DAY, STEPS and ACTIVE with your variables (select the word, then tap the variable above the keyboard).
         <pre class="copy" id="cpBody">${esc(body)}</pre><button class="btn small" id="bBody">Copy text</button></li>
