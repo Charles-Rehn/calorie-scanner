@@ -432,7 +432,7 @@ ol.steps li::marker{color:var(--flame-1);font-weight:800}
   <div class="sec-h"><h2>Diary</h2></div>
   <div id="meals"></div>
   <p class="foot" id="storeNote"></p>
-  <p class="foot">Product data from <a href="https://world.openfoodfacts.org" target="_blank" rel="noopener">Open Food Facts</a> (ODbL).</p>
+  <p class="foot">Product data from <a href="https://world.openfoodfacts.org" target="_blank" rel="noopener">Open Food Facts</a> (ODbL). Food nutrition data from <a href="https://tempolife.app" target="_blank" rel="noopener">TempoLife</a> (CC-BY-4.0) and USDA FoodData Central.</p>
 </div>
 
 <div class="dock">
@@ -1216,6 +1216,36 @@ function usualQty(f, r) {
   return { mult: r.amt, qty: `${r1(r.amt)} × ${f.servingLabel || "serving"}` };
 }
 const COMMON_BY_ID = Object.fromEntries([...COMMON, ...RESTAURANTS].map(f => [f.id, f]));
+/* Thousands of everyday foods (per 100 g): USDA FoodData Central SR Legacy via TempoLife, CC-BY-4.0 */
+let FOODDB = null; const FOODDB_BY_ID = {};
+function loadFoodDb() {
+  if (FOODDB) return Promise.resolve(FOODDB);
+  if (loadFoodDb.p) return loadFoodDb.p;
+  loadFoodDb.p = fetch("foods.json").then(r => { if (!r.ok) throw new Error(r.status); return r.json(); }).then(rows => {
+    FOODDB = rows.map(([name, k, pr, c, f]) => ({ id: "fd-" + hash(name), src: "usda", name, brand: "", code: "", servingLabel: "100 g", servingGrams: 100, kcal: k, protein: pr, carbs: c, fat: f, _n: snorm(name) }));
+    FOODDB.forEach(x => FOODDB_BY_ID[x.id] = x);
+    return FOODDB;
+  }).catch(() => { loadFoodDb.p = null; return []; });
+  return loadFoodDb.p;
+}
+// British words find American database names too
+const SYN = { yoghurt: ["yogurt"], yogurt: ["yoghurt"], mince: ["ground"], minced: ["ground"], prawn: ["shrimp"], prawns: ["shrimp"],
+  coriander: ["cilantro"], crisps: ["chips"], crisp: ["chips"], chips: ["fries", "french fried", "chips"], biscuit: ["cookie", "cookies"], biscuits: ["cookies", "cookie"],
+  porridge: ["oatmeal", "oats"], courgette: ["zucchini"], courgettes: ["zucchini"], aubergine: ["eggplant"], rocket: ["arugula"], rapeseed: ["canola"],
+  gammon: ["ham"], sweetcorn: ["corn"], swede: ["rutabaga"], beetroot: ["beets", "beet"], chickpeas: ["garbanzo", "chickpea"], jacket: ["baked"],
+  sultanas: ["raisins"], icing: ["powdered"], coriander: ["cilantro"], semi: ["reduced fat", "2%"], skimmed: ["nonfat", "skim"], treacle: ["molasses"],
+  candyfloss: ["cotton candy"], aubergines: ["eggplant"], scone: ["biscuit"], scones: ["biscuits"], jam: ["jam", "jams", "preserves"], squash: ["squash"] };
+const wordHits = (s, w) => s.includes(w) || (w.length > 3 && /s$/.test(w) && s.includes(w.replace(/e?s$/, ""))) || (SYN[w] || []).some(v => s.includes(v));
+// Best matches first: name starts with the first word, whole-word matches, shorter names
+function rankFoods(list, words) {
+  return list.map(f => {
+    const n = " " + f._n + " "; let sc = 0;
+    if (f._n.startsWith(words[0]) || (SYN[words[0]] || []).some(v => f._n.startsWith(v))) sc += 6;
+    words.forEach(w => { if (n.includes(" " + w + " ") || n.includes(" " + w.replace(/e?s$/, "") + " ")) sc += 2; });
+    sc -= f._n.length / 30;
+    return [sc, f];
+  }).sort((a, b) => b[0] - a[0]).map(x => x[1]);
+}
 
 /* =========================================================
    Data
@@ -1417,7 +1447,7 @@ function startWatches() {
   Data.watch("members", m => { cache.members = m; renderDishes(); renderFamily(); const l = $("#memList"); if (l) l.innerHTML = memListHtml(); });
 }
 const memberName = pid => pid === me.pid ? "You" : (cache.members[pid]?.name || "Someone");
-function foodById(id) { return COMMON_BY_ID[id] || (cache.pantry[id] ? { ...cache.pantry[id], id } : null); }
+function foodById(id) { return COMMON_BY_ID[id] || FOODDB_BY_ID[id] || (cache.pantry[id] ? { ...cache.pantry[id], id } : null); }
 function foodId(f) { return f.id && !String(f.id).startsWith("tmp") ? f.id : f.code ? "bc-" + f.code : "nm-" + hash(norm(f.name + "|" + (f.brand || ""))); }
 function remember(id) { me.recent = [id, ...me.recent.filter(x => x !== id)].slice(0, 40); Data.saveMe(); }
 
@@ -1773,7 +1803,8 @@ function openSearch(flow) {
   }
   function draw() {
     items = {};
-    const raw = input.value.trim(), q = snorm(raw), words = q.split(" ").filter(Boolean), hit = s => words.every(w => s.includes(w));
+    const raw = input.value.trim(), q = snorm(raw), words = q.split(" ").filter(Boolean);
+    const hit = s => words.every(w => wordHits(s, w));
     flow.q = raw;
     let html = "";
     if (chain) {
@@ -1800,14 +1831,17 @@ function openSearch(flow) {
         const ds = Object.entries(cache.dishes).filter(([, d]) => hit(snorm(d.name))).slice(0, 6);
         if (ds.length) html += `<div class="grp">Dishes</div><div class="list">${ds.map(([id, d]) => `<button class="entry" data-dishpick="${esc(id)}">${thumb({ dish: true })}<span class="nm"><b>${esc(d.name)}</b><small>${esc(memberName(d.by))} · ${d.portions || "?"} portions</small></span><span class="kc">${d.portions ? fmt(d.kcal / d.portions) : fmt(d.kcal)}<small>${d.portions ? "kcal/portion" : "kcal"}</small></span></button>`).join("")}</div>`;
       }
-      const pan = Object.entries(cache.pantry).map(([id, f]) => ({ ...f, id })).filter(f => hit(snorm(f.name + " " + (f.brand || "")))).slice(0, 12);
+      const pan = rankFoods(Object.entries(cache.pantry).map(([id, f]) => ({ ...f, id, _n: snorm(f.name + " " + (f.brand || "")) })).filter(f => hit(f._n)), words).slice(0, 12);
       if (pan.length) html += `<div class="grp">${R.fam ? "Family foods" : "Your foods"}</div>${list(pan)}`;
       // Restaurants first only when the search names a restaurant ("nandos chips"); otherwise plain foods come first
       const rs = pick ? [] : RESTAURANTS.filter(r => hit(r._n)).slice(0, 10);
       const namesChain = rs.length && RCHAINS.some(c => words.some(w => snorm(c + " " + (CHAIN_ALIAS[c] || "")).split(" ").includes(w)));
-      const com = COMMON.filter(f => hit(f._n)).slice(0, 12);
+      const com = rankFoods(COMMON.filter(f => hit(f._n)), words).slice(0, 12);
       const rsHtml = rs.length ? `<div class="grp">Restaurants</div>${list(rs)}` : "", comHtml = com.length ? `<div class="grp">Common foods</div>${list(com)}` : "";
-      html += namesChain ? rsHtml + comHtml : comHtml + rsHtml;
+      let dbHtml = "";
+      if (FOODDB) { const more = rankFoods(FOODDB.filter(f => hit(f._n)), words).slice(0, 25); if (more.length) dbHtml = `<div class="grp">More foods</div>${list(more)}`; }
+      else { dbHtml = `<p class="note"><span class="spin"></span>&nbsp; Loading more foods…</p>`; loadFoodDb().then(() => { if (input.isConnected) draw(); }); }
+      html += namesChain ? rsHtml + comHtml + dbHtml : comHtml + dbHtml + rsHtml;
       const det = detectBrand(raw);
       html += `<div class="grp">Packaged products</div>${offBlock(det ? `Search ${det.brand.label}${det.rest ? ` for “${det.rest}”` : ""}` : `Search packaged products for “${raw}”`)}`;
     }
@@ -1955,10 +1989,10 @@ function openFood(food, flow) {
     if (flow.unit === "g" && food.servingGrams > 0) { unit = "g"; startAmt = flow.amt; }
     else if (flow.unit === "serv") { unit = "serv"; startAmt = flow.amt; }
   }
-  const builtin = food.src === "db" || food.src === "rest";
+  const builtin = food.src === "db" || food.src === "rest" || food.src === "usda";
   const sh = openSheet(`${head(flow.unknown ? "New product" : pick ? "Add ingredient" : "Log food", !!flow.back)}
     ${flow.unknown ? `<div class="banner"><span>Barcode <span class="code">${esc(food.code)}</span> isn't in Open Food Facts yet. Type the numbers from the nutrition panel once and it's saved for ${R.fam ? "the whole family" : "next time"}.</span></div>` : ""}
-    ${food.src === "off" ? `<p class="note">From Open Food Facts. Check against the pack if something looks off.</p>` : food.src === "db" ? `<p class="note">Typical values. Edit them to match your pack if you have it.</p>` : food.src === "rest" ? `<p class="note">${esc(chainNote(food.brand, food))}</p>` : ""}
+    ${food.src === "off" ? `<p class="note">From Open Food Facts. Check against the pack if something looks off.</p>` : food.src === "db" ? `<p class="note">Typical values. Edit them to match your pack if you have it.</p>` : food.src === "rest" ? `<p class="note">${esc(chainNote(food.brand, food))}</p>` : food.src === "usda" ? `<p class="note">Values per 100 g from the USDA food database. Weigh it, or use the label if you have the pack.</p>` : ""}
     ${food.img ? `<img class="fimg" src="${esc(food.img)}" alt="${esc(food.name)}" onerror="this.remove()">` : ""}
     <div class="label">
       <div class="title">Nutrition Facts</div>
@@ -2507,7 +2541,7 @@ function openGoals() {
   const pr = Object.assign({ sex: null, age: "", heightCm: "", weightKg: me.weight || "", activity: "sit", units: "metric", pace: null }, me.profile || {});
   let units = me.units || pr.units || "metric", sex = pr.sex, activity = pr.activity, pace = pr.pace;
   const ACT = [["sit", "Mostly sitting", 1.2], ["light", "On my feet a bit", 1.375], ["active", "Active job", 1.55], ["very", "Very active", 1.725]];
-  const PACES = [["0.25", "Gentle", 0.25], ["0.5", "Steady", 0.5], ["0.75", "Faster", 0.75]];
+  const PACES = [["0", "Stay the same", 0], ["0.25", "Gentle", 0.25], ["0.5", "Steady", 0.5], ["0.75", "Faster", 0.75]];
   const ftIn = cm => { const t = cm / 2.54; let ft = Math.floor(t / 12), inch = Math.round(t - ft * 12); if (inch === 12) { ft++; inch = 0; } return [ft, inch]; };
   const stLb = kg => { const t = kg * 2.20462; let st = Math.floor(t / 14), lb = Math.round(t - st * 14); if (lb === 14) { st++; lb = 0; } return [st, lb]; };
   const [ft0, in0] = pr.heightCm ? ftIn(pr.heightCm) : ["", ""], [st0, lb0] = pr.weightKg ? stLb(pr.weightKg) : ["", ""];
@@ -2526,7 +2560,7 @@ function openGoals() {
     <div class="field" id="wMet"><label for="pKg">Current weight (kg)</label><input id="pKg" type="number" inputmode="decimal" value="${pr.weightKg || ""}"></div>
     <div class="field" id="wImp"><label for="pSt">Current weight (stone, pounds)</label><div class="inl"><input id="pSt" type="number" inputmode="numeric" placeholder="st" value="${st0}"><input id="pLb" type="number" inputmode="decimal" placeholder="lb" value="${lb0}"></div></div>
     <div><div class="lbl" style="margin-bottom:6px">Your normal day, not counting workouts</div>${chips("act", ACT.map(a => [a[0], a[1]]), activity)}</div>
-    <div class="grp">How fast do you want to lose weight?</div>
+    <div class="grp">Your goal</div>
     <div id="plans" class="plans"></div>
     <div class="grp">Daily calorie limit</div>
     <div class="field"><label for="gK">Calories per day: pick a plan above or type your own</label><input id="gK" type="number" inputmode="numeric" value="${g.kcal}" style="font-size:22px;font-weight:800"></div>
@@ -2559,9 +2593,9 @@ function openGoals() {
     const tdee = bmr * ACT.find(a => a[0] === activity)[2], floor = sex === "male" ? 1500 : 1200;
     const plans = PACES.map(([id, label, kgw]) => { const raw = tdee - kgw * 7700 / 7, k = Math.max(floor, r10(raw)); return { id, label, kgw, k, clamped: raw < floor }; });
     $("#plans").innerHTML = plans.map(p => `<button class="plan" data-pace="${p.id}" data-kcal="${p.k}" aria-pressed="${pace === p.id}">
-        <span class="nm"><b>${p.label}${p.id === "0.5" ? `<span class="tag">Popular</span>` : ""}</b><small>Lose about ${units === "metric" ? p.kgw + " kg" : (p.kgw * 2.20462).toFixed(1).replace(/\.0$/, "") + " lb"} a week${p.clamped ? " · held at a safe minimum" : ""}</small></span>
+        <span class="nm"><b>${p.label}${p.id === "0.5" ? `<span class="tag">Popular</span>` : ""}</b><small>${p.kgw ? `Lose about ${units === "metric" ? p.kgw + " kg" : (p.kgw * 2.20462).toFixed(1).replace(/\.0$/, "") + " lb"} a week${p.clamped ? " · held at a safe minimum" : ""}` : "Keep your weight where it is"}</small></span>
         <span class="kc">${fmt(p.k)}<small>kcal a day</small></span></button>`).join("")
-      + `<p class="maint">To stay at your current weight: <b>${fmt(r10(tdee))} kcal</b> a day.</p>`;
+;
     $("#plans").querySelectorAll(".plan").forEach(b => b.onclick = () => {
       haptic(); pace = b.dataset.pace; $("#gK").value = b.dataset.kcal; setMacros(+b.dataset.kcal);
       $("#plans").querySelectorAll(".plan").forEach(x => x.setAttribute("aria-pressed", x === b));
@@ -2775,6 +2809,7 @@ if ("serviceWorker" in navigator && location.protocol === "https:") navigator.se
 startWatches();
 render();
 loadDay().then(loadWeek);
+setTimeout(() => loadFoodDb().then(() => renderMeals()), 1200);
 (async () => {
   const note = $("#storeNote");
   const ok = await initRemote();

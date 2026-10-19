@@ -1,7 +1,7 @@
 // Keeps the app opening offline. Pages and scripts come from the network when
 // possible (so updates show up), falling back to the saved copy.
-const CACHE = "calorie-scanner-v10";
-const SHELL = ["./", "./index.html", "./config.js", "./manifest.webmanifest", "./icon-180.png", "./icon-192.png", "./icon-512.png"];
+const CACHE = "calorie-scanner-v11";
+const SHELL = ["./", "./index.html", "./config.js", "./manifest.webmanifest", "./icon-180.png", "./icon-192.png", "./icon-512.png", "./foods.json"];
 
 self.addEventListener("install", e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));
