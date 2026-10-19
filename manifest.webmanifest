@@ -3,11 +3,24 @@
   "short_name": "Calories",
   "description": "Scan barcodes, search foods and log calories together as a family.",
   "display": "standalone",
-  "background_color": "#EEF2EE",
-  "theme_color": "#17734A",
+  "background_color": "#0A0C12",
+  "theme_color": "#0A0C12",
   "icons": [
-    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" },
-    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
   ]
 }

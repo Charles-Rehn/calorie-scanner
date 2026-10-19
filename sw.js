@@ -1,6 +1,6 @@
 // Keeps the app opening offline. Pages and scripts come from the network when
 // possible (so updates show up), falling back to the saved copy.
-const CACHE = "calorie-scanner-v3";
+const CACHE = "calorie-scanner-v4";
 const SHELL = ["./", "./index.html", "./config.js", "./manifest.webmanifest", "./icon-180.png", "./icon-192.png", "./icon-512.png"];
 
 self.addEventListener("install", e => {
