@@ -50,7 +50,7 @@ def main(src, out):
     rd = csv.reader(f, delimiter="\t", quoting=csv.QUOTE_NONE)
     head = next(rd)
     col = {h: i for i, h in enumerate(head)}
-    need = ["code", "product_name", "brands", "countries_tags", "energy-kcal_100g", "proteins_100g", "carbohydrates_100g", "fat_100g"]
+    need = ["code", "product_name", "countries_tags", "energy-kcal_100g", "proteins_100g", "carbohydrates_100g", "fat_100g"]
     missing = [c for c in need if c not in col]
     if missing: sys.exit(f"export is missing columns {missing}")
     g = lambda row, k: row[col[k]] if k in col and col[k] < len(row) else ""
@@ -73,7 +73,7 @@ def main(src, out):
         scans = int(num(g(row, "unique_scans_n")) or 0)
         if not uk and scans < MIN_SCANS_WORLD: continue
         seen.add(code)
-        brand = g(row, "brands").split(",")[0].strip()[:40]
+        brand = (g(row, "brands") or g(row, "brands_en") or g(row, "brands_tags").replace("-", " ").title()).split(",")[0].strip()[:40]
         sq = num(g(row, "serving_quantity"))
         sl = g(row, "serving_size").strip()[:40]
         img = ""

@@ -34,14 +34,14 @@ jobs:
             https://openfoodfacts-ds.s3.eu-west-3.amazonaws.com/en.openfoodfacts.org.products.csv.gz \
             https://world.openfoodfacts.org/data/en.openfoodfacts.org.products.csv.gz; do
             echo "== trying $url" | tee -a build.log
-            if curl -fL --retry 3 --retry-delay 15 -A "$UA" -o products.csv.gz -w "http %{http_code}, %{size_download} bytes, %{time_total}s\n" "$url" 2>&1 | tail -3 | tee -a build.log; then
+            if curl -fL --retry 3 --retry-delay 15 -sS -A "$UA" -o products.csv.gz -w "http %{http_code}, %{size_download} bytes, %{time_total}s\n" "$url" 2>&1 | tail -3 | tee -a build.log; then
               if gzip -t products.csv.gz 2>>build.log; then ok=1; break; fi
               echo "not a complete gzip file" | tee -a build.log
             fi
           done
           ls -l products.csv.gz 2>&1 | tee -a build.log
           [ -n "$ok" ] || { echo "download failed" | tee -a build.log; exit 1; }
-          zcat products.csv.gz | head -1 | tr '\t' '\n' | head -200 | tr '\n' ' ' >> build.log; echo >> build.log
+          (zcat products.csv.gz | head -1 | tr '\t' ' ' | cut -c1-3000 >> build.log) || true; echo >> build.log
           python tools/build_products.py products.csv.gz out 2>&1 | tee -a build.log
           du -sh out | tee -a build.log
       - name: Publish to the data branch
