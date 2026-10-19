@@ -1,17 +1,19 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Your own diary, limit, foods and dishes: only you can read or change them.
     match /users/{uid}/{rest=**} {
       allow read, write: if request.auth != null && request.auth.uid == uid;
     }
-    // A family is reachable only by signed-in people who know its code.
-    // Listing all families is not allowed.
     match /families/{family} {
       allow get, create, update: if request.auth != null;
       match /{collection}/{rest=**} {
         allow read, write: if request.auth != null;
       }
+    }
+    match /healthsync/{id} {
+      allow get: if request.auth != null;
+      allow create, update: if id.size() >= 34 && id.size() <= 60
+        && request.resource.data.keys().hasOnly(['date', 'steps', 'active']);
     }
   }
 }

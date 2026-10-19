@@ -357,6 +357,11 @@ details[open] summary::after{transform:translateY(1px) rotate(225deg)}
 .exp[aria-expanded="true"] svg{transform:rotate(180deg)}
 .hscroll:not([hidden]){animation:drop .4s var(--ease)}
 .chip.ghostchip{border-style:dashed;color:var(--ink)}
+/* v7: Apple Health guide */
+pre.copy{white-space:pre-wrap;word-break:break-all;font-family:var(--mono);font-size:11.5px;line-height:1.45;background:var(--surface-2);border:1px solid var(--line-2);border-radius:14px;padding:10px 12px;margin:8px 0 6px;-webkit-user-select:all;user-select:all;max-height:180px;overflow:auto}
+ol.steps{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:10px;font-size:14px;line-height:1.45}
+ol.steps li::marker{color:var(--flame-1);font-weight:800}
+.plan .chev{color:var(--muted);font-size:22px;font-weight:400}
 @media (prefers-reduced-motion: reduce){
   *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;transition-delay:0s!important}
 }
@@ -1221,7 +1226,7 @@ const COMMON_BY_ID = Object.fromEntries([...COMMON, ...RESTAURANTS].map(f => [f.
    ========================================================= */
 const url = new URL(location.href);
 const joinCode = (url.searchParams.get("family") || "").replace(/[^a-z0-9]/gi, "").toLowerCase() || null;
-const DEFAULT_ME = () => ({ pid: null, name: "", family: null, goals: { kcal: 2000, protein: 150, carbs: 200, fat: 65 }, recent: [], freq: {}, weight: null, share: true, profile: null, lastWorkout: null, units: "metric" });
+const DEFAULT_ME = () => ({ pid: null, name: "", family: null, goals: { kcal: 2000, protein: 150, carbs: 200, fat: 65 }, recent: [], freq: {}, weight: null, share: true, profile: null, lastWorkout: null, units: "metric", healthKey: null, healthCount: true });
 function loadMe() { const m = Object.assign(DEFAULT_ME(), LS.get("me", {})); if (!m.pid) m.pid = rid(14); if (m.profile && m.profile.units && !LS.get("me", {}).units) m.units = m.profile.units; LS.set("me", m); return m; }
 let me = loadMe();
 
@@ -1274,7 +1279,7 @@ const Data = {
     LS.set("me", me);
     const u = userRef();
     if (u) u.set(clean({ name: me.name, goals: me.goals, recent: me.recent, family: me.family || null, freq: me.freq || {}, weight: me.weight || null,
-      share: me.share !== false, profile: me.profile || null, lastWorkout: me.lastWorkout || null, units: me.units || "metric" }), { merge: true }).catch(remoteFail);
+      share: me.share !== false, profile: me.profile || null, lastWorkout: me.lastWorkout || null, units: me.units || "metric", healthKey: me.healthKey || null, healthCount: me.healthCount !== false }), { merge: true }).catch(remoteFail);
     if (R.fam && me.name) R.fam.collection("members").doc(me.pid).set({ name: me.name, joined: cache.members[me.pid]?.joined || Date.now() }).catch(remoteFail);
   },
   watch(c, cb) {
@@ -1342,7 +1347,8 @@ async function signedIn(user) {
     const s = await u.get();
     if (s.exists) { fresh = false; const d = s.data(); if (d.goals) me.goals = { ...me.goals, ...d.goals }; if (Array.isArray(d.recent)) me.recent = d.recent; if (d.name) me.name = d.name; if ("family" in d) me.family = d.family || null;
       if (d.freq) me.freq = d.freq; if (d.weight) me.weight = d.weight; if ("share" in d) me.share = d.share !== false; if (d.profile) me.profile = d.profile; if (d.lastWorkout) me.lastWorkout = d.lastWorkout;
-      me.units = d.units || (d.profile && d.profile.units) || me.units || "metric"; }
+      me.units = d.units || (d.profile && d.profile.units) || me.units || "metric";
+      if ("healthKey" in d) me.healthKey = d.healthKey || null; if ("healthCount" in d) me.healthCount = d.healthCount !== false; }
   } catch (e) {}
   if (!me.name && user.displayName) me.name = user.displayName;
   if (carry && (carry.days.length || Object.keys(carry.pantry).length || Object.keys(carry.dishes).length)) {
@@ -1366,6 +1372,7 @@ async function signedIn(user) {
   const code = me.family;
   if (code) { try { await connectFamily(code); } catch (e) { me.family = null; Data.saveMe(); stopRemote(); startWatches(); } }
   await loadDay(); await loadWeek(); render(); renderAccount();
+  healthSync(true);
   if (!me.family && joinCode) openFamily();
 }
 function signedOut() {
@@ -1552,11 +1559,11 @@ const DUMBBELL = ICON('<path d="M6 7v10M18 7v10M3 9.5v5M21 9.5v5M6 12h12"/>');
 function workoutsCard() {
   const ws = S.workouts, total = burnedOf(ws);
   return `<section class="meal" aria-label="Workouts">
-    <div class="meal-h"><span class="meal-ic wk">${DUMBBELL}</span><h3>Workouts</h3><span class="k">${ws.length ? "−" + fmt(total) + " kcal" : ""}</span><button class="add" data-workout="1" aria-label="Add a workout">${PLUS}</button></div>
+    <div class="meal-h"><span class="meal-ic wk">${DUMBBELL}</span><h3>Workouts</h3><span class="k">${total ? "−" + fmt(total) + " kcal" : ""}</span><button class="add" data-workout="1" aria-label="Add a workout">${PLUS}</button></div>
     ${ws.length ? ws.map(w => `
       <button class="entry wk${w.id === S.freshW ? " fresh" : ""}" data-entry="${w.id}" aria-expanded="${S.open === w.id}">
         <span class="nm"><b>${esc(w.type)}</b><small>${esc(w.detail || "")}</small></span>
-        <span class="kc">−${fmt(w.kcal)}<small>kcal</small></span>
+        <span class="kc">${w.kcal ? "−" + fmt(w.kcal) : "0"}<small>kcal</small></span>
       </button>
       ${S.open === w.id ? `<div class="entry-actions"><button class="btn small danger" data-wdel="${w.id}">Remove</button></div>` : ""}`).join("")
       : `<p class="empty">Burned calories are added to what you can eat today.</p>`}
@@ -2261,7 +2268,9 @@ function openWorkout() {
     ${me.weight ? "" : `<div class="field"><label for="wWeight">Your weight in ${imperial() ? "pounds" : "kg"}, for better estimates</label><input id="wWeight" type="number" inputmode="decimal" min="20" placeholder="${imperial() ? 165 : 75}"></div>`}
     <p class="note" id="wHint"></p>
     <p class="err" id="wErr" hidden></p>
-    <button class="btn primary wide" id="wAdd">Add workout</button>`);
+    <button class="btn primary wide" id="wAdd">Add workout</button>
+    <button class="btn ghost small" id="wHealth" style="align-self:center">${me.healthKey ? "Apple Health is connected" : "Sync workouts from Apple Health or WHOOP"}</button>`);
+  $("#wHealth").onclick = () => openHealth();
   const typedKg = () => { const w = parseFloat(($("#wWeight") || {}).value); return w > 20 ? (imperial() ? w * 0.453592 : w) : null; };
   const kg = () => me.weight || typedKg() || 75;
   function est() {
@@ -2361,6 +2370,125 @@ function openMember(id) {
 }
 
 /* =========================================================
+   Apple Health (and WHOOP, which writes into Apple Health)
+   A Shortcut on the iPhone reads today's steps and active calories and
+   sends them to healthsync/<private code>_<day>. The app picks them up here.
+   ========================================================= */
+const HEALTH_RULES = `rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /users/{uid}/{rest=**} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+    }
+    match /families/{family} {
+      allow get, create, update: if request.auth != null;
+      match /{collection}/{rest=**} {
+        allow read, write: if request.auth != null;
+      }
+    }
+    match /healthsync/{id} {
+      allow get: if request.auth != null;
+      allow create, update: if id.size() >= 34 && id.size() <= 60
+        && request.resource.data.keys().hasOnly(['date', 'steps', 'active']);
+    }
+  }
+}`;
+const healthNum = v => {
+  const t = String(v == null ? "" : v).trim();
+  if (/^\d+([.,]\d{1,2})?$/.test(t)) return Math.round(parseFloat(t.replace(",", ".")));
+  return parseInt(t.replace(/[^\d]/g, ""), 10) || 0;
+};
+let hsBusy = false, hsLast = 0;
+async function healthSync(force) {
+  if (!R.fs || !R.user || !me.healthKey || hsBusy) return null;
+  if (!force && Date.now() - hsLast < 60000) return null;
+  hsBusy = true; hsLast = Date.now();
+  let latest = null;
+  try {
+    const days = [0, 1, 2].map(n => { const d = new Date(); d.setDate(d.getDate() - n); return dayKey(d); });
+    for (const k of days) {
+      const snap = await R.fs.collection("healthsync").doc(`${me.healthKey}_${k}`).get().catch(() => null);
+      if (!snap || !snap.exists) continue;
+      const h = snap.data(), steps = healthNum(h.steps), active = healthNum(h.active), count = me.healthCount !== false;
+      if (!latest) latest = { day: k, steps, active };
+      const current = k === dayKey(S.date) && R.user && S.dayOwner === R.user.uid;
+      const day = current ? { entries: S.entries, workouts: S.workouts } : await Data.getDay(k);
+      const id = "ah-" + k;
+      const w = { id, type: "Apple Health", detail: `${fmt(steps)} steps · ${fmt(active)} active kcal${count ? "" : " (not counted)"}`, kcal: count ? active : 0, at: Date.now(), health: true };
+      const old = day.workouts.find(x => x.id === id);
+      if (old && old.kcal === w.kcal && old.detail === w.detail) continue;
+      day.workouts = day.workouts.filter(x => x.id !== id).concat([w]);
+      Data.setDay(k, day);
+      S.week[k] = netOf(day);
+      if (k === dayKey(S.date)) { S.workouts = day.workouts; render(); }
+    }
+    renderSummary();
+  } finally { hsBusy = false; }
+  return latest;
+}
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") healthSync(); });
+setInterval(() => healthSync(), 5 * 60 * 1000);
+
+function openHealth() {
+  const cfg = window.FIREBASE_CONFIG;
+  if (!cfg || !R.fs) { openSheet(`${head("Apple Health & WHOOP")}<p>Accounts need to be switched on for this website before Apple Health can sync.</p>`); return; }
+  if (!R.user) {
+    openSheet(`${head("Apple Health & WHOOP")}<p>Sign in first, so your steps and active calories have an account to go to.</p><button class="btn primary wide" id="hSign">Sign in</button>`);
+    $("#hSign").onclick = () => openAuth("in"); return;
+  }
+  if (!me.healthKey) {
+    openSheet(`${head("Apple Health & WHOOP")}
+      <p>Bring your steps and active calories from Apple Health into the app automatically. That includes workouts from an Apple Watch or a WHOOP band, since WHOOP writes them into Apple Health.</p>
+      <p class="note">Websites can't read Apple Health directly, so this uses a Shortcut on your iPhone that you set up once (about 5 minutes). It then runs by itself.</p>
+      <button class="btn primary wide" id="hStart">Set up Apple Health</button>`);
+    $("#hStart").onclick = () => { me.healthKey = rid(24); me.healthCount = true; Data.saveMe(); openHealth(); };
+    return;
+  }
+  const url = `https://firestore.googleapis.com/v1/projects/${cfg.projectId}/databases/(default)/documents/healthsync/${me.healthKey}_DAY?key=${cfg.apiKey}`;
+  const body = `{"fields":{"date":{"stringValue":"DAY"},"steps":{"stringValue":"STEPS"},"active":{"stringValue":"ACTIVE"}}}`;
+  const sh = openSheet(`${head("Apple Health & WHOOP")}
+    <div class="banner" style="border-style:solid" id="hStatus"><span class="note"><span class="spin"></span>&nbsp; Checking for data from your iPhone…</span></div>
+    <label class="switchrow" for="hCount"><span><b>Add active calories to my day</b><br><span class="note">Turn off to just see your steps. Don't also add the same workouts by hand.</span></span><input type="checkbox" id="hCount" switch ${me.healthCount !== false ? "checked" : ""}></label>
+    <div class="grp">Set up the Shortcut on your iPhone</div>
+    <ol class="steps">
+      <li><b>Only once, for whoever set up Firebase:</b> in the Firebase console open Firestore Database › Rules, replace everything with this, and tap Publish.
+        <pre class="copy" id="cpRules">${esc(HEALTH_RULES)}</pre><button class="btn small" id="bRules">Copy rules</button></li>
+      <li>Open the <b>Shortcuts</b> app, tap <b>+</b> and name it <b>Calorie sync</b>.</li>
+      <li>Add <b>Find Health Samples</b>. Set Type to <b>Steps</b>, add the filter <b>Start Date is Today</b>, and set <b>Group By</b> to <b>Day</b>. Then add <b>Calculate Statistics</b> (Sum), <b>Round Number</b>, and <b>Set Variable</b> named <b>Steps</b>.</li>
+      <li>Do the same again with Type <b>Active Energy</b>, and name the variable <b>Active</b>.</li>
+      <li>Add <b>Format Date</b> with <b>Current Date</b>, Date Format <b>Custom</b>: <span class="code">yyyy-MM-dd</span>. Add <b>Set Variable</b> named <b>Day</b>.</li>
+      <li>Add a <b>Text</b> action and paste this. Then replace DAY, STEPS and ACTIVE with your variables (select the word, then tap the variable above the keyboard).
+        <pre class="copy" id="cpBody">${esc(body)}</pre><button class="btn small" id="bBody">Copy text</button></li>
+      <li>Add <b>Get Contents of URL</b> and paste this link. Replace DAY with the Day variable.
+        <pre class="copy" id="cpUrl">${esc(url)}</pre><button class="btn small" id="bUrl">Copy link</button>
+        Tap the arrow to show more: Method <b>PATCH</b>, add the header <span class="code">Content-Type</span> = <span class="code">application/json</span>, and set Request Body to <b>File</b>, choosing the Text.</li>
+      <li>Tap ▶ to run it once and allow access to Health. Then come back here and tap <b>Check now</b>.</li>
+      <li>Make it automatic: in Shortcuts go to <b>Automation</b> › <b>+</b> › <b>Time of Day</b>, pick a time like 9 pm, choose <b>Daily</b> and <b>Run Immediately</b>, and select <b>Calorie sync</b>. Add a second one at lunchtime if you like.</li>
+    </ol>
+    <p class="note">Your sync code is private. Anyone with this link could send numbers to it, so don't share it.</p>
+    <div class="row"><button class="btn primary" id="hCheck">Check now</button><button class="btn danger" id="hOff">Turn off</button></div>`);
+  sh.querySelectorAll("li").forEach(li => li.style.marginBottom = "4px");
+  copyBtn("bRules", HEALTH_RULES); copyBtn("bBody", body); copyBtn("bUrl", url);
+  const status = async () => {
+    const el = $("#hStatus"); if (!el) return;
+    el.innerHTML = `<span class="note"><span class="spin"></span>&nbsp; Checking…</span>`;
+    let got = null; try { got = await healthSync(true); } catch (e) {}
+    if (!$("#hStatus")) return;
+    $("#hStatus").innerHTML = got
+      ? `<span><b>Connected.</b> Latest from Apple Health (${esc(got.day === dayKey(new Date()) ? "today" : got.day)}): ${fmt(got.steps)} steps, ${fmt(got.active)} active kcal.</span>`
+      : `<span class="note">Nothing received yet. Once the Shortcut has run, tap Check now.</span>`;
+  };
+  $("#hCheck").onclick = () => { haptic(); status(); };
+  $("#hCount").onchange = e => { me.healthCount = e.target.checked; Data.saveMe(); hsLast = 0; healthSync(true).then(() => toast(me.healthCount ? "Active calories now count toward your day" : "Showing steps only")); };
+  let armed = false;
+  $("#hOff").onclick = () => {
+    if (!armed) { armed = true; $("#hOff").textContent = "Tap again to turn off"; return; }
+    me.healthKey = null; Data.saveMe(); closeSheet(); toast("Apple Health sync turned off. You can delete the Shortcut.");
+  };
+  status();
+}
+
+/* =========================================================
    Limit & goals
    ========================================================= */
 function openGoals() {
@@ -2373,6 +2501,7 @@ function openGoals() {
   const stLb = kg => { const t = kg * 2.20462; let st = Math.floor(t / 14), lb = Math.round(t - st * 14); if (lb === 14) { st++; lb = 0; } return [st, lb]; };
   const [ft0, in0] = pr.heightCm ? ftIn(pr.heightCm) : ["", ""], [st0, lb0] = pr.weightKg ? stLb(pr.weightKg) : ["", ""];
   const sh = openSheet(`${head("Settings")}
+    <button class="plan" id="toHealth"><span class="nm"><b>Apple Health & WHOOP</b><small>${me.healthKey ? "Connected: steps and active calories sync automatically" : "Bring in your steps and workouts automatically"}</small></span><span class="chev">›</span></button>
     <div class="grp">Units</div>
     ${chips("units", [["metric", "Metric: kg, cm, grams"], ["imperial", "Imperial: st, ft, ounces"]], units)}
     <p class="note">Nutrition labels stay in grams, as printed on the pack. Calories are always kcal.</p>
@@ -2443,6 +2572,7 @@ function openGoals() {
   $("#gK").addEventListener("input", () => { pace = null; $("#plans").querySelectorAll(".plan").forEach(x => x.setAttribute("aria-pressed", "false")); });
   ["gP", "gC", "gF"].forEach(id => $("#" + id).addEventListener("input", hint));
   showUnits(); calc(); hint();
+  $("#toHealth").onclick = () => { haptic(); openHealth(); };
   $("#gSave").onclick = () => {
     const n = (id, d) => { const x = Math.round(+$("#" + id).value); return x > 0 ? x : d; };
     const ok = calc(), cm = getCm(), kg = getKg(), age = v("pAge");
