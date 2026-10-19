@@ -36,6 +36,17 @@ def num(v):
 
 def r1(x): return round(x * 10) / 10
 
+def nice_brand(raw):
+    """'MARS POLSKA SP. Z O.O., Twix' -> 'Twix'; 'walkers-crisps' -> 'Walkers Crisps'; 'alpro' -> 'Alpro'."""
+    parts = [b.strip() for b in (raw or "").split(",") if b.strip()][:3]
+    if not parts: return ""
+    b = min(parts, key=len) if len(parts[0]) > 18 else parts[0]
+    if re.fullmatch(r"[a-z0-9-]+", b):
+        b = re.sub(r"-s$", "'s", b).replace("-", " ")
+    if b == b.lower() or (b == b.upper() and len(b) > 4):
+        b = re.sub(r"(^|\s)(\S)", lambda m: m.group(1) + m.group(2).upper(), b.lower())
+    return b[:40]
+
 def open_source(src):
     if re.match(r"https?://", src):
         req = urllib.request.Request(src, headers={"User-Agent": "CalorieScanner-family-app/1.0 (github.com/Charles-Rehn/calorie-scanner)"})
@@ -73,13 +84,14 @@ def main(src, out):
         scans = int(num(g(row, "unique_scans_n")) or 0)
         if not uk and scans < MIN_SCANS_WORLD: continue
         seen.add(code)
-        brand = (g(row, "brands") or g(row, "brands_en") or g(row, "brands_tags").replace("-", " ").title()).split(",")[0].strip()[:40]
+        brand = nice_brand(g(row, "brands") or g(row, "brands_en") or g(row, "brands_tags"))
         sq = num(g(row, "serving_quantity"))
         sl = g(row, "serving_size").strip()[:40]
         img = ""
         m = re.search(r"/front_([a-z]{2})\.(\d+)\.\d+\.jpg", g(row, "image_small_url") or g(row, "image_front_small_url"))
         if m: img = f"{m.group(1)}.{m.group(2)}"
-        rows.append((scans + (40 if uk else 0) + (5 if img else 0), [code, name, brand, round(k), r1(p), r1(c), r1(fat),
+        # UK products first: a UK family mostly buys what UK shops sell
+        rows.append(((scans * 4 + 100 if uk else scans) + (5 if img else 0), [code, name, brand, round(k), r1(p), r1(c), r1(fat),
                      sl if sq and 0 < sq <= 2000 else "", round(sq, 1) if sq and 0 < sq <= 2000 else 0, 1 if uk else 0, img]))
     rows.sort(key=lambda r: -r[0])
     print(f"read {total:,} rows, kept {len(rows):,} products in {time.time() - t0:.0f}s", flush=True)

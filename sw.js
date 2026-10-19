@@ -1,6 +1,6 @@
 // Opens instantly from the saved copy, then quietly fetches any update in the
 // background so the next launch has it.
-const CACHE = "calorie-scanner-v23";
+const CACHE = "calorie-scanner-v24";
 const DATA = "calorie-products"; // kept across app updates
 const SHELL = ["./", "./index.html", "./config.js", "./manifest.webmanifest", "./icon-180.png", "./icon-192.png", "./icon-512.png", "./foods.json"];
 
