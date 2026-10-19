@@ -340,6 +340,23 @@ details[open] summary::after{transform:translateY(1px) rotate(225deg)}
 .inl{display:flex;gap:8px;align-items:flex-end}
 .inl>*{flex:1;min-width:0}
 .unitchips .chip{padding:6px 11px;font-size:12px}
+/* v6: photos, collapsible lists */
+.thumb{width:42px;height:42px;border-radius:12px;flex:none;display:grid;place-items:center;overflow:hidden;background:var(--surface-3);font-weight:850;font-size:13px;color:var(--muted);letter-spacing:.02em}
+.thumb img{width:100%;height:100%;object-fit:contain;background:#fff}
+.thumb.ph{background:hsl(var(--h,20) 40% 20%);color:hsl(var(--h,20) 85% 76%)}
+.thumb.dish{background:linear-gradient(135deg,var(--flame-1),var(--flame-3));color:var(--accent-ink)}
+.fimg{width:110px;height:110px;object-fit:contain;background:#fff;border-radius:18px;align-self:center;box-shadow:0 10px 30px rgba(0,0,0,.4)}
+.exps{display:flex;gap:8px}
+.exp{flex:1;min-width:0;display:flex;align-items:center;gap:6px;border:1px solid var(--line-2);background:var(--surface-2);color:var(--ink);border-radius:15px;padding:10px 12px;font-weight:750;font-size:14px;text-align:left}
+.exp span{white-space:nowrap}
+.exp span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis}
+.exp.picked span{color:var(--flame-1)}
+.exp b{display:none}
+.exp svg{flex:none;transition:transform .35s var(--ease);color:var(--muted)}
+.exp[aria-expanded="true"]{border-color:rgba(255,122,61,.5)}
+.exp[aria-expanded="true"] svg{transform:rotate(180deg)}
+.hscroll:not([hidden]){animation:drop .4s var(--ease)}
+.chip.ghostchip{border-style:dashed;color:var(--ink)}
 @media (prefers-reduced-motion: reduce){
   *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;transition-delay:0s!important}
 }
@@ -649,28 +666,56 @@ Coffee, black|2|0.3|0|0|1 cup (240 ml)|240`
       kcal: Math.round(+k * m), protein: r1(+p * m), carbs: r1(+c * m), fat: r1(+f * m), _n: snorm(name) };
   });
 /* =========================================================
-   Restaurants: approximate values from the chains' published (mainly UK) nutrition info.
-   chain|item|serving|kcal|protein|carbs|fat
+   Restaurants. chain|item|serving|kcal|protein|carbs|fat|grams per serving (optional)
+   Empty protein/carbs/fat = the chain only publishes calories.
    ========================================================= */
-const RESTAURANTS = `McDonald's|Big Mac|1 burger|508|26|42|25
-McDonald's|Quarter Pounder with Cheese|1 burger|518|31|37|26
-McDonald's|Double Cheeseburger|1 burger|445|26|34|22
-McDonald's|Cheeseburger|1 burger|298|15|31|12
+const RESTAURANT_DATA = `McDonald's|Big Mac|1 burger|509|26|42|25
+McDonald's|Quarter Pounder with Cheese|1 burger|514|31|37|26
+McDonald's|Double Quarter Pounder with Cheese|1 burger|749|||
+McDonald's|Double Cheeseburger|1 burger|452|26|34|22
+McDonald's|Cheeseburger|1 burger|303|15|31|12
 McDonald's|Hamburger|1 burger|250|12|30|8
-McDonald's|McChicken Sandwich|1 burger|388|16|40|17
+McDonald's|McChicken Sandwich|1 burger|371|16|40|17
+McDonald's|McCrispy|1 burger|484|||
+McDonald's|Mayo Chicken|1 burger|282|||
 McDonald's|Filet-O-Fish|1 burger|329|15|35|13
-McDonald's|Chicken McNuggets, 6 pieces|6 pieces|259|15|16|15
-McDonald's|Chicken McNuggets, 9 pieces|9 pieces|388|23|24|23
-McDonald's|Chicken McNuggets, 20 pieces|20 pieces|863|51|54|50
+McDonald's|Chicken McNuggets, 6 pieces|6 pieces|261|15|16|15
+McDonald's|Chicken McNuggets, 9 pieces|9 pieces|391|23|24|23
+McDonald's|Chicken McNuggets, 20 pieces|20 pieces|870|51|54|50
+McDonald's|Chicken Selects, 3 pieces|3 pieces|336|||
+McDonald's|Chicken Selects, 5 pieces|5 pieces|560|||
 McDonald's|Fries, small|small|237|3|30|11
 McDonald's|Fries, medium|medium|337|4|42|16
 McDonald's|Fries, large|large|444|5|56|21
 McDonald's|Egg McMuffin|1 muffin|297|18|28|12
-McDonald's|Sausage & Egg McMuffin|1 muffin|423|23|27|24
-McDonald's|Hash Brown|1 hash brown|138|1|14|9
-McDonald's|McFlurry Oreo|regular|340|8|53|11
+McDonald's|Sausage & Egg McMuffin|1 muffin|424|23|27|24
+McDonald's|Double Sausage & Egg McMuffin|1 muffin|552|||
+McDonald's|Hash Brown|1 hash brown|127|1|14|8
+McDonald's|Cheesy Bacon Flatbread|1 flatbread|280|||
+McDonald's|McFlurry Smarties, regular|regular|273|||
+McDonald's|McFlurry Oreo, regular|regular|340|8|53|11
 McDonald's|Coca-Cola, medium|400 ml|170|0|42|0
 McDonald's|Coca-Cola Zero, medium|400 ml|1|0|0|0
+KFC|Original Recipe chicken, average piece|1 piece|241|||
+KFC|Original Recipe drumstick|1 piece|179|||
+KFC|Original Recipe thigh|1 piece|268|||
+KFC|Original Recipe wing|1 piece|182|||
+KFC|Hot Wing|1 wing|91|||
+KFC|Chicken Tender|1 piece|125|||
+KFC|Popcorn Chicken, small|small|142|||
+KFC|Popcorn Chicken, regular|regular|307|||
+KFC|Popcorn Chicken, large|large|478|||
+KFC|Zinger Burger|1 burger|468|||
+KFC|Fillet Burger|1 burger|463|||
+KFC|Mini Fillet Burger|1 burger|277|||
+KFC|Zinger Tower Burger|1 burger|652|||
+KFC|Flamin' Mini Wrap|1 wrap|325|||
+KFC|Original Ranch Rice Bowl|1 bowl|558|||
+KFC|Zinger Ranch Rice Bowl|1 bowl|543|||
+KFC|Signature Fries, regular|regular|261|||
+KFC|Gravy, regular|regular|73|||
+KFC|BBQ Beans, regular|regular|93|||
+KFC|Corn Cobette|1 cobette|57|||
 Burger King|Whopper|1 burger|640|29|50|36
 Burger King|Whopper with Cheese|1 burger|730|34|51|43
 Burger King|Bacon Double Cheeseburger|1 burger|450|27|31|24
@@ -679,88 +724,455 @@ Burger King|Chicken Royale|1 burger|620|25|54|33
 Burger King|Chicken Nuggets, 6 pieces|6 pieces|265|13|17|16
 Burger King|Fries, regular|regular|290|4|38|13
 Burger King|Onion Rings, regular|regular|330|4|38|18
-KFC|Original Recipe chicken, 1 piece|1 piece (average)|230|20|7|14
-KFC|Zinger Burger|1 burger|450|26|41|20
-KFC|Fillet Burger|1 burger|440|27|42|18
-KFC|Popcorn Chicken, regular|regular|285|18|16|16
-KFC|Hot Wings, 3 pieces|3 pieces|230|14|7|16
-KFC|Fries, regular|regular|250|3|33|11
-KFC|Gravy, regular|regular|80|1|9|4
-KFC|Coleslaw, regular|regular|140|1|8|12
+Subway|Italian B.M.T., 6-inch|6-inch (footlong = 2)|386|||
+Subway|Chicken Tikka, 6-inch|6-inch (footlong = 2)|345|||
+Subway|Chicken Breast, 6-inch|6-inch (footlong = 2)|340|||
+Subway|Philly Steak, 6-inch|6-inch (footlong = 2)|297|||
+Subway|Ham & Turkey, 6-inch|6-inch (footlong = 2)|327|||
+Subway|Meatball Marinara, 6-inch|6-inch (footlong = 2)|447|||
 Subway|Sweet Onion Chicken Teriyaki, 6-inch|6-inch (footlong = 2)|330|25|49|4
-Subway|Italian B.M.T., 6-inch|6-inch (footlong = 2)|380|18|41|16
-Subway|Meatball Marinara, 6-inch|6-inch (footlong = 2)|430|20|51|16
 Subway|Tuna, 6-inch|6-inch (footlong = 2)|420|18|40|21
-Subway|Turkey Breast, 6-inch|6-inch (footlong = 2)|260|18|40|3
-Subway|Steak & Cheese, 6-inch|6-inch (footlong = 2)|340|24|40|9
 Subway|Veggie Delite, 6-inch|6-inch (footlong = 2)|210|8|40|2
+Subway|Chocolate Chunk Cookie|1 cookie|214|||
+Subway|White Chocolate Macadamia Cookie|1 cookie|215|||
+Subway|Garlic & Herb sauce|1 portion (14 g)|80|||
+Subway|Chipotle Southwest sauce|1 portion (14 g)|58|||
+Subway|Sweet Onion sauce|1 portion (14 g)|23|||
+Subway|American cheese|1 portion (12 g)|42|||
+Greggs|Sausage Roll|1 roll|338|||
+Greggs|Vegan Sausage Roll|1 roll|308|||
+Greggs|Steak Bake|1 bake|411|||
+Greggs|Chicken Bake|1 bake|435|15|34|26
+Greggs|Sausage, Bean & Cheese Melt|1 melt|425|14|32|27
+Greggs|Bacon Breakfast Roll|1 roll|269|||
+Greggs|Ham & Cheese Baguette|1 baguette|482|||
+Greggs|Tuna Crunch Baguette|1 baguette|413|||
+Greggs|Tandoori Chicken Baguette|1 baguette|459|||
+Greggs|Southern Fried Chicken Goujons|1 portion|250|||
+Greggs|Southern Fried Potato Wedges|1 portion|186|||
+Greggs|Caramel Custard Doughnut|1 doughnut|282|||
+Greggs|Glazed Ring Doughnut|1 doughnut|191|3|24|9
+Nando's|1/4 Chicken|1/4 chicken|289|||
+Nando's|1/2 Chicken|1/2 chicken|579|||
+Nando's|Chicken Butterfly|1 butterfly|332|||
+Nando's|4 Boneless Chicken Thighs|4 thighs|706|||
+Nando's|5 Chicken Wings|5 wings|393|||
+Nando's|Grilled Chicken Wrap|1 wrap|514|||
+Nando's|Grilled Chicken Burger|1 burger|443|||
+Nando's|Peri-Salted Chips, regular|regular|498|||
+Nando's|Chips, regular|regular|496|||
+Nando's|Spicy Rice, regular|regular|246|||
+Nando's|Garlic Bread, regular|regular|372|||
+Nando's|Creamy Mash, regular|regular|308|||
+Nando's|Macho Peas, regular|regular|155|||
+Nando's|Corn on the Cob, regular|regular|142|||
+Nando's|Rainbow Slaw, regular|regular|132|||
+Nando's|Tenderstem Broccoli, regular|regular|32|||
+Nando's|Grilled Halloumi|1 portion|267|||
+Pepe's|Pepe's Original|1 platter|1596|||
+Pepe's|Pepe's Chicken Box|1 box|739|||
+Pepe's|Chick'n'Rice|1 portion|556|||
+Pepe's|Chicken Tasca|1 portion|476|||
+Pepe's|Chicken XL|1 portion|443|||
+Pepe's|Prime Pitta|1 pitta|412|||
+Pepe's|The Wrap|1 wrap|367|||
+Pepe's|BBQ Wrap|1 wrap|388|||
+Pepe's|Fajita Wrap|1 wrap|785|||
+Pepe's|Chicken Burrito|1 burrito|353|||
+Pepe's|Chicken & Cheese Quesadilla|1 quesadilla|395|||
+Pepe's|Hot & Spicy Quesadilla|1 quesadilla|417|||
+Pepe's|BBQ Quesadilla|1 quesadilla|434|||
+Pepe's|Chicken Nachos|1 portion|790|||
+Pepe's|Loaded Fries, chicken|1 portion|755|||
+Pepe's|Gourmet Beef burger|1 burger|876|||
+Pepe's|Korean Burger|1 burger|881|||
+Pepe's|Texan Beef|1 burger|781|||
+Pepe's|Texan Lamb|1 burger|713|||
+Pepe's|Gourmet Lamb|1 burger|807|||
+Pepe's|Chicken Burger (fried)|1 burger|383|||
+Pepe's|Veggie Burger|1 burger|514|||
+Pepe's|Pepe's Wings (grilled)|1 portion|221|||
+Pepe's|Tender Strips|1 portion|166|||
+Pepe's|Chicken Nuggets|1 portion|268|||
+Pepe's|Chicken Salad|1 salad|120|||
+Pepe's|Paneer Wrap|1 wrap|581|||
+Pepe's|Paneer Burrito|1 burrito|581|||
+Pepe's|Paneer Rice|1 portion|688|||
+Pepe's|Paneer Loaded Fries|1 portion|971|||
+Pepe's|Pepe's Fries|1 portion|259|||
+Pepe's|Loaded Fries (side)|1 portion|658|||
+Pepe's|Spicy Rice|1 portion|377|||
+Pepe's|Pepe's Wedges|1 portion|225|||
+Pepe's|Corn on the Cob|1 cob|232|||
+Pepe's|Crispy Onion Rings|1 portion|305|||
+Pepe's|Mozzarella Sticks|1 portion|430|||
+Pepe's|Chilli Cheese Nuggets|1 portion|237|||
+Pepe's|Steamed Mixed Veg|1 portion|106|||
+Pepe's|Side Salad|1 portion|15|||
+Pepe's|Strips Kids Meal|1 meal|332|||
+Pepe's|Nuggets Kids Meal|1 meal|427|||
+Pepe's|Burger Kids Meal|1 meal|652|||
+Starbucks|Caffè Latte, grande, skimmed|grande|115|||
 Starbucks|Caffè Latte, grande, semi-skimmed|grande|185|12|18|7
 Starbucks|Cappuccino, grande, semi-skimmed|grande|120|8|12|4.5
-Starbucks|Flat White, semi-skimmed|1 cup|115|7|10|5
-Starbucks|Caramel Macchiato, grande, semi-skimmed|grande|230|10|33|6
+Starbucks|Flat White, short, whole milk|short|76|||
+Starbucks|Flat White, short, skimmed|short|46|||
+Starbucks|Flat White, short, oat|short|71|||
+Starbucks|Caramel Macchiato, grande, whole milk|grande|198|||
+Starbucks|Iced Latte, tall, skimmed|tall|64|||
+Starbucks|Iced Brown Sugar Oat Shaken Espresso, grande|grande|131|||
 Starbucks|Caramel Frappuccino, grande, with cream|grande|380|5|58|14
 Starbucks|Chai Tea Latte, grande, semi-skimmed|grande|220|7|41|3.5
 Starbucks|Hot Chocolate, grande, with cream|grande|350|13|47|13
 Starbucks|Americano, grande|grande|15|1|2|0
+Starbucks|Signature Grilled Cheese Toastie|1 toastie|414|||
+Starbucks|Ham & Cheese Toastie|1 toastie|450|||
+Starbucks|Tuna Melt Panini|1 panini|448|||
+Starbucks|Ham & Cheese Croissant|1 croissant|385|||
 Starbucks|Butter Croissant|1 croissant|280|6|31|15
 Starbucks|Blueberry Muffin|1 muffin|410|6|54|19
-Costa|Latte, medium, semi-skimmed|medium|175|12|17|6
-Costa|Flat White, semi-skimmed|1 cup|120|8|11|5
-Costa|Cappuccino, medium, semi-skimmed|medium|120|8|12|4
+Costa|Latte, medium, semi-skimmed|medium|146|||
+Costa|Latte, medium, skimmed|medium|105|||
+Costa|Latte, medium, oat|medium|184|||
+Costa|Latte, small, semi-skimmed|small|115|||
+Costa|Latte, large, semi-skimmed|large|179|||
+Costa|Cappuccino, medium, semi-skimmed|medium|140|||
+Costa|Cappuccino, medium, whole milk|medium|190|||
+Costa|Flat White, semi-skimmed|1 cup|135|||
+Costa|Flat White, whole milk|1 cup|189|||
+Costa|Iced Latte, medium, skimmed|medium|87|||
 Costa|Americano, medium|medium|10|1|1|0
-Costa|Hot Chocolate, medium, semi-skimmed|medium|270|10|40|8
-Nando's|Quarter chicken, breast|1/4 chicken|250|46|1|6
-Nando's|Quarter chicken, leg|1/4 chicken|350|37|0|22
-Nando's|Half chicken|1/2 chicken|600|83|1|28
-Nando's|Butterfly chicken breast|1 breast|330|62|1|8
-Nando's|Peri-Peri Chips, regular|regular|420|6|52|21
-Nando's|Spicy Rice, regular|regular|320|6|55|8
-Nando's|Corn on the Cob, regular|regular|120|4|20|3
-Nando's|Garlic Bread, regular|regular|360|9|42|17
-Greggs|Sausage Roll|1 roll|328|9|23|22
-Greggs|Vegan Sausage Roll|1 roll|311|12|26|17
-Greggs|Steak Bake|1 bake|408|13|32|25
-Greggs|Chicken Bake|1 bake|435|15|34|26
-Greggs|Sausage, Bean & Cheese Melt|1 melt|425|14|32|27
-Greggs|Glazed Ring Doughnut|1 doughnut|191|3|24|9
+Costa|Ham & Cheese Toastie|1 toastie|356|||
+Costa|Smoked Bacon Bap|1 bap|343|||
+Costa|Pork Sausage Bap|1 bap|515|||
+Costa|Tuna Melt Panini|1 panini|462|||
+Costa|Cinnamon Bun|1 bun|447|||
+Costa|Chocolate Tiffin|1 slice|403|||
+Caffè Nero|Latte, regular, semi-skimmed|regular|123|||
+Caffè Nero|Latte, regular, skimmed|regular|99|||
+Caffè Nero|Latte, regular, oat|regular|155|||
+Caffè Nero|Cappuccino, regular, skimmed|regular|71|||
+Caffè Nero|Flat White, whole milk|1 cup|106|||
+Caffè Nero|Cortado, whole milk|1 cup|71|||
+Caffè Nero|Iced Latte, whole milk|1 cup|117|||
+Caffè Nero|Cheese & Tomato Toastie|1 toastie|363|||
+Caffè Nero|Ham & Cheese Croissant|1 croissant|388|||
+Caffè Nero|Almond Croissant|1 croissant|338|||
+Caffè Nero|Pistachio Croissant|1 croissant|363|||
+Caffè Nero|Belgian Chocolate Brownie|1 brownie|314|||
+Caffè Nero|Fruit Scone|1 scone|299|||
+Caffè Nero|Porridge, semi-skimmed milk|1 pot|237|||
 Domino's|Margherita, large, per slice|1 slice|190|8|23|7
 Domino's|Pepperoni Passion, large, per slice|1 slice|235|10|23|11
 Domino's|Texas BBQ, large, per slice|1 slice|215|10|25|8
 Domino's|Garlic & Herb Dip|1 pot|330|1|2|36
-Five Guys|Hamburger|1 burger|840|39|39|43
-Five Guys|Cheeseburger|1 burger|980|47|40|55
-Five Guys|Little Hamburger|1 burger|540|23|39|26
-Five Guys|Little Cheeseburger|1 burger|610|27|40|32
-Five Guys|Fries, little|little|528|8|72|23
-Five Guys|Fries, regular|regular|953|15|131|41
+Pizza Hut|Margherita, personal pan|1 pizza (206 g)|448|||
+Pizza Hut|Meat Feast Melt|1 melt|790|||
+Pizza Hut|Garlic Bread, 4 slices|4 slices|180|||
+Pizza Hut|Cheesy Garlic Bread, 4 slices|4 slices|264|||
+Pizza Hut|BBQ Chicken Wings, 4|4 wings|245|||
+Pizza Hut|Breaded Chicken Strips, 4|4 strips|323|||
+Pizza Hut|Chicken Bites|1 portion|359|||
+Pizza Hut|Potato Wedges|1 portion|195|||
+Pizza Hut|Seasoned Fries, large|large|334|||
+Pizza Hut|Halloumi Fries|1 portion|296|||
+Pizza Hut|Doritos Cheesy Nachos|1 portion|246|||
+Pizza Hut|Hot Cookie Dough|1 portion|628|||
+Papa John's|Cheese & Tomato, original base|100 g (a slice is about 100 g)|266||||100
+Papa John's|Double Pepperoni, original base|100 g (a slice is about 100 g)|289||||100
+Papa John's|All The Meats, original base|100 g (a slice is about 100 g)|274||||100
+Papa John's|BBQ Meat Feast, original base|100 g (a slice is about 100 g)|306||||100
+Papa John's|Chicken Club, original base|100 g (a slice is about 100 g)|231||||100
+Papa John's|Garlic Pizza Sticks|100 g|335||||100
+Papa John's|Potato Tots|100 g|206||||100
+Papa John's|BBQ Chicken Wings|100 g|243||||100
+PizzaExpress|Margherita, Classic|1 pizza|711|||
+PizzaExpress|Margherita, Romana|1 pizza|769|||
+PizzaExpress|La Reine, Classic|1 pizza|748|||
+PizzaExpress|American, Romana|1 pizza|936|||
+PizzaExpress|Smoky BBQ Chicken, Romana|1 pizza|942|||
+PizzaExpress|Pollo ad Astra, Leggera|1 pizza|531|||
+PizzaExpress|Dough Balls with garlic butter|1 portion|450|||
+PizzaExpress|Garlic Bread with Mozzarella|1 portion|355|||
+PizzaExpress|Eggs Royale|1 portion|642|||
+Five Guys|Hamburger|1 burger|700|||
+Five Guys|Cheeseburger|1 burger|840|||
+Five Guys|Bacon Burger|1 burger|780|||
+Five Guys|Bacon Cheeseburger|1 burger|920|||
+Five Guys|Little Hamburger|1 burger|480|||
+Five Guys|Little Cheeseburger|1 burger|550|||
+Five Guys|Little Bacon Burger|1 burger|560|||
+Five Guys|Little Bacon Cheeseburger|1 burger|683|||
+Five Guys|Hot Dog|1 hot dog|524|||
+Five Guys|Veggie Sandwich|1 sandwich|440|||
+Five Guys|Fries, little|little|659|||
+Five Guys|Fries, large|large|1314|||
+Five Guys|Milkshake|1 milkshake|670|||
+Wagamama|Chicken Katsu Curry|1 bowl|995|||
+Wagamama|Chicken + Prawn Pad Thai|1 bowl|789|||
+Wagamama|Chicken + Prawn Yaki Soba|1 bowl|804|||
+Wagamama|Chicken Teriyaki Soba|1 bowl|840|||
+Wagamama|Steak Teriyaki Soba|1 bowl|856|||
+Wagamama|Chicken Teriyaki Donburi|1 bowl|877|||
+Wagamama|Grilled Chicken Ramen|1 bowl|529|||
+Wagamama|Chilli Chicken Ramen|1 bowl|541|||
+Wagamama|Chicken Ramen|1 bowl|400|||
+Wagamama|Shirodashi Pork Belly Ramen|1 bowl|762|||
+Wagamama|Tantanmen Beef Brisket Ramen|1 bowl|714|||
+Wagamama|Chicken Gyoza|1 portion|195|||
+Wagamama|Chilli Squid|1 portion|411|||
+Chipotle|Chicken burrito (rice, black beans, salsa, cheese, lettuce)|1 burrito|870|54|102|27
+Chipotle|Chicken burrito bowl (rice, black beans, fajita veg, salsa, cheese, lettuce)|1 bowl|594|48|61|19
+Chipotle|Flour tortilla (burrito)|1 tortilla|297|7|46|8
+Chipotle|Chicken|1 portion (113 g)|180|32|0|7
+Chipotle|Steak|1 portion (113 g)|165|23|1|7
+Chipotle|Barbacoa|1 portion (113 g)|154|22|2|6
+Chipotle|Carnitas|1 portion (113 g)|210|23|0|12
+Chipotle|Coriander-lime white rice|1 portion (113 g)|185|4|35|4
+Chipotle|Brown rice|1 portion (113 g)|185|4|32|5
+Chipotle|Black beans|1 portion (113 g)|95|6|16|1
+Chipotle|Pinto beans|1 portion (113 g)|95|6|15|1
+Chipotle|Fajita vegetables|1 portion (57 g)|21|1|5|0
+Chipotle|Fresh tomato salsa|1 portion (113 g)|15|0|3|0
+Chipotle|Chilli-corn salsa|1 portion (113 g)|38|1|8|1
+Chipotle|Green chilli salsa|1 portion (59 g)|6|0|1|0
+Chipotle|Sour cream|1 portion (57 g)|45|1|1|4
+Chipotle|Cheese|1 portion|94|5|1|7
+Chipotle|Guacamole|1 portion (113 g)|145|1|5|14
+Chipotle|Romaine lettuce|1 portion (28 g)|4|0|1|0
+Chipotle|Chips, regular|1 portion (113 g)|417|5|56|19
+Tortilla|Chicken burrito, regular|1 burrito|850|50|95|28
+Tortilla|Steak burrito, regular|1 burrito|860|48|95|30
+Tortilla|Pulled pork burrito, regular|1 burrito|900|46|96|35
+Tortilla|Chicken burrito bowl|1 bowl|600|45|62|18
+Tortilla|Chicken tacos, 3|3 tacos|550|36|48|22
+Tortilla|Chicken quesadilla|1 quesadilla|650|40|50|32
+Tortilla|Nachos with cheese, regular|1 portion|600|16|60|33
+Tortilla|Chips & guacamole|1 portion|550|6|52|35
 Taco Bell|Crunchy Taco|1 taco|170|8|13|9
 Taco Bell|Soft Taco|1 taco|180|9|17|9
 Taco Bell|Crunchwrap Supreme|1 wrap|530|16|71|21
 Taco Bell|Burrito Supreme|1 burrito|390|16|51|14
 Taco Bell|Chicken Quesadilla|1 quesadilla|520|27|37|28
-Taco Bell|Nachos BellGrande|1 portion|740|16|82|38`
-  .split("\n").map(line => {
-    const [chain, name, sl, k, p, c, f] = line.split("|");
-    return { id: "rs-" + hash(chain + "|" + name), src: "rest", name, brand: chain, code: "", servingLabel: sl, servingGrams: null,
-      kcal: +k, protein: +p, carbs: +c, fat: +f, _n: snorm(chain + " " + name) };
-  });
+Taco Bell|Nachos BellGrande|1 portion|740|16|82|38
+Shake Shack|ShackBurger|1 burger|528|30|25|30
+Shake Shack|Double ShackBurger|1 burger|790|51|27|52
+Shake Shack|Double Cheeseburger|1 burger|730|51|25|46
+Shake Shack|Chick'n Shack|1 burger|590|33|34|36
+Shake Shack|Fries, regular|regular|470|6|63|22
+Shake Shack|Cheese Fries|1 portion|710|12|64|44
+German Doner Kebab|Original Doner Kebab, chicken|1 kebab|1026|62.7|68.6|55.2
+German Doner Kebab|OG Kebab, beef|1 kebab|1049|41.6|76.2|63.8
+German Doner Kebab|Doner Durum Wrap, chicken|1 wrap|1005|61.4|60|57.2
+German Doner Kebab|Mixed Meat Doner Wrap|1 wrap|786|50|59.8|37.9
+German Doner Kebab|Gym Box|1 box|474|53.2|5.8|26.5
+German Doner Kebab|Doner Gym Box, mixed|1 box|505|43|10.3|32.5
+German Doner Kebab|Fries|1 portion (200 g)|296|4.6|50|7.4
+German Doner Kebab|Garlic sauce|1 pot (28 g)|147|0.7|1.5|15.4
+Leon|Chargrilled Chicken Rice Box|1 box|372|||
+Leon|Chargrilled Chicken Burger|1 burger|432|||
+Leon|Grilled Halloumi Wrap|1 wrap|556|||
+Leon|Crunchy Korean Chicken Wrap|1 wrap|619|||
+Leon|Baked Fries|1 portion (100 g)|242|||
+Leon|Hash Browns|1 portion|140|||
+Leon|Sourdough Toast|1 portion|328|||
+Leon|Shakshuka Poached Egg Pot, double egg|1 pot|324|||
+Leon|Choconutty Banana Bread|1 slice|278|||
+Leon|Slaw|1 portion|108|||
+Leon|Latte, oat, regular|regular|150|||
+Leon|Flat White, oat|1 cup|110|||
+itsu|Chicken Teriyaki|1 box|485|||
+itsu|Double Chicken Teriyaki|1 box|625|||
+itsu|Salmon Full House|1 box|626|||
+itsu|Super Salmon Light|1 box|431|||
+itsu|Sushi Festival|1 box|510|||
+itsu|Itsu Classics|1 box|591|||
+itsu|Salmon & Avo Dragon Rolls|1 box|515|||
+itsu|California Rolls|1 box|336|||
+itsu|Chicken Noodle Soup|1 pot|285|||
+itsu|Detox Miso Noodle Soup|1 pot|190|||
+itsu|Miso Soup|1 pot|32|||
+itsu|Edamame|1 portion|132|||
+itsu|Chicken & Spring Onion Gyoza|1 portion|251|||
+itsu|Vegetable Fusion Gyoza|1 portion|234|||
+Wasabi|Chicken Chilli Crisp Biang Biang Noodles|1 box (400 g)|676||||400
+Wasabi|Chicken Katsu Curry Bento|100 g (box weight is on the label)|171||||100
+Wasabi|Sweet Chilli Chicken Bento|100 g (box weight is on the label)|145||||100
+Wasabi|Sweet Chilli Chicken Yakisoba|100 g (box weight is on the label)|138||||100
+Wasabi|Tokyo Salmon Set|100 g (box weight is on the label)|155||||100
+Wasabi|Rainbow Set|100 g (box weight is on the label)|152||||100
+Wasabi|Salmon Teriyaki Onigiri|100 g|172||||100
+Wasabi|Spicy Korean Chicken Pops|100 g|159||||100
+YO! Sushi|Chicken Katsu Curry|1 portion|349|||
+YO! Sushi|Korean Style Sweet Chilli Chicken Rice Bowl|1 bowl|520|||
+YO! Sushi|Rainbow Salmon Poke|1 bowl|457|||
+YO! Sushi|Classic Salmon & Avocado Roll|1 portion|382|||
+YO! Sushi|Salmon Nigiri|1 portion|244|||
+YO! Sushi|Salmon Dragon Roll|1 portion|241|||
+YO! Sushi|Crispy Salmon Dragon Roll|1 portion|350|||
+YO! Sushi|YO! Roll|1 portion|203|||
+YO! Sushi|Veggie Roll|1 portion|330|||
+YO! Sushi|Tuna Onigiri|1 onigiri|194|||
+YO! Sushi|Chicken Katsu Kids Bento|1 bento|507|||
+Pho|Chicken Pho (noodle soup)|1 bowl|347|||
+Pho|Beef Brisket Pho|1 bowl|397|||
+Pho|Hot & Spicy Beef Brisket Pho|1 bowl|454|||
+Pho|Steak with Garlic Pho|1 bowl|468|||
+Pho|Pho House|1 bowl|351|||
+Pho|Wok Fried Noodles, chicken|1 portion|447|||
+Pho|Curry Noodle Soup with King Prawns|1 bowl|584|||
+Pho|Beef Brisket Curry with Rice|1 portion|682|||
+Pho|Chicken & Dried Shrimp Fried Rice|1 portion|794|||
+Pho|Summer Rolls, prawn|1 portion|145|||
+Pho|Summer Rolls, chicken|1 portion|183|||
+Pho|Spring Rolls, pork|1 portion|360|||
+Tim Hortons|Original Breakfast Wrap|1 wrap|488|||
+Tim Hortons|Big Breakfast Wrap|1 wrap|540|||
+Tim Hortons|Bacon Roll|1 roll|450|||
+Tim Hortons|Maple BBQ Chicken Wrap|1 wrap|465|||
+Tim Hortons|Hash Brown|1 hash brown|90|||
+Tim Hortons|Latte, small|small|99|||
+Tim Hortons|Iced Caramel Latte, small|small|105|||
+Tim Hortons|Iced Vanilla Latte, medium|medium|99|||
+Tim Hortons|Boston Cream Donut|1 donut|298|||
+Tim Hortons|Canadian Maple Donut|1 donut|293|||
+Tim Hortons|Chocolate Dip Donut|1 donut|276|||
+Tim Hortons|Apple Fritter|1 donut|328|||
+Tim Hortons|Raspberry Donut|1 donut|247|||
+Tim Hortons|Chocolate Glazed Timbit|1 timbit|88|||
+Wetherspoons|Traditional Breakfast|1 plate|774|||
+Wetherspoons|Small Breakfast|1 plate|435|||
+Wetherspoons|Large Breakfast|1 plate|1320|||
+Wetherspoons|Fish & Chips, cod, with peas|1 plate|1240|||
+Wetherspoons|Fish & Chips, cod, with mushy peas|1 plate|1308|||
+Wetherspoons|Chips|1 portion|602|||
+Wetherspoons|Chips, small|1 portion|329|||
+Wetherspoons|Jacket Potato with Tuna Mayo|1 plate|591|||
+Wetherspoons|Southern-Fried Chicken Strips|1 portion|459|||
+Wetherspoons|Chicken Bites|1 portion|322|||
+Wetherspoons|Eggs Benedict|1 plate|756|||
+Wetherspoons|Pasta Alfredo|1 plate|519|||
+Wetherspoons|Katsu Grilled Chicken Curry|1 plate|542|||
+Wetherspoons|Onion Rings, 6|6 rings|269|||
+TGI Fridays|Jack Daniel's Burger|1 burger|1360|||
+TGI Fridays|Jack Daniel's Chicken|1 plate|620|||
+TGI Fridays|Sizzling Chicken Fajitas|1 portion|520|||
+TGI Fridays|Sweet Potato Fries|1 portion|390|||
+TGI Fridays|Buffalo Wings, 3|3 wings|150|||
+TGI Fridays|Onion Rings, 3|3 rings|140|||
+TGI Fridays|Mozzarella Stick|1 stick|110|||
+Zizzi|Margherita Pizza|1 pizza|727|||
+Zizzi|Garlic Bread|1 portion|605|||
+Zizzi|Mozzarella Arancini|1 portion|343|||
+Zizzi|Burrata|1 portion|238|||
+Zizzi|Tiramisu|1 portion|366|||
+Bella Italia|Carbonara|1 plate|905|||
+Bella Italia|Meat Feast Pizza|1 pizza|1212|||
+Bella Italia|Chicken Milanese|1 plate|736|||
+Bella Italia|Chicken Caesar Salad|1 plate|683|||
+Bella Italia|Caprese Salad|1 plate|384|||
+Bella Italia|Tomato Bruschetta|1 portion|303|||
+Bella Italia|Cheesy Garlic Bread|1 portion|279|||
+Bella Italia|Bacon, Cheese & Onion Loaded Fries|1 portion|741|||
+Bella Italia|Chocolate Brownie|1 portion|385|||
+Bella Italia|Cookie Dough|1 portion|833|||
+Prezzo|Margherita Pizza|1 pizza|985|||
+Prezzo|Ribeye Steak & Chips|1 plate|960|||
+Prezzo|Spaghetti with King Prawns|1 plate|655|||
+Prezzo|Pesto Chicken Panini|1 panini|600|||
+Prezzo|Ham & Cheese Panini|1 panini|535|||
+Prezzo|Chicken, Bacon & Avocado Salad|1 plate|545|||
+Prezzo|Tomato & Burrata Salad|1 plate|510|||
+Prezzo|Avocado on Toast|1 plate|470|||
+Prezzo|Truffle Fries|1 portion|485|||
+Goiko|Kevin Bacon|1 burger|875|||
+Goiko|M-30|1 burger|695|||
+Goiko|Chiliraptor|1 burger|917|||
+Goiko|Camburguer|1 burger|737|||
+Goiko|Bomba Sexy|1 burger|1584|||
+Goiko|Chipotle|1 burger|511|||
+Goiko|Patatas Rústicas|1 portion (350 g)|922|||
+Goiko|Thai Chicken Bowl|1 bowl|530|||
+Goiko|César Bowl|1 bowl|587|||
+Goiko|Fresh Bowl|1 bowl|367|||
+Goiko|Goiko Cookie|1 portion|841|||
+Goiko|Goiko Shake|1 shake|970|||
+100 Montaditos|Montadito Club|1 montadito|190|||
+100 Montaditos|Serranito|1 montadito|230|||
+100 Montaditos|Montadito de Calamares|1 montadito|163|||
+100 Montaditos|Jamón Ibérico con aceite de oliva|1 montadito|154|||
+100 Montaditos|Salmón con crema de queso|1 montadito|160|||
+100 Montaditos|Chistorra|1 montadito|229|||
+100 Montaditos|Gambas con alioli|1 montadito|131|||
+100 Montaditos|Pollo asado con bacon, queso y brava|1 montadito|167|||
+100 Montaditos|Patatas fritas cheddar y bacon|1 ración|438|||
+100 Montaditos|Patatas 4 salsas|1 ración|832|||
+100 Montaditos|Ensalada César|1 ensalada|417|||
+VIPS|Smash Bacon & Cheese|1 burger|680|||
+VIPS|Aguacate Chicken Burger|1 burger|583|||
+VIPS|Veggie Burger|1 burger|493|||
+VIPS|Sándwich Vips Club|1 sandwich|770|||
+VIPS|Vips Club Salmón|1 sandwich|438|||
+VIPS|Sándwich Egeo|1 sandwich|449|||
+VIPS|Roll Brooklyn|1 plate|700|||
+VIPS|Salteado de Pollo Oriental|1 plate|615|||
+VIPS|Ensalada Louisiana|1 plate|460|||
+VIPS|Desayuno Americano|1 plate|900|||
+Telepizza|Barbacoa pizza|100 g (a slice is about 100 g)|225|8.9|25.4|8.9|100
+Telepizza|4 Quesos pizza|100 g (a slice is about 100 g)|224|11.9|26.4|7.5|100
+Telepizza|Bacon Crispy pizza|100 g (a slice is about 100 g)|240|9.3|29|9.4|100
+Telepizza|Carbonara pizza|100 g (a slice is about 100 g)|215|8.2|22.2|10|100
+Telepizza|Pepe Pepperoni pizza|100 g (a slice is about 100 g)|257|10.2|24.9|12.7|100
+Telepizza|Hawaiana pizza|100 g (a slice is about 100 g)|198|8.6|24.2|7.2|100
+Telepizza|Especial de la Casa pizza|100 g (a slice is about 100 g)|186|7.3|21.9|7|100
+Telepizza|Croquetas|100 g|240|9.7|19.9|13.5|100
+Telepizza|Patatas Gajo|100 g|152|2.5|21.3|5.8|100`;
+// Where each chain's numbers come from
+const CHAIN_SOURCE = { "Pepe's": "official", "Burger King": "estimate", "Domino's": "estimate", "Taco Bell": "estimate", "Tortilla": "estimate" };
+const CHAIN_ALIAS = { "McDonald's": "maccies maccas mcds mcdonalds", "KFC": "kentucky fried chicken", "Wetherspoons": "spoons wetherspoon", "Pepe's": "pepes piri piri", "Caffè Nero": "cafe nero", "Five Guys": "5 guys", "Papa John's": "papa johns", "German Doner Kebab": "gdk doner", "100 Montaditos": "cien montaditos", "YO! Sushi": "yo sushi" };
+const RESTAURANTS = RESTAURANT_DATA.split("\n").map(line => {
+  const [chain, name, sl, k, p, c, f, g] = line.split("|");
+  const n = x => (x === "" || x == null) ? "" : +x;
+  return { id: "rs-" + hash(chain + "|" + name), src: "rest", name, brand: chain, code: "", servingLabel: sl, servingGrams: g ? +g : null,
+    kcal: +k, protein: n(p), carbs: n(c), fat: n(f), _n: snorm(chain + " " + name + " " + (CHAIN_ALIAS[chain] || "")) };
+});
 const RCHAINS = [...new Set(RESTAURANTS.map(r => r.brand))];
+const initials = s => (String(s || "?").replace(/['’]/g, "").match(/[A-Za-z0-9]+/g) || ["?"]).slice(0, 2).map(w => w[0]).join("").toUpperCase();
+function thumb(f) {
+  if (f && f.dish) return `<span class="thumb dish" aria-hidden="true">${POT_SVG_S}</span>`;
+  if (f && f.img) return `<span class="thumb" aria-hidden="true"><img src="${esc(f.img)}" alt="" loading="lazy" decoding="async" onerror="this.parentNode.classList.add('ph');this.parentNode.textContent='${esc(initials(f.name)).replace(/'/g, "")}'"></span>`;
+  const key = f && f.src === "rest" ? f.brand : (f && f.name) || "?";
+  return `<span class="thumb ph" style="--h:${parseInt(hash(key), 36) % 360}" aria-hidden="true">${esc(f && f.src === "rest" ? initials(f.brand) : initials(f && f.name))}</span>`;
+}
+const POT_SVG_S = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10h16v6a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4z"/><path d="M2 10h20"/></svg>`;
+const poss = c => /['’]s$/i.test(c) ? c : /s$/i.test(c) ? c + "'" : c + "'s";
+function chainNote(chain, food) {
+  const src = CHAIN_SOURCE[chain];
+  const noMacros = food && food.protein === "" ? " Protein, carbs and fat aren't published, so only calories are counted." : "";
+  if (src === "official") return `Calories from ${poss(chain)} published menu.${noMacros}`;
+  if (src === "estimate") return `Approximate values: ${poss(chain)} full nutrition info wasn't available, so check the menu if you need exact numbers.`;
+  return `Calories from ${poss(chain)} published nutrition info. Menus vary by country and change over time.${noMacros}`;
+}
 
-/* Shops and brands. by: which Open Food Facts field to filter on first.
-   Supermarket own-label is usually under the brand; Aldi and Lidl use sub-brands, so we look at where it's sold. */
+/* Shops and brands: the names printed on their packs, own-label ranges included. */
+const tagify = s => norm(s).replace(/[&'’]/g, " ").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
 const SHOP_BRANDS = [
-  ["Tesco", "tesco", "tesco", "brands"], ["Sainsbury's", "sainsbury-s", "sainsburys|sainsbury", "brands"],
-  ["Asda", "asda", "asda", "brands"], ["Aldi", "aldi", "aldi", "stores"], ["Lidl", "lidl", "lidl", "stores"],
-  ["M&S", "marks-spencer", "m&s|ms|marks and spencer|marks & spencer|marks spencer", "brands"],
-  ["Morrisons", "morrisons", "morrisons", "brands"], ["Waitrose", "waitrose", "waitrose", "brands"],
-  ["Co-op", "co-op", "coop|co op", "brands"], ["Iceland", "iceland", "iceland", "brands"], ["Ocado", "ocado", "ocado", "brands"],
-  ["Spar", "spar", "spar", "brands"], ["Costco", "kirkland-signature", "costco|kirkland", "brands"], ["Booths", "booths", "booths", "brands"],
-  ["Farmfoods", "farmfoods", "farmfoods", "stores"],
-  ["Mercadona", "hacendado", "mercadona|hacendado", "brands"], ["Carrefour", "carrefour", "carrefour", "brands"],
-  ["Dia", "dia", "dia", "brands"], ["Alcampo", "auchan", "alcampo|auchan", "brands"], ["El Corte Inglés", "el-corte-ingles", "el corte ingles|corte ingles", "brands"],
-  ["Kellogg's", "kellogg-s", "kelloggs|kellogg", "brands"], ["Nestlé", "nestle", "nestle", "brands"], ["Cadbury", "cadbury", "cadbury", "brands"],
-  ["Heinz", "heinz", "heinz", "brands"], ["Müller", "muller", "muller|mueller", "brands"], ["Alpro", "alpro", "alpro", "brands"], ["Danone", "danone", "danone", "brands"]
-].map(([label, tag, al, by]) => ({ label, tag, by, aliases: al.split("|").map(snorm).filter(Boolean) }));
+  ["Tesco", "Tesco|Tesco Finest|Stockwell & Co|Tesco Everyday Value", "tesco"],
+  ["Sainsbury's", "Sainsbury's|Sainsburys|Taste the Difference|By Sainsbury's", "sainsburys|sainsbury"],
+  ["Asda", "Asda|Asda Extra Special|Just Essentials", "asda"],
+  ["Aldi", "Aldi|Specially Selected|Everyday Essentials|Harvest Morn|Cowbelle|Bramwells|Snackrite|Moser Roth|Brooklea|Village Bakery", "aldi"],
+  ["Lidl", "Lidl|Milbona|Deluxe|Crownfield|Chef Select|Pilos|Snack Day|Solevita|Freshona|Trattoria Alfredo|Birchwood", "lidl"],
+  ["M&S", "M&S|Marks & Spencer|Marks and Spencer|M&S Food", "m&s|ms|marks and spencer|marks & spencer|marks spencer"],
+  ["Morrisons", "Morrisons|Morrisons The Best|Morrisons Savers", "morrisons"],
+  ["Waitrose", "Waitrose|Essential Waitrose|Waitrose Duchy Organic|No.1 Waitrose", "waitrose"],
+  ["Co-op", "Co-op|Coop|Co-operative|Irresistible", "coop|co op"],
+  ["Iceland", "Iceland", "iceland"], ["Ocado", "Ocado", "ocado"], ["Spar", "Spar", "spar"],
+  ["Costco", "Kirkland Signature|Kirkland|Costco", "costco|kirkland"], ["Booths", "Booths", "booths"], ["Farmfoods", "Farmfoods", "farmfoods"],
+  ["Mercadona", "Hacendado|Mercadona", "mercadona|hacendado"], ["Carrefour", "Carrefour", "carrefour"], ["Dia", "Dia", "dia"],
+  ["Alcampo", "Alcampo|Auchan", "alcampo|auchan"], ["El Corte Inglés", "El Corte Inglés", "el corte ingles|corte ingles"],
+  ["Kellogg's", "Kellogg's|Kelloggs", "kelloggs|kellogg"], ["Nestlé", "Nestlé|Nestle", "nestle"], ["Cadbury", "Cadbury", "cadbury"],
+  ["Heinz", "Heinz", "heinz"], ["Müller", "Müller|Muller", "muller|mueller"], ["Alpro", "Alpro", "alpro"], ["Danone", "Danone", "danone"]
+].map(([label, names, al]) => { const ns = names.split("|"); return { label, names: ns, tag: tagify(ns[0]), tags: [...new Set(ns.map(tagify))], aliases: al.split("|").map(snorm).filter(Boolean) }; });
 const brandObj = tag => SHOP_BRANDS.find(b => b.tag === tag) || null;
 function detectBrand(raw) {
   const s = " " + snorm(raw) + " ";
@@ -846,7 +1258,7 @@ const Data = {
   shareDay(k, d, force) {
     if (!R.fam || !R.user || me.share === false || S.dayOwner !== R.user.uid) return;
     const doc = { name: me.name || "", limit: me.goals.kcal, kcal: Math.round(sum(d.entries).kcal), burned: Math.round(burnedOf(d.workouts)),
-      entries: d.entries.map(e => ({ meal: e.meal, name: e.name, qty: e.qty || "", kcal: Math.round(+e.kcal || 0) })),
+      entries: d.entries.map(e => ({ meal: e.meal, name: e.name, qty: e.qty || "", kcal: Math.round(+e.kcal || 0), img: (e.img || "").length < 300 ? e.img || "" : "", src: e.src || "", brand: e.brand || "", dish: !!e.dishId })),
       workouts: d.workouts.map(w => ({ type: w.type, detail: w.detail || "", kcal: Math.round(+w.kcal || 0) })) };
     const sig = R.fam.id + k + JSON.stringify(doc);
     if (!force && R.shared[k] === sig) return;
@@ -1119,6 +1531,7 @@ function renderMeals() {
       <div class="meal-h"><span class="meal-ic">${MEAL_IC[m]}</span><h3>${m}</h3><span class="k">${es.length ? fmt(mk) + " kcal" : ""}</span><button class="add" data-add="${m}" aria-label="Add to ${m}">${PLUS}</button></div>
       ${es.length ? es.map(e => `
         <button class="entry${e.id === fresh ? " fresh" : ""}" data-entry="${e.id}" aria-expanded="${S.open === e.id}">
+          ${thumb(e.dishId ? { dish: true } : e)}
           <span class="nm"><b>${esc(e.name)}</b><small>${esc([e.brand, e.qty].filter(Boolean).join(" · "))}</small></span>
           <span class="kc">${fmt(e.kcal)}<small>kcal</small></span>
         </button>
@@ -1314,10 +1727,12 @@ function openSearch(flow) {
   const sh = openSheet(`${head(pick ? "Add ingredient" : "Search food", pick)}
     ${pick ? "" : mealChips(flow.meal)}
     <form id="sForm" role="search"><input id="sIn" type="search" placeholder="Search foods, shops, restaurants" autocomplete="off" data-autofocus enterkeyhint="search" value="${esc(flow.q || "")}"></form>
-    ${pick ? "" : `<div class="grp">Restaurants</div>
-    <div class="hscroll" id="chainRow">${RCHAINS.map(c => `<button class="chip" data-chain="${esc(c)}" aria-pressed="${c === chain}">${esc(c)}</button>`).join("")}</div>`}
-    <div class="grp">Supermarkets & brands</div>
-    <div class="hscroll" id="brandRow">${SHOP_BRANDS.map(b => `<button class="chip" data-brand="${b.tag}" aria-pressed="${b.tag === brand}">${esc(b.label)}</button>`).join("")}</div>
+    <div class="exps">
+      ${pick ? "" : `<button class="exp" id="expR" aria-expanded="false" aria-controls="chainRow"><span>Restaurants</span><b id="expRv"></b><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>`}
+      <button class="exp" id="expB" aria-expanded="false" aria-controls="brandRow"><span>Supermarkets</span><b id="expBv"></b><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
+    </div>
+    ${pick ? "" : `<div class="hscroll" id="chainRow" hidden>${RCHAINS.map(c => `<button class="chip" data-chain="${esc(c)}" aria-pressed="${c === chain}">${esc(c)}</button>`).join("")}<button class="chip ghostchip" data-other="1">+ Not listed</button></div>`}
+    <div class="hscroll" id="brandRow" hidden>${SHOP_BRANDS.map(b => `<button class="chip" data-brand="${b.tag}" aria-pressed="${b.tag === brand}">${esc(b.label)}</button>`).join("")}</div>
     <div class="tools">
       <button class="tool" id="tScan"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7V4h3M18 4h3v3M21 17v3h-3M6 20H3v-3"/><path d="M7 8v8M10 8v8M13 8v8M16 8v8" stroke-width="1.6"/></svg>Scan</button>
       <button class="tool" id="tManual"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg>Enter manually</button>
@@ -1327,10 +1742,10 @@ function openSearch(flow) {
   const input = $("#sIn"), res = $("#sRes");
   let offState = flow.off || { key: "", items: null, loading: false, err: "" }, items = {};
   if (!pick) wireChips(sh, "meal", m => { flow.meal = m; draw(); });
-  const row = (f, right, extra = "") => { items[f.id] = f; return `<button class="entry" data-pick="${esc(f.id)}" ${extra}><span class="nm"><b>${esc(f.name)}</b><small>${esc([f.brand, f.servingLabel].filter(Boolean).join(" · "))}</small></span><span class="kc">${right}</span></button>`; };
+  const row = (f, right, extra = "") => { items[f.id] = f; return `<button class="entry" data-pick="${esc(f.id)}" ${extra}>${thumb(f)}<span class="nm"><b>${esc(f.name)}</b><small>${esc([f.brand, f.servingLabel].filter(Boolean).join(" · "))}</small></span><span class="kc">${right}</span></button>`; };
   const kcalRight = f => `${fmt(f.kcal)}<small>kcal</small>`;
   const list = fs => `<div class="list">${fs.map(f => row(f, kcalRight(f))).join("")}</div>`;
-  const usualRow = (f, r) => { items[f.id] = f; const u = usualQty(f, r); return `<button class="entry" data-pick="${esc(f.id)}" data-usual="1"><span class="nm"><b>${esc(f.name)}</b><small>${esc([f.brand, "usually " + u.qty].filter(Boolean).join(" · "))}</small></span><span class="kc">${fmt(f.kcal * u.mult)}<small>kcal</small></span></button>`; };
+  const usualRow = (f, r) => { items[f.id] = f; const u = usualQty(f, r); return `<button class="entry" data-pick="${esc(f.id)}" data-usual="1">${thumb(f)}<span class="nm"><b>${esc(f.name)}</b><small>${esc([f.brand, "usually " + u.qty].filter(Boolean).join(" · "))}</small></span><span class="kc">${fmt(f.kcal * u.mult)}<small>kcal</small></span></button>`; };
   const offKey = () => snorm(input.value) + "|" + (brand || "");
   function sync() {
     sh.querySelectorAll("[data-chain]").forEach(b => b.setAttribute("aria-pressed", b.dataset.chain === chain));
@@ -1338,6 +1753,9 @@ function openSearch(flow) {
     const bo = brandObj(brand);
     input.placeholder = chain ? `Search the ${chain} menu` : bo ? `Search ${bo.label} products` : "Search foods, shops, restaurants";
     flow.chain = chain; flow.brand = brand;
+    const er = $("#expR"), eb = $("#expB");
+    if (er) { er.querySelector("span").textContent = chain || "Restaurants"; er.classList.toggle("picked", !!chain); }
+    eb.querySelector("span").textContent = bo ? bo.label : "Supermarkets"; eb.classList.toggle("picked", !!bo);
   }
   function offBlock(label) {
     const key = offKey();
@@ -1352,8 +1770,11 @@ function openSearch(flow) {
     let html = "";
     if (chain) {
       const menu = RESTAURANTS.filter(r => r.brand === chain && hit(r._n));
+      const added = Object.entries(cache.pantry).map(([id, f]) => ({ ...f, id })).filter(f => snorm(f.brand || "") === snorm(chain) && hit(snorm(f.name)));
       html += `<div class="grp">${esc(chain)} menu</div>${menu.length ? list(menu) : `<p class="note">Nothing on the ${esc(chain)} menu matches “${esc(raw)}”.</p>`}
-        <p class="note">Approximate values from ${esc(chain)}'s published nutrition info (UK menu). Sizes and recipes vary by country.</p>`;
+        ${added.length ? `<div class="grp">Added by ${R.fam ? "your family" : "you"}</div>${list(added)}` : ""}
+        <button class="btn wide" id="addChainItem">+ Add a ${esc(chain)} item that's missing</button>
+        <p class="note">${esc(chainNote(chain))}</p>`;
     } else if (brand) {
       const bo = brandObj(brand), bn = snorm(bo.label);
       const pan = Object.entries(cache.pantry).map(([id, f]) => ({ ...f, id })).filter(f => snorm(f.brand || "").includes(bn) && hit(snorm(f.name + " " + f.brand))).slice(0, 10);
@@ -1369,7 +1790,7 @@ function openSearch(flow) {
     } else {
       if (!pick) {
         const ds = Object.entries(cache.dishes).filter(([, d]) => hit(snorm(d.name))).slice(0, 6);
-        if (ds.length) html += `<div class="grp">Dishes</div><div class="list">${ds.map(([id, d]) => `<button class="entry" data-dishpick="${esc(id)}"><span class="nm"><b>${esc(d.name)}</b><small>${esc(memberName(d.by))} · ${d.portions || "?"} portions</small></span><span class="kc">${d.portions ? fmt(d.kcal / d.portions) : fmt(d.kcal)}<small>${d.portions ? "kcal/portion" : "kcal"}</small></span></button>`).join("")}</div>`;
+        if (ds.length) html += `<div class="grp">Dishes</div><div class="list">${ds.map(([id, d]) => `<button class="entry" data-dishpick="${esc(id)}">${thumb({ dish: true })}<span class="nm"><b>${esc(d.name)}</b><small>${esc(memberName(d.by))} · ${d.portions || "?"} portions</small></span><span class="kc">${d.portions ? fmt(d.kcal / d.portions) : fmt(d.kcal)}<small>${d.portions ? "kcal/portion" : "kcal"}</small></span></button>`).join("")}</div>`;
       }
       const pan = Object.entries(cache.pantry).map(([id, f]) => ({ ...f, id })).filter(f => hit(snorm(f.name + " " + (f.brand || "")))).slice(0, 12);
       if (pan.length) html += `<div class="grp">${R.fam ? "Family foods" : "Your foods"}</div>${list(pan)}`;
@@ -1381,6 +1802,7 @@ function openSearch(flow) {
     }
     res.innerHTML = html;
     const go = $("#offGo"); if (go) go.onclick = runOff;
+    const ac = $("#addChainItem"); if (ac) ac.onclick = () => openFood({ ...blankFood(input.value.trim()), brand: chain }, { ...flow, back: () => openSearch(flow) });
   }
   async function runOff() {
     const raw = input.value.trim(), key = offKey();
@@ -1393,6 +1815,15 @@ function openSearch(flow) {
     offState.loading = false; if (offKey() === key && input.isConnected) draw();
   }
   sh.querySelectorAll("[data-chain]").forEach(b => b.onclick = () => { haptic(); chain = chain === b.dataset.chain ? null : b.dataset.chain; brand = null; sync(); draw(); });
+  const other = sh.querySelector("[data-other]");
+  if (other) other.onclick = () => { haptic(); openFood({ ...blankFood(input.value.trim()), brand: "" }, { ...flow, back: () => openSearch(flow) }); };
+  function setExp(which, open) {
+    const b = $(which === "r" ? "#expR" : "#expB"), row = $(which === "r" ? "#chainRow" : "#brandRow"); if (!b || !row) return;
+    b.setAttribute("aria-expanded", open); row.hidden = !open; flow[which === "r" ? "showR" : "showB"] = open;
+  }
+  if ($("#expR")) $("#expR").onclick = () => { haptic(); setExp("r", $("#chainRow").hidden); };
+  $("#expB").onclick = () => { haptic(); setExp("b", $("#brandRow").hidden); };
+  setExp("r", !!(chain || flow.showR)); setExp("b", !!(brand || flow.showB));
   sh.querySelectorAll("[data-brand]").forEach(b => b.onclick = () => {
     haptic(); brand = brand === b.dataset.brand ? null : b.dataset.brand; chain = null; sync(); draw();
     if (brand && !(offState.key === offKey() && offState.items)) runOff();
@@ -1414,50 +1845,78 @@ function openSearch(flow) {
 }
 
 let offTimes = [];
-const OFF_FIELDS = "code,product_name,product_name_en,product_name_es,brands,nutriments,serving_size,serving_quantity";
-async function offFetch(params) {
+const OFF_FIELDS = "code,product_name,product_name_en,product_name_es,generic_name,brands,nutriments,serving_size,serving_quantity,image_front_small_url,image_small_url,image_front_thumb_url";
+const offCache = new Map();
+function offRate() {
   offTimes = offTimes.filter(x => Date.now() - x < 60000);
-  if (offTimes.length >= 9) throw new Error("Open Food Facts allows about 10 searches a minute. Wait a moment and try again.");
+  if (offTimes.length >= 9) throw new Error("Lots of searches in a row. Wait a few seconds and try again.");
   offTimes.push(Date.now());
-  const ctl = new AbortController(), tm = setTimeout(() => ctl.abort(), 12000);
+}
+async function getJSON(url, ms = 10000) {
+  const ctl = new AbortController(), tm = setTimeout(() => ctl.abort(), ms);
   try {
-    const r = await fetch(`https://world.openfoodfacts.org/cgi/search.pl?search_simple=1&action=process&json=1&page_size=30&sort_by=unique_scans_n&fields=${OFF_FIELDS}&${params}`, { signal: ctl.signal });
-    if (!r.ok) throw new Error(r.status === 429 || r.status === 503 ? "Open Food Facts is busy. Try again in a minute." : "Search failed. Try again.");
-    const j = await r.json();
-    return (j.products || []).map(offToFood).filter(Boolean);
+    const r = await fetch(url, { signal: ctl.signal });
+    if (!r.ok) { const e = new Error(r.status === 429 || r.status === 503 ? "The food database is busy. Try again in a minute." : "Search failed. Try again."); e.status = r.status; throw e; }
+    return await r.json();
   } catch (e) {
-    if (e.name === "AbortError") throw new Error("Open Food Facts took too long to answer. Try again.");
-    if (e instanceof TypeError) throw new Error("Couldn't reach Open Food Facts. Check your connection.");
+    if (e.name === "AbortError") throw new Error("The food database took too long to answer. Try again.");
+    if (e instanceof TypeError) throw new Error("Couldn't reach the food database. Check your connection.");
     throw e;
   } finally { clearTimeout(tm); }
 }
-// Search everything, or one shop/brand: by its label first, then where it's sold, then plain text.
-async function searchOFF(q, b) {
-  const t = q ? `search_terms=${encodeURIComponent(q)}` : "";
-  if (!b) return offFetch(t);
-  const by = [b.by, b.by === "brands" ? "stores" : "brands"];
-  let items = await offFetch(`${t}&tagtype_0=${by[0]}&tag_contains_0=contains&tag_0=${encodeURIComponent(b.tag)}`);
-  if (items.length < 5) {
-    const more = await offFetch(`${t}&tagtype_0=${by[1]}&tag_contains_0=contains&tag_0=${encodeURIComponent(b.tag)}`).catch(() => []);
-    const seen = new Set(items.map(x => x.id)); items = items.concat(more.filter(x => !seen.has(x.id)));
+const offList = j => ((j && (j.products || j.hits)) || []).map(offToFood).filter(Boolean);
+async function offFetch(params) { offRate(); return offList(await getJSON(`https://world.openfoodfacts.org/cgi/search.pl?search_simple=1&action=process&json=1&page_size=30&sort_by=unique_scans_n&fields=${OFF_FIELDS}&${params}`)); }
+async function v2Fetch(params) { offRate(); return offList(await getJSON(`https://world.openfoodfacts.org/api/v2/search?${params}&page_size=30&sort_by=unique_scans_n&fields=${OFF_FIELDS}`)); }
+// Open Food Facts' newer search: matches a shop by brand name or where it's sold, in one go.
+async function salFetch(q, b) {
+  const qq = s => `"${String(s).replace(/["\\]/g, "")}"`;
+  const brandsOr = b ? b.names.map(n => `brands:${qq(n)}`) : [], storesOr = b ? [...new Set([b.label, b.names[0]])].map(n => `stores:${qq(n)}`) : [];
+  const build = withStores => [q && q.trim(), b ? "(" + (withStores ? brandsOr.concat(storesOr) : brandsOr).join(" OR ") + ")" : ""].filter(Boolean).join(" AND ");
+  const url = query => `https://search.openfoodfacts.org/search?q=${encodeURIComponent(query)}&page_size=40&langs=en&fields=${OFF_FIELDS}`;
+  for (const [query, sort] of [[build(true), true], [build(true), false], [build(false), false]]) {
+    try { return offList(await getJSON(url(query) + (sort ? "&sort_by=-unique_scans_n" : ""), 9000)); }
+    catch (e) { if (!(e.status >= 400 && e.status < 500)) throw e; } // a query the service didn't accept: try a simpler one
   }
-  if (!items.length) items = await offFetch(`search_terms=${encodeURIComponent((b.label + " " + q).trim())}`).catch(() => []);
+  return [];
+}
+const mergeFoods = (a, b) => { const seen = new Set(a.map(x => x.id)); return a.concat((b || []).filter(x => !seen.has(x.id) && seen.add(x.id))); };
+async function searchOFF(q, b) {
+  const key = (b ? b.tag : "") + "|" + snorm(q);
+  if (offCache.has(key)) return offCache.get(key);
+  let items = [], lastErr = null;
+  try { items = await salFetch(q, b); } catch (e) { lastErr = e; }
+  if (items.length < 5) {
+    try {
+      if (b && !q) {
+        items = mergeFoods(items, await v2Fetch(`brands_tags=${encodeURIComponent(b.tags.join("|"))}`));
+        if (items.length < 5) items = mergeFoods(items, await v2Fetch(`stores_tags=${encodeURIComponent(b.tags.join("|"))}`).catch(() => []));
+      } else if (b) {
+        items = mergeFoods(items, await offFetch(`search_terms=${encodeURIComponent(q)}&tagtype_0=brands&tag_contains_0=contains&tag_0=${encodeURIComponent(b.tag)}`));
+        if (!items.length) items = await offFetch(`search_terms=${encodeURIComponent(b.names[0] + " " + q)}`).catch(() => []);
+      } else items = mergeFoods(items, await offFetch(`search_terms=${encodeURIComponent(q)}`));
+    } catch (e) { lastErr = lastErr || e; }
+  }
+  if (!items.length && lastErr) throw lastErr;
+  offCache.set(key, items);
   return items;
 }
+const pickText = v => v == null ? "" : typeof v === "string" ? v : Array.isArray(v) ? v.join(", ") : typeof v === "object" ? (v.en || v.main || Object.values(v)[0] || "") : String(v);
 function offToFood(p) {
+  if (!p) return null;
   const n = p.nutriments || {};
   let k100 = n["energy-kcal_100g"]; if (k100 == null && n["energy_100g"] != null) k100 = n["energy_100g"] / 4.184;
-  const name = p.product_name || p.product_name_en || p.product_name_es;
-  if (k100 == null || !name) return null;
+  const name = pickText(p.product_name) || pickText(p.product_name_en) || pickText(p.product_name_es) || pickText(p.generic_name);
+  if (k100 == null || !name || !p.code) return null;
   const sq = parseFloat(p.serving_quantity), g = sq > 0 ? sq : 100, f = g / 100;
-  return { id: "bc-" + p.code, src: "off", code: String(p.code || ""), name, brand: (p.brands || "").split(",")[0].trim(),
-    servingLabel: sq > 0 ? (p.serving_size || `${sq} g`) : "100 g", servingGrams: g,
-    kcal: Math.round(k100 * f), protein: r1((n.proteins_100g || 0) * f), carbs: r1((n.carbohydrates_100g || 0) * f), fat: r1((n.fat_100g || 0) * f) };
+  const img = p.image_front_small_url || p.image_small_url || p.image_front_thumb_url || "";
+  return { id: "bc-" + p.code, src: "off", code: String(p.code || ""), name, brand: pickText(p.brands).split(",")[0].trim(), img: /^https:\/\//.test(img) ? img : "",
+    servingLabel: sq > 0 ? (pickText(p.serving_size) || `${sq} g`) : "100 g", servingGrams: g,
+    kcal: Math.round(+k100 * f), protein: r1((+n.proteins_100g || 0) * f), carbs: r1((+n.carbohydrates_100g || 0) * f), fat: r1((+n.fat_100g || 0) * f) };
 }
 async function fetchProduct(code) {
   const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), 9000);
   try {
-    const r = await fetch(`https://world.openfoodfacts.org/api/v2/product/${code}.json?fields=code,product_name,product_name_en,product_name_es,brands,nutriments,serving_size,serving_quantity`, { signal: ctl.signal });
+    const r = await fetch(`https://world.openfoodfacts.org/api/v2/product/${code}.json?fields=${OFF_FIELDS}`, { signal: ctl.signal });
     if (!r.ok) return null;
     const j = await r.json(); if (j.status !== 1 || !j.product) return null;
     return offToFood({ ...j.product, code });
@@ -1480,7 +1939,8 @@ function openFood(food, flow) {
   const builtin = food.src === "db" || food.src === "rest";
   const sh = openSheet(`${head(flow.unknown ? "New product" : pick ? "Add ingredient" : "Log food", !!flow.back)}
     ${flow.unknown ? `<div class="banner"><span>Barcode <span class="code">${esc(food.code)}</span> isn't in Open Food Facts yet. Type the numbers from the nutrition panel once and it's saved for ${R.fam ? "the whole family" : "next time"}.</span></div>` : ""}
-    ${food.src === "off" ? `<p class="note">From Open Food Facts. Check against the pack if something looks off.</p>` : food.src === "db" ? `<p class="note">Typical values. Edit them to match your pack if you have it.</p>` : food.src === "rest" ? `<p class="note">Approximate values from ${esc(food.brand)}'s published nutrition info. Menus vary by country, so edit them if yours differ.</p>` : ""}
+    ${food.src === "off" ? `<p class="note">From Open Food Facts. Check against the pack if something looks off.</p>` : food.src === "db" ? `<p class="note">Typical values. Edit them to match your pack if you have it.</p>` : food.src === "rest" ? `<p class="note">${esc(chainNote(food.brand, food))}</p>` : ""}
+    ${food.img ? `<img class="fimg" src="${esc(food.img)}" alt="${esc(food.name)}" onerror="this.remove()">` : ""}
     <div class="label">
       <div class="title">Nutrition Facts</div>
       <input class="nm-in" id="fName" type="text" placeholder="Food name" value="${esc(food.name)}" aria-label="Food name" ${food.name ? "" : "data-autofocus"}>
@@ -1544,7 +2004,7 @@ function openFood(food, flow) {
     remember(id);
     const grams = unit === "g" ? fromW(amt) : (g > 0 ? amt * g : null);
     const qty = unit === "g" ? fmtW(fromW(amt)) : `${r1(amt)} × ${f.servingLabel}`;
-    const out = { name: f.name, brand: f.brand, qty, grams, foodId: id, kcal: Math.round(t.kcal), protein: r1(t.protein), carbs: r1(t.carbs), fat: r1(t.fat) };
+    const out = { name: f.name, brand: f.brand, img: f.img || "", src: builtin ? food.src : (food.src === "rest" ? "rest" : ""), qty, grams, foodId: id, kcal: Math.round(t.kcal), protein: r1(t.protein), carbs: r1(t.carbs), fat: r1(t.fat) };
     if (pick) { flow.pick(out); return; }
     closeSheet(); addEntry({ ...out, meal });
   };
@@ -1887,7 +2347,7 @@ function openMember(id) {
   const ents = p.entries || [], ws = p.workouts || [];
   const mealHtml = MEALS.map(m => {
     const es = ents.filter(e => e.meal === m); if (!es.length) return "";
-    return `<div class="grp">${m} · ${fmt(sum(es).kcal)} kcal</div><div class="list">${es.map(e => `<div class="entry"><span class="nm"><b>${esc(e.name)}</b><small>${esc(e.qty || "")}</small></span><span class="kc">${fmt(e.kcal)}<small>kcal</small></span></div>`).join("")}</div>`;
+    return `<div class="grp">${m} · ${fmt(sum(es).kcal)} kcal</div><div class="list">${es.map(e => `<div class="entry">${thumb(e)}<span class="nm"><b>${esc(e.name)}</b><small>${esc(e.qty || "")}</small></span><span class="kc">${fmt(e.kcal)}<small>kcal</small></span></div>`).join("")}</div>`;
   }).join("");
   const wHtml = ws.length ? `<div class="grp">Workouts · ${fmt(burnedOf(ws))} kcal burned</div><div class="list">${ws.map(w => `<div class="entry wk"><span class="nm"><b>${esc(w.type)}</b><small>${esc(w.detail || "")}</small></span><span class="kc">−${fmt(w.kcal)}<small>kcal</small></span></div>`).join("")}</div>` : "";
   openSheet(`${head(esc(p.mine ? "Your day" : p.name + "'s day"))}
