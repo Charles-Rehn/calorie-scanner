@@ -2216,6 +2216,7 @@ function scoreFood(f, Q) {
     if (!m && (SYN[w] || []).some(v => v.includes(" ") && nm.includes(v))) m = 2.2;
     if (!m && wj.length >= 5 && glued.includes(wj)) m = 2.8; // "kit kat" / "kitkat"
     if (!m && w.length >= 5 && glued.includes(w)) m = 2.6;
+    if (!m && f._srv) m = 0.3;
     if (!m) return -1;
     s += m; if ((" " + head).includes(" " + w.slice(0, 4))) inHead++;
   }
@@ -2265,9 +2266,9 @@ async function searchOFFQuick(Q) {
   const b = Q.det ? Q.det.brand : null, terms = correctWords(Q.itemWords).join(" ");
   const key = (b ? b.tag : "") + "|" + terms;
   if (offQuickCache.has(key)) return offQuickCache.get(key);
-  let items;
-  try { items = await salFetch(terms, b); } catch (e) { items = null; }
-  if (!items || !items.length) items = await searchOFF(terms, b); // the older search as a second chance
+  const [uk, all] = await Promise.all([salFetch(terms, b, true).catch(() => []), salFetch(terms, b).catch(() => null)]);
+  let items = mergeFoods(uk.map(f => Object.assign(f, { uk: true })), all || []);
+  if (!items.length) items = await searchOFF(terms, b); // the older search as a second chance
   items = items.map(f => b ? { ...f, _shop: true } : f);
   offQuickCache.set(key, items);
   return items;
@@ -2378,7 +2379,7 @@ function openSearch(flow) {
 }
 
 let offTimes = [];
-const OFF_FIELDS = "code,product_name,product_name_en,product_name_es,generic_name,brands,nutriments,serving_size,serving_quantity,image_front_small_url,image_small_url,image_front_thumb_url,countries_tags,unique_scans_n";
+const OFF_FIELDS = "code,product_name,product_name_en,product_name_es,generic_name,brands,nutriments,serving_size,serving_quantity,image_front_small_url,image_small_url,image_front_thumb_url,countries_tags,countries,unique_scans_n,selected_images,quantity";
 const offCache = new Map();
 function offRate() {
   offTimes = offTimes.filter(x => Date.now() - x < 60000);
@@ -2397,16 +2398,17 @@ async function getJSON(url, ms = 10000) {
     throw e;
   } finally { clearTimeout(tm); }
 }
-const offList = j => ((j && (j.products || j.hits)) || []).map(offToFood).filter(Boolean);
+const offList = j => ((j && (j.products || j.hits)) || []).map(offToFood).filter(Boolean).map(f => Object.assign(f, { _srv: true }));
 async function offFetch(params) { offRate(); return offList(await getJSON(`https://world.openfoodfacts.org/cgi/search.pl?search_simple=1&action=process&json=1&page_size=30&sort_by=unique_scans_n&fields=${OFF_FIELDS}&${params}`)); }
 async function v2Fetch(params) { offRate(); return offList(await getJSON(`https://world.openfoodfacts.org/api/v2/search?${params}&page_size=30&sort_by=unique_scans_n&fields=${OFF_FIELDS}`)); }
 // Open Food Facts' newer search: matches a shop by brand name or where it's sold, in one go.
-async function salFetch(q, b) {
+// Open Food Facts lists millions of products from every brand; this asks its fast search service.
+async function salFetch(q, b, ukOnly) {
   const qq = s => `"${String(s).replace(/["\\]/g, "")}"`;
-  const brandsOr = b ? b.names.map(n => `brands:${qq(n)}`) : [], storesOr = b ? [...new Set([b.label, b.names[0]])].map(n => `stores:${qq(n)}`) : [];
-  const build = withStores => [q && q.trim(), b ? "(" + (withStores ? brandsOr.concat(storesOr) : brandsOr).join(" OR ") + ")" : ""].filter(Boolean).join(" AND ");
+  const brandsOr = b ? [...new Set(b.names.map(qq).concat(b.tags.map(qq)))].map(n => `brands:${n}`) : [];
+  const build = brands => [q && q.trim(), brands && b ? "(" + brandsOr.join(" OR ") + ")" : "", ukOnly ? `countries:"en:united-kingdom"` : ""].filter(Boolean).join(" AND ");
   const url = query => `https://search.openfoodfacts.org/search?q=${encodeURIComponent(query)}&page_size=40&langs=en&fields=${OFF_FIELDS}`;
-  for (const [query, sort] of [[build(true), true], [build(true), false], [build(false), false]]) {
+  for (const [query, sort] of [[build(true), true], [build(true), false], [build(false), true]]) {
     try { return offList(await getJSON(url(query) + (sort ? "&sort_by=-unique_scans_n" : ""), 9000)); }
     catch (e) { if (!(e.status >= 400 && e.status < 500)) throw e; } // a query the service didn't accept: try a simpler one
   }
@@ -2441,19 +2443,31 @@ async function searchOFF(q, b) {
   offCache.set(key, items);
   return items;
 }
+// The fast search gives brands as tags ("kellogg-s") and images as revision numbers: turn them back into names and links
+function niceBrand(s) {
+  if (!s || !/^[a-z0-9-]+$/.test(s)) return s;
+  const shop = SHOP_BRANDS.find(b => b.tags.includes(s)); if (shop) return shop.label;
+  return s.replace(/-s$/, "'s").split("-").map(w => w ? w[0].toUpperCase() + w.slice(1) : w).join(" ").replace(/ 'S$/, "'s").replace(/ ' s$/, "'s");
+}
+function offImage(p) {
+  const fr = p.selected_images && p.selected_images.front; if (!Array.isArray(fr) || !fr.length || !p.code) return "";
+  const im = fr.find(x => x.lc === "en") || fr[0]; if (!im || !im.rev) return "";
+  const c = String(p.code), path = c.length > 8 ? c.padStart(13, "0").match(/^(...)(...)(...)(.*)$/).slice(1).join("/") : c;
+  return `https://images.openfoodfacts.org/images/products/${path}/front_${im.lc}.${im.rev}.200.jpg`;
+}
 const pickText = v => v == null ? "" : typeof v === "string" ? v : Array.isArray(v) ? v.join(", ") : typeof v === "object" ? (v.en || v.main || Object.values(v)[0] || "") : String(v);
 function offToFood(p) {
   if (!p) return null;
   const n = p.nutriments || {};
-  let k100 = n["energy-kcal_100g"]; if (k100 == null && n["energy_100g"] != null) k100 = n["energy_100g"] / 4.184;
-  const name = pickText(p.product_name) || pickText(p.product_name_en) || pickText(p.product_name_es) || pickText(p.generic_name);
+  let k100 = n["energy-kcal_100g"]; if (k100 == null) { const kj = n["energy-kj_100g"] ?? n["energy_100g"]; if (kj != null) k100 = kj / 4.184; }
+  const name = pickText(p.product_name_en) || pickText(p.product_name) || pickText(p.product_name_es) || pickText(p.generic_name);
   if (k100 == null || !name || !p.code) return null;
   const sq = parseFloat(p.serving_quantity), g = sq > 0 ? sq : 100, f = g / 100;
-  const img = p.image_front_small_url || p.image_small_url || p.image_front_thumb_url || "";
-  return { id: "bc-" + p.code, src: "off", code: String(p.code || ""), name, brand: pickText(p.brands).split(",")[0].trim(), img: /^https:\/\//.test(img) ? img : "",
+  const img = p.image_front_small_url || p.image_small_url || p.image_front_thumb_url || offImage(p) || "";
+  return { id: "bc-" + p.code, src: "off", code: String(p.code || ""), name, brand: niceBrand(pickText(p.brands).split(",")[0].trim()), img: /^https:\/\//.test(img) ? img : "",
     servingLabel: sq > 0 ? (pickText(p.serving_size) || `${sq} g`) : "100 g", servingGrams: g,
     kcal: Math.round(+k100 * f), protein: r1((+n.proteins_100g || 0) * f), carbs: r1((+n.carbohydrates_100g || 0) * f), fat: r1((+n.fat_100g || 0) * f),
-    uk: (Array.isArray(p.countries_tags) ? p.countries_tags : []).includes("en:united-kingdom"), scans: +p.unique_scans_n || 0 };
+    uk: [].concat(p.countries_tags || [], p.countries || []).includes("en:united-kingdom"), scans: +p.unique_scans_n || 0 };
 }
 async function fetchProduct(code) {
   const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), 9000);
