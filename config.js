@@ -8,3 +8,6 @@ window.FIREBASE_CONFIG = {
   messagingSenderId: "844341778373",
   appId: "1:844341778373:web:675021d55c674d5b1e5dac"
 };
+
+// Meal photos: the reCAPTCHA key used by Firebase App Check (public, safe to publish).
+window.RECAPTCHA_SITE_KEY = null;

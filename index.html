@@ -455,6 +455,7 @@ ol.steps li::marker{color:var(--flame-1);font-weight:800}
 
 <input type="file" accept="image/*" capture="environment" id="photoFile" class="vh" tabindex="-1" aria-hidden="true">
 <input type="file" accept="image/*" id="labelPhoto" class="vh" tabindex="-1" aria-hidden="true">
+<input type="file" accept="image/*" id="mealPhoto" class="vh" tabindex="-1" aria-hidden="true">
 <div id="sheetRoot"></div>
 <div id="toast" role="status" hidden></div>
 
@@ -1777,7 +1778,7 @@ function openSearch(flow) {
       <button class="tool" id="tScan"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7V4h3M18 4h3v3M21 17v3h-3M6 20H3v-3"/><path d="M7 8v8M10 8v8M13 8v8M16 8v8" stroke-width="1.6"/></svg>Scan</button>
       <button class="tool" id="tLabel"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>Label photo</button>
       <button class="tool" id="tManual"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg>Type it in</button>
-      ${pick ? `<button class="tool" id="tCode"><span class="code" style="font-size:15px;color:var(--accent)">123</span>Type barcode</button>` : `<button class="tool" id="tDish"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 10h16v6a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4z"/><path d="M2 10h20"/></svg>Create dish</button>`}
+      ${pick ? `<button class="tool" id="tCode"><span class="code" style="font-size:15px;color:var(--accent)">123</span>Type barcode</button>` : `<button class="tool" id="tMeal"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="13" r="7"/><circle cx="12" cy="13" r="3"/><path d="M3 4v5M5 4v5M4 9v11M20 4c-1.5 1-2 3-2 5h2v11"/></svg>Meal photo</button>`}
     </div>
     <div id="sRes" style="display:flex;flex-direction:column;gap:12px"></div>`, pick ? flow.back : null);
   const input = $("#sIn"), res = $("#sRes");
@@ -1889,7 +1890,7 @@ function openSearch(flow) {
   $("#tScan").onclick = () => startScan(flow);
   $("#tLabel").onclick = () => openLabel(flow);
   $("#tManual").onclick = () => openFood(blankFood(input.value.trim()), { ...flow, back: () => openSearch(flow) });
-  if ($("#tDish")) $("#tDish").onclick = () => openDishEditor();
+  if ($("#tMeal")) $("#tMeal").onclick = () => openMealPhoto(flow);
   if ($("#tCode")) $("#tCode").onclick = () => openCodeEntry(flow);
 }
 
@@ -2106,8 +2107,10 @@ async function startScan(flow) {
     <div class="finder"><video id="vid" playsinline muted autoplay></video><div class="frame"></div><div class="laser"></div></div>
     <p class="note" id="camMsg">Starting the camera…</p>
     <div class="row"><button class="btn" id="usePhoto">Take a photo instead</button><button class="btn" id="typeCode">Type the number</button></div>
-    <button class="btn ghost" id="useLabel">No barcode? Photograph the nutrition label</button>`, back);
+    <button class="btn ghost" id="useLabel">No barcode? Photograph the nutrition label</button>
+    ${flow.pick ? "" : `<button class="btn ghost" id="useMeal">Or photograph a meal to estimate it</button>`}`, back);
   $("#useLabel").onclick = () => openLabel(flow);
+  if ($("#useMeal")) $("#useMeal").onclick = () => openMealPhoto(flow);
   $("#usePhoto").onclick = () => { const f = $("#photoFile"); f.value = ""; f.click(); };
   $("#typeCode").onclick = () => openCodeEntry(flow);
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { $("#camMsg").textContent = "This browser can't use the camera here. Take a photo instead."; return; }
@@ -2742,6 +2745,140 @@ async function readLabelFile(file) {
 }
 window.__label = { getOcr, imageToCanvas, parseLabel }; // used by the label-reading tests
 $("#labelPhoto").addEventListener("change", e => { const f = e.target.files && e.target.files[0]; if (f) readLabelFile(f); });
+
+/* =========================================================
+   Photo of a meal: Gemini (through Firebase AI Logic, protected by App Check)
+   names the foods and estimates portions, calories and macros.
+   ========================================================= */
+const FB_MOD = "https://www.gstatic.com/firebasejs/12.19.0/";
+const MEAL_MODELS = ["gemini-3.8-flash", "gemini-2.5-flash"];
+let mealAI = null;
+async function getMealAI() {
+  if (mealAI) return mealAI;
+  const cfg = window.FIREBASE_CONFIG, siteKey = window.RECAPTCHA_SITE_KEY;
+  if (!cfg) throw Object.assign(new Error("Accounts aren't switched on for this website."), { code: "nocfg" });
+  if (!siteKey) throw Object.assign(new Error("Meal photos aren't set up yet."), { code: "nokey" });
+  const [{ initializeApp, getApps }, { initializeAppCheck, ReCaptchaEnterpriseProvider }, { getAI, getGenerativeModel, GoogleAIBackend }] = await Promise.all([
+    import(FB_MOD + "firebase-app.js"), import(FB_MOD + "firebase-app-check.js"), import(FB_MOD + "firebase-ai.js")]);
+  const app = getApps().find(a => a.name === "meal-ai") || initializeApp(cfg, "meal-ai");
+  initializeAppCheck(app, { provider: new ReCaptchaEnterpriseProvider(siteKey), isTokenAutoRefreshEnabled: true });
+  const ai = getAI(app, { backend: new GoogleAIBackend() });
+  mealAI = { models: MEAL_MODELS.map(m => getGenerativeModel(ai, { model: m, generationConfig: { responseMimeType: "application/json", temperature: 0.2 } })) };
+  return mealAI;
+}
+function photoToJpeg(file, maxSide) {
+  return new Promise((res, rej) => {
+    const u = URL.createObjectURL(file), img = new Image();
+    img.onload = () => {
+      const sc = Math.min(1, maxSide / Math.max(img.naturalWidth, img.naturalHeight)), c = document.createElement("canvas");
+      c.width = Math.round(img.naturalWidth * sc); c.height = Math.round(img.naturalHeight * sc);
+      c.getContext("2d").drawImage(img, 0, 0, c.width, c.height); URL.revokeObjectURL(u);
+      res(c.toDataURL("image/jpeg", maxSide > 200 ? 0.82 : 0.7));
+    };
+    img.onerror = () => { URL.revokeObjectURL(u); rej(new Error("That photo couldn't be opened.")); };
+    img.src = u;
+  });
+}
+const MEAL_PROMPT = `You are a nutrition assistant for a UK family's calorie tracker. Look at the photo of a meal or food.
+Identify each distinct food or drink you can see. Estimate the portion actually on the plate in grams (use the plate, cutlery and packaging for scale), and its calories, protein, carbohydrate and fat for that portion. Use UK food names and typical UK recipes. Include likely hidden calories such as cooking oil, butter or sauces as their own item when they are probably there.
+Reply with ONLY JSON in exactly this shape:
+{"items":[{"name":"short food name","grams":number,"kcal":number,"protein":number,"carbs":number,"fat":number}],"confidence":"low"|"medium"|"high","note":"one short sentence about anything uncertain"}
+If the photo does not show food, reply {"items":[],"confidence":"low","note":"No food found"}.`;
+async function estimateMeal(dataUrl) {
+  const { models } = await getMealAI();
+  const part = { inlineData: { mimeType: "image/jpeg", data: dataUrl.split(",")[1] } };
+  let lastErr = null;
+  for (const m of models) {
+    try {
+      const r = await Promise.race([m.generateContent([MEAL_PROMPT, part]), new Promise((_, rej) => setTimeout(() => rej(Object.assign(new Error("slow"), { code: "slow" })), 45000))]);
+      const txt = r.response.text().replace(/^```(json)?|```$/g, "").trim();
+      const j = JSON.parse(txt.slice(txt.indexOf("{"), txt.lastIndexOf("}") + 1));
+      const items = (Array.isArray(j.items) ? j.items : []).map(x => ({ name: String(x.name || "Food").slice(0, 60), grams: Math.max(0, +x.grams || 0),
+        kcal: Math.max(0, Math.round(+x.kcal || 0)), protein: r1(Math.max(0, +x.protein || 0)), carbs: r1(Math.max(0, +x.carbs || 0)), fat: r1(Math.max(0, +x.fat || 0)) })).filter(x => x.kcal > 0 || x.grams > 0);
+      return { items, confidence: j.confidence || "medium", note: String(j.note || "") };
+    } catch (e) {
+      lastErr = e;
+      const msg = String(e && (e.message || e.code) || "");
+      if (!/not found|404|not supported|unsupported model|is not available/i.test(msg)) break;   // only try the next model if this one doesn't exist
+    }
+  }
+  throw lastErr || new Error("No answer");
+}
+function mealError(e) {
+  const m = String(e && (e.message || e.code) || "");
+  if (e && e.code === "nokey") return "Meal photos aren't set up yet. Whoever set up Firebase needs to finish the AI Logic and reCAPTCHA steps.";
+  if (e && e.code === "nocfg") return "Accounts need to be switched on for this website first.";
+  if (e && e.code === "slow") return "That took too long. Check your connection and try again.";
+  if (/app.?check|attestation|recaptcha|appCheck/i.test(m)) return "The security check didn't pass. Try again in a moment; if it keeps happening, the reCAPTCHA key or App Check setup needs a look.";
+  if (/quota|429|resource.?exhausted|rate/i.test(m)) return "Too many photos in a short time. Wait a minute and try again.";
+  if (/api.*(not been used|disabled)|PERMISSION_DENIED|403/i.test(m)) return "The AI service isn't switched on in Firebase yet (AI Logic › Get started).";
+  if (e instanceof SyntaxError) return "The answer came back garbled. Try again, ideally with the whole plate in view.";
+  if (/network|fetch|failed to load|import/i.test(m)) return "Couldn't reach the AI service. Check your connection.";
+  return "Couldn't estimate that meal. Try again with the whole plate in view.";
+}
+let mealFlow = null;
+function openMealPhoto(flow) {
+  mealFlow = { ...flow };
+  getMealAI().catch(() => {});
+  const f = $("#mealPhoto"); f.value = ""; f.click();
+}
+async function readMealFile(file) {
+  const flow = mealFlow || { meal: mealForNow() };
+  let big, small;
+  try { [big, small] = await Promise.all([photoToJpeg(file, 1024), photoToJpeg(file, 120)]); }
+  catch (e) { toast(e.message, true); return; }
+  openSheet(`${head("Looking at your meal")}<div class="finder"><img src="${big}" alt="Your meal"><div class="laser"></div></div>
+    <p class="note" id="mealMsg"><span class="spin"></span>&nbsp; Working out what's on the plate…</p>`);
+  let res = null, err = null;
+  try { res = await estimateMeal(big); } catch (e) { err = e; }
+  if (!$("#mealMsg")) return; // closed meanwhile
+  if (err || !res || !res.items.length) {
+    const sh = openSheet(`${head("Couldn't estimate that")}<p>${esc(err ? mealError(err) : "No food was found in that photo. Try again with the whole plate in view, from a little above.")}</p>
+      <div class="row"><button class="btn primary" id="mAgain">Take another photo</button><button class="btn" id="mSearch">Search instead</button></div>`);
+    $("#mAgain").onclick = () => openMealPhoto(flow); $("#mSearch").onclick = () => openSearch(flow);
+    return;
+  }
+  haptic();
+  showMealResult(res, flow, small, big);
+}
+function showMealResult(res, flow, thumbUrl, bigUrl) {
+  let meal = flow.meal || mealForNow(), scale = 1;
+  const items = res.items.map((x, i) => ({ ...x, i, on: true }));
+  const conf = { low: "Low confidence", medium: "Medium confidence", high: "High confidence" }[res.confidence] || "";
+  const sh = openSheet(`${head("Your meal")}
+    <img class="fimg" src="${bigUrl}" alt="Your meal" style="width:100%;height:auto;max-height:220px;object-fit:cover;background:var(--surface-2)">
+    <div class="banner" style="border-style:solid;border-color:rgba(255,122,61,.5)"><span><b>AI estimate${conf ? ` · ${esc(conf.toLowerCase())}` : ""}.</b> Photos can't show oil, butter or what's underneath, so treat this as a rough guide and adjust if you know better.${res.note ? `<br>${esc(res.note)}` : ""}</span></div>
+    <div class="list" id="mItems"></div>
+    <div><div class="lbl" style="margin-bottom:6px">Your portion compared to the photo</div>${chips("scale", [["0.5", "Half"], ["0.75", "Smaller"], ["1", "Same"], ["1.25", "Bigger"], ["1.5", "Much bigger"]], "1")}</div>
+    ${mealChips(meal)}
+    <div class="total"><span class="big" id="mTot">0 kcal</span><span class="mac" id="mMac"></span></div>
+    <button class="btn primary wide" id="mAdd">Add to ${meal}</button>`);
+  const draw = () => {
+    $("#mItems").innerHTML = items.map(x => `<label class="est" style="display:flex;align-items:center;gap:10px;padding:11px 14px;border-top:1px solid var(--line)">
+      <input type="checkbox" data-i="${x.i}" ${x.on ? "checked" : ""} style="width:20px;height:20px;accent-color:var(--flame-2);flex:none">
+      <span class="nm" style="flex:1;min-width:0"><b style="display:block;font-weight:650">${esc(x.name)}</b><small style="color:var(--muted);font-size:12px">about ${esc(fmtW(x.grams * scale))} · P ${r1(x.protein * scale)} · C ${r1(x.carbs * scale)} · F ${r1(x.fat * scale)} g</small></span>
+      <span class="kc" style="font-weight:850">${fmt(x.kcal * scale)}<small style="display:block;font-size:11px;color:var(--muted);font-weight:600">kcal</small></span></label>`).join("");
+    const on = items.filter(x => x.on), t = on.reduce((a, x) => ({ k: a.k + x.kcal, p: a.p + x.protein, c: a.c + x.carbs, f: a.f + x.fat }), { k: 0, p: 0, c: 0, f: 0 });
+    $("#mTot").textContent = fmt(t.k * scale) + " kcal";
+    $("#mMac").textContent = `P ${r1(t.p * scale)} · C ${r1(t.c * scale)} · F ${r1(t.f * scale)} g`;
+    $("#mAdd").disabled = !on.length;
+  };
+  $("#mItems").addEventListener("change", e => { const c = e.target.closest("[data-i]"); if (c) { items[+c.dataset.i].on = c.checked; draw(); } });
+  wireChips(sh, "scale", v => { scale = +v; draw(); });
+  wireChips(sh, "meal", m => { meal = m; $("#mAdd").textContent = "Add to " + m; });
+  draw();
+  $("#mAdd").onclick = () => {
+    const on = items.filter(x => x.on); if (!on.length) return;
+    closeSheet();
+    on.forEach(x => S.entries.push({ id: rid(10), at: Date.now(), meal, name: x.name, brand: "photo estimate", qty: "about " + fmtW(x.grams * scale), grams: Math.round(x.grams * scale),
+      img: thumbUrl, kcal: Math.round(x.kcal * scale), protein: r1(x.protein * scale), carbs: r1(x.carbs * scale), fat: r1(x.fat * scale) }));
+    const total = Math.round(on.reduce((a, x) => a + x.kcal, 0) * scale);
+    S.fresh = null; saveDay(); render(); haptic();
+    const left = me.goals.kcal + burnedOf(S.workouts) - sum(S.entries).kcal;
+    toast(left < 0 ? `Added ${fmt(total)} kcal. ${fmt(-left)} kcal over your limit.` : `Added ${fmt(total)} kcal to ${meal}. ${fmt(left)} left.`, left < 0);
+  };
+}
+$("#mealPhoto").addEventListener("change", e => { const f = e.target.files && e.target.files[0]; if (f) readMealFile(f); });
 
 /* =========================================================
    Limit & goals
