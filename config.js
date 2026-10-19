@@ -10,4 +10,4 @@ window.FIREBASE_CONFIG = {
 };
 
 // Meal photos: the reCAPTCHA key used by Firebase App Check (public, safe to publish).
-window.RECAPTCHA_SITE_KEY = null;
+window.RECAPTCHA_SITE_KEY = "6LeKavYtAAAAAJ8sxBE9AajlHHTfTMI1l42RLFq6";
