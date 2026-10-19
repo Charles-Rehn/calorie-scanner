@@ -645,7 +645,7 @@ input[type=text],input[type=email],input[type=password],input[type=number],input
   <div class="dishes" id="dishes"></div>
 
   <p class="foot" id="storeNote"></p>
-  <p class="foot">Product data from <a href="https://world.openfoodfacts.org" target="_blank" rel="noopener">Open Food Facts</a> (ODbL). Food nutrition data from <a href="https://tempolife.app" target="_blank" rel="noopener">TempoLife</a> (CC-BY-4.0) and USDA FoodData Central.</p>
+  <p class="foot">Product data from <a href="https://world.openfoodfacts.org" target="_blank" rel="noopener">Open Food Facts</a> (ODbL), copied weekly. Food nutrition data from <a href="https://tempolife.app" target="_blank" rel="noopener">TempoLife</a> (CC-BY-4.0) and USDA FoodData Central.</p>
 </div>
 
 <div class="dock">
@@ -2263,11 +2263,67 @@ function correctWords(words) {
   });
 }
 // Quick product lookup while typing: the fast search only, the older one as a fallback
+/* Our own copy of the Open Food Facts database (UK products plus popular ones worldwide), rebuilt
+   every week by .github/workflows/products.yml and read straight from GitHub: no rate limits, no outages. */
+const PRODUCTS_URL = "https://raw.githubusercontent.com/Charles-Rehn/calorie-scanner/data/";
+const own = { meta: null, metaAt: 0, shards: new Map(), chunks: new Map() };
+async function ownMeta() {
+  if (own.meta && Date.now() - own.metaAt < 6 * 3600e3) return own.meta;
+  try {
+    const r = await fetch(PRODUCTS_URL + "meta.json", { cache: "no-cache" });
+    if (r.ok) { own.meta = await r.json(); own.metaAt = Date.now(); LS.set("ownMeta", own.meta, true); }
+    else if (r.status === 404) { own.metaAt = Date.now(); throw Object.assign(new Error("not built yet"), { status: 404 }); }
+  } catch (e) { if (!own.meta) own.meta = LS.get("ownMeta", null, true); if (!own.meta) throw e; }
+  return own.meta;
+}
+function ownJSON(path, store) {
+  if (store.has(path)) return store.get(path);
+  const pr = fetch(PRODUCTS_URL + path).then(r => r.status === 404 ? null : r.ok ? r.json() : Promise.reject(Object.assign(new Error("status " + r.status), { status: r.status })));
+  store.set(path, pr); pr.catch(() => store.delete(path));
+  return pr;
+}
+function ownToFood(r, rank) {
+  const [code, name, brand, k, p, c, f, sl, sg, uk, img] = r, g = sg > 0 ? sg : 100, m = g / 100;
+  let url = "";
+  if (img) { const [lc, rev] = img.split("."), path = code.length > 8 ? code.padStart(13, "0").match(/^(...)(...)(...)(.*)$/).slice(1).join("/") : code; url = `https://images.openfoodfacts.org/images/products/${path}/front_${lc}.${rev}.200.jpg`; }
+  return { id: "bc-" + code, src: "off", code, name, brand: brand || "", img: url, servingLabel: sg > 0 ? (sl || `${sg} g`) : "100 g", servingGrams: g,
+    kcal: Math.round(k * m), protein: r1(p * m), carbs: r1(c * m), fat: r1(f * m), uk: !!uk, scans: Math.round(2e5 / (rank + 20)) };
+}
+async function searchOwn(Q) {
+  const m = await ownMeta(), v = m.v;
+  const words = [...new Set(Q.words)].slice(0, 5); if (!words.length) return [];
+  const key = w => w.length >= 2 ? w.slice(0, 2) : w + "_";
+  const shards = await Promise.all(words.map(w => ownJSON(`${v}/t/${key(w)}.json`, own.shards)));
+  const sets = words.map((w, i) => {
+    const sh = shards[i] || {}, ws = stemW(w), mx = typoMax(w), last = i === words.length - 1, set = new Set();
+    let capped = false;
+    for (const t in sh) {
+      if (t === w || stemW(t) === ws || (t.startsWith(w) && (w.length >= 3 || last)) || (mx && editNear(w, t, mx))) {
+        let prev = -1; const d = sh[t]; if (d.length >= m.cap) capped = true;
+        for (const x of d) set.add(prev += x);
+      }
+    }
+    return { set, capped };
+  });
+  // start from the rarest word, narrow down with the others (very common words only filter later, by name)
+  const order = sets.slice().sort((a, b) => (a.capped - b.capped) || (a.set.size - b.set.size));
+  let cand = [...order[0].set];
+  for (const s of order.slice(1)) if (!s.capped || order[0].capped) cand = cand.filter(x => s.set.has(x));
+  cand.sort((a, b) => a - b); cand = cand.slice(0, 120);
+  const chunks = [...new Set(cand.map(i => Math.floor(i / m.chunk)))];
+  const data = await Promise.all(chunks.map(c => ownJSON(`${v}/p/${c}.json`, own.chunks)));
+  const byChunk = new Map(chunks.map((c, i) => [c, data[i] || []]));
+  const shopNames = Q.det ? Q.det.brand.names.map(snorm) : null;
+  return cand.map(i => { const rec = byChunk.get(Math.floor(i / m.chunk))[i % m.chunk]; if (!rec) return null; const f = ownToFood(rec, i);
+    if (shopNames && shopNames.some(n => snorm(f.brand).includes(n) || n.includes(snorm(f.brand)) && f.brand)) f._shop = true; return f; }).filter(Boolean);
+}
 const offQuickCache = new Map(); let offBusyUntil = 0;
 async function searchOFFQuick(Q) {
   const b = Q.det ? Q.det.brand : null, terms = correctWords(Q.itemWords).join(" ");
   const key = (b ? b.tag : "") + "|" + terms;
   if (offQuickCache.has(key)) return offQuickCache.get(key);
+  // our own copy first; Open Food Facts' live search only if that finds nothing or can't be reached
+  try { const mine = await searchOwn(Q); if (mine.length) { offQuickCache.set(key, mine); return mine; } } catch (e) {}
   if (Date.now() < offBusyUntil) throw Object.assign(new Error("The online food database is busy, so only foods saved in the app are shown for a moment."), { diag: "cooling down" });
   let items, diag = [];
   try { items = await salFetch(terms, b); diag.push("fast:" + items.length); }

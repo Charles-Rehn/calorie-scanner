@@ -1,0 +1,41 @@
+# Builds the app's own copy of the Open Food Facts product database every week
+# and publishes it on the "data" branch, which the app reads from.
+name: Build product database
+on:
+  push:
+    branches: [main]
+    paths: ["tools/build_products.py", ".github/workflows/products.yml"]
+  schedule:
+    - cron: "17 3 * * 0"   # Sundays 03:17 UTC
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: products
+  cancel-in-progress: true
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Download and build
+        run: |
+          curl -fL --retry 5 --retry-delay 20 -A "CalorieScanner-family-app/1.0 (github.com/${{ github.repository }})" \
+            -o products.csv.gz https://static.openfoodfacts.org/data/en.openfoodfacts.org.products.csv.gz
+          ls -lh products.csv.gz
+          python tools/build_products.py products.csv.gz out
+          du -sh out
+      - name: Publish to the data branch
+        run: |
+          cd out
+          printf "Product data from Open Food Facts (https://world.openfoodfacts.org), ODbL 1.0.\nBuilt automatically by .github/workflows/products.yml\n" > README.md
+          git init -q -b data
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -q -m "Product database $(date -u +%Y-%m-%d)"
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" data
