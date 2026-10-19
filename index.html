@@ -497,6 +497,73 @@ input[type=text],input[type=email],input[type=password],input[type=number],input
 .chip[aria-pressed="true"]{background:rgba(255,255,255,.92)}
 .qadd{width:36px;height:36px;box-shadow:none}
 .qadd svg{width:17px;height:17px}
+
+/* v18: plain nutrition boxes, meal ideas */
+.shade{bottom:var(--kb,0px)}
+.fnames{display:flex;flex-direction:column;gap:2px}
+.fnames .fname{border:0;background:none;padding:0;min-height:0;font-size:22px;font-weight:800;font-stretch:105%;border-radius:0;box-shadow:none!important}
+.fnames .fbrand{border:0;background:none;padding:0;min-height:0;font-size:14px;color:var(--muted);border-radius:0;box-shadow:none!important}
+.fnames input::placeholder{color:var(--faint)}
+.nsec{display:flex;flex-direction:column;gap:8px}
+.ngrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.nb{position:relative;display:flex;flex-direction:column;gap:2px;background:var(--surface-2);border:1px solid transparent;border-radius:14px;padding:8px 12px 6px;min-width:0;cursor:text;transition:border-color .2s}
+.nb:focus-within{border-color:rgba(255,122,61,.5)}
+.nb.s2{grid-column:span 2}
+.nb.s3{grid-column:span 3}
+.nb span{font-size:12px;color:var(--muted);font-weight:600;display:flex;align-items:center;gap:5px;white-space:nowrap}
+.nb .dot{width:7px;height:7px;margin:0}
+.ngrid .nb input{border:0;background:none;padding:0 22px 0 0;min-height:30px;border-radius:0;font-size:19px;font-weight:750;width:100%;box-shadow:none!important}
+.ngrid .nb.s2 input{padding-right:0;font-size:16px;font-weight:600}
+.nb.kcal input{font-size:24px;font-weight:850;padding-right:44px}
+.nb em{position:absolute;right:12px;bottom:11px;font-style:normal;font-size:13px;color:var(--muted);font-weight:600;pointer-events:none}
+.nb.kcal em{bottom:13px}
+.cantfind{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:4px 0 8px}
+.cantfind span{font-size:13px;color:var(--muted);font-weight:600;margin-right:4px}
+.coachpill{display:flex;align-items:center;gap:10px;width:100%;border:1px solid rgba(255,140,80,.22);border-radius:16px;padding:12px 12px 12px 14px;color:var(--ink);font-weight:700;font-size:15px;text-align:left;
+  background:linear-gradient(100deg,rgba(255,193,71,.1),rgba(255,61,127,.08));transition:transform .2s var(--ease)}
+.coachpill:active{transform:scale(.97)}
+.coachpill>svg:first-child{color:var(--flame-1);flex:none}
+.coachpill span{flex:1;min-width:0}
+.coachpill small{color:var(--muted);font-weight:600;font-size:13px;white-space:nowrap}
+.coachpill>svg:last-child{color:var(--muted);flex:none;width:16px;height:16px}
+.sheet:has(.coach){height:calc(100% - env(safe-area-inset-top,0px) - 24px);padding-bottom:0}
+.coach{min-height:100%}
+.sheet-h h3 .spark{color:var(--flame-1);display:inline-grid;vertical-align:-2px;margin-right:8px}
+.coach-sum{display:flex;flex-direction:column;gap:2px;margin-top:-6px}
+.coach-sum b{font-size:15px}
+.coach-sum b.over{color:var(--over)}
+.coach-sum span{font-size:12.5px;color:var(--muted)}
+.coach-log{display:flex;flex-direction:column;gap:12px;flex:1}
+.cmsg{display:flex;flex-direction:column;gap:10px;max-width:100%}
+.cmsg p{margin:0;line-height:1.45}
+.cmsg.me{align-self:flex-end;max-width:85%}
+.cmsg.me p{background:var(--surface-3);padding:9px 14px;border-radius:18px 18px 6px 18px;font-weight:600}
+.cmsg.ai>p{font-size:15px}
+.cmsg.err p{color:var(--over);font-size:14px}
+.cmsg.err small{color:var(--faint);font-size:11px;font-family:var(--mono)}
+.idea{background:var(--surface-2);border-radius:18px;padding:12px 14px;display:flex;flex-direction:column;gap:6px;animation:rise .45s var(--ease) both}
+.idea-h{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.idea .tag{font-size:11.5px;font-weight:750;color:var(--flame-1);background:rgba(255,193,71,.1);border-radius:99px;padding:2px 9px}
+.idea .k{font-size:12.5px;color:var(--muted);font-weight:650}
+.idea-t{font-size:16px;font-weight:750;line-height:1.3}
+.idea .why{font-size:13px;color:var(--muted)}
+.idea ul{list-style:none;margin:2px 0 4px;padding:0;display:flex;flex-direction:column;gap:3px}
+.idea li{display:flex;justify-content:space-between;gap:10px;font-size:13.5px}
+.idea li small{color:var(--muted);margin-left:4px}
+.idea li span:last-child{color:var(--muted);font-weight:650;white-space:nowrap}
+.idea .btn{align-self:flex-start}
+.coach-foot{position:sticky;bottom:0;margin:auto -16px 0;padding:10px 16px calc(14px + env(safe-area-inset-bottom,0px));background:linear-gradient(to top,var(--surface) 82%,rgba(19,23,34,0));display:flex;flex-direction:column;gap:10px}
+.coach-foot .hscroll{margin-inline:-16px;padding-inline:16px}
+.coach-in{display:flex;gap:8px;align-items:flex-end}
+.coach-in textarea{flex:1;resize:none;min-height:46px;max-height:120px;border-radius:23px;padding:12px 16px;line-height:1.35}
+.cgo{flex:none;width:46px;height:46px;border-radius:50%;border:0;display:grid;place-items:center;color:var(--accent-ink);background:linear-gradient(135deg,var(--flame-1),var(--flame-2) 60%,var(--flame-3))}
+.cgo:disabled{opacity:.4}
+.cgo:active{transform:scale(.92)}
+.typing-dots{display:flex;gap:5px;padding:6px 2px}
+.typing-dots i{width:7px;height:7px;border-radius:50%;background:var(--muted);animation:blink 1.2s infinite ease-in-out}
+.typing-dots i:nth-child(2){animation-delay:.15s}
+.typing-dots i:nth-child(3){animation-delay:.3s}
+@keyframes blink{0%,80%,100%{opacity:.25;transform:translateY(0)}40%{opacity:1;transform:translateY(-3px)}}
 @media (prefers-reduced-motion: reduce){
   *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;transition-delay:0s!important}
 }
@@ -552,6 +619,7 @@ input[type=text],input[type=email],input[type=password],input[type=number],input
       <div class="macro m-c"><div class="t"><b>Carbs</b><span><em id="mC">0</em><small> / <em id="mCg">200</em> g</small></span></div><div class="bar"><i></i></div></div>
       <div class="macro m-f"><div class="t"><b>Fat</b><span><em id="mF">0</em><small> / <em id="mFg">65</em> g</small></span></div><div class="bar"><i></i></div></div>
     </div>
+    <button class="coachpill" id="coachBtn" hidden></button>
     <div class="week-h"><span>Last 7 days</span><span id="weekNote"></span></div>
     <div class="week" id="week"></div>
   </section>
@@ -654,6 +722,7 @@ function toast(msg, bad, action) {
   clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove("show"), action ? 4500 : bad ? 4200 : 2600);
 }
 const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+if (window.visualViewport) { const vv = visualViewport, kb = () => document.documentElement.style.setProperty("--kb", Math.max(0, Math.round(innerHeight - vv.height - vv.offsetTop)) + "px"); vv.addEventListener("resize", kb); vv.addEventListener("scroll", kb); }
 const EASE = "cubic-bezier(.16,1,.3,1)";
 // A light tap you can feel. Android vibrates; iPhone (iOS 18+) uses the switch-control haptic.
 const haptic = (() => {
@@ -1314,7 +1383,7 @@ const EMO = [
   [/peanut|almond|cashew|walnut|pistachio|hazelnut|pecan|brazil nut|macadamia|\bnuts?\b|trail mix/, "🥜"],
   [/banana/, "🍌"], [/apple/, "🍎"], [/orange|satsuma|clementine|tangerine|mandarin/, "🍊"], [/grape|raisin|sultana/, "🍇"], [/strawberr|raspberr/, "🍓"], [/blueberr|blackberr|berries/, "🫐"],
   [/pear\b|pears/, "🍐"], [/peach|nectarine|apricot/, "🍑"], [/cherr/, "🍒"], [/mango/, "🥭"], [/pineapple/, "🍍"], [/melon/, "🍉"], [/kiwi/, "🥝"], [/lemon|lime\b/, "🍋"],
-  [/coconut/, "🥥"], [/avocado|guacamole/, "🥑"], [/tomato/, "🍅"], [/potato|jacket|mash/, "🥔"], [/carrot/, "🥕"], [/broccoli|cauliflower/, "🥦"], [/sweetcorn|corn on|\bcorn\b/, "🌽"],
+  [/coconut/, "🥥"], [/avocado|guacamole/, "🥑"], [/tomato/, "🍅"], [/potato|jacket|mash/, "🥔"], [/carrot/, "🥕"], [/broccoli|cauliflower|stir.?fry veg|vegetables|\bveg\b/, "🥦"], [/sweetcorn|corn on|\bcorn\b/, "🌽"],
   [/pepper\b|peppers/, "🫑"], [/cucumber|courgette|gherkin|pickle/, "🥒"], [/lettuce|spinach|kale|cabbage|rocket|leaves|greens|sprout/, "🥬"], [/mushroom/, "🍄"], [/onion|leek/, "🧅"],
   [/garlic/, "🧄"], [/\bbeans?\b|lentil|chickpea|hummus|houmous|\bpeas\b|edamame|tofu/, "🫘"], [/aubergine|eggplant/, "🍆"], [/chilli|jalapeno/, "🌶️"],
   [/\brice\b|risotto|paella/, "🍚"], [/bread|toast|bagel|loaf|\broll\b|crumpet|muffin|naan|chapati|roti|tortilla|pitta|brioche|teacake|crackers/, "🍞"],
@@ -1810,7 +1879,8 @@ function workoutsCard() {
       : `<p class="empty">Burned calories are added to what you can eat today.</p>`}
   </section>`;
 }
-function render() { renderHeader(); renderSummary(); renderFamily(); renderDishes(); renderMeals(); }
+function render() { renderHeader(); renderSummary(); renderFamily(); renderDishes(); renderMeals(); renderCoachPill(); }
+$("#coachBtn").onclick = () => openCoach();
 
 $("#meals").addEventListener("click", ev => {
   const b = ev.target.closest("button"); if (!b) return;
@@ -1984,16 +2054,10 @@ const mealChips = sel => chips("meal", MEALS.map(m => [m, m]), sel);
    ========================================================= */
 function openSearch(flow) {
   const pick = !!flow.pick;
-  let chain = flow.chain || null, brand = flow.brand || null;
+  let chain = null, brand = null; // shops and restaurants are found by typing their name
   const sh = openSheet(`${head(pick ? "Add ingredient" : "Search food", pick)}
     ${pick ? "" : mealChips(flow.meal)}
-    <form id="sForm" role="search"><input id="sIn" type="search" placeholder="Search foods, shops, restaurants" autocomplete="off" data-autofocus enterkeyhint="search" value="${esc(flow.q || "")}"></form>
-    <div class="exps">
-      ${pick ? "" : `<button class="exp" id="expR" aria-expanded="false" aria-controls="chainRow"><span>Restaurants</span><b id="expRv"></b><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>`}
-      <button class="exp" id="expB" aria-expanded="false" aria-controls="brandRow"><span>Supermarkets</span><b id="expBv"></b><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
-    </div>
-    ${pick ? "" : `<div class="hscroll" id="chainRow" hidden>${RCHAINS.map(c => `<button class="chip" data-chain="${esc(c)}" aria-pressed="${c === chain}">${esc(c)}</button>`).join("")}<button class="chip ghostchip" data-other="1">+ Not listed</button></div>`}
-    <div class="hscroll" id="brandRow" hidden>${SHOP_BRANDS.map(b => `<button class="chip" data-brand="${b.tag}" aria-pressed="${b.tag === brand}">${esc(b.label)}</button>`).join("")}</div>
+    <form id="sForm" role="search"><input id="sIn" type="search" placeholder="Food, brand or restaurant" autocomplete="off" data-autofocus enterkeyhint="search" value="${esc(flow.q || "")}"></form>
     <div class="tools">
       <button class="tool" id="tScan"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7V4h3M18 4h3v3M21 17v3h-3M6 20H3v-3"/><path d="M7 8v8M10 8v8M13 8v8M16 8v8" stroke-width="1.6"/></svg>Scan</button>
       <button class="tool" id="tLabel"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>Label photo</button>
@@ -2015,11 +2079,11 @@ function openSearch(flow) {
     sh.querySelectorAll("[data-chain]").forEach(b => b.setAttribute("aria-pressed", b.dataset.chain === chain));
     sh.querySelectorAll("[data-brand]").forEach(b => b.setAttribute("aria-pressed", b.dataset.brand === brand));
     const bo = brandObj(brand);
-    input.placeholder = chain ? `Search the ${chain} menu` : bo ? `Search ${bo.label} products` : "Search foods, shops, restaurants";
+    input.placeholder = "Food, brand or restaurant";
     flow.chain = chain; flow.brand = brand;
     const er = $("#expR"), eb = $("#expB");
     if (er) { er.querySelector("span").textContent = chain || "Restaurants"; er.classList.toggle("picked", !!chain); }
-    eb.querySelector("span").textContent = bo ? bo.label : "Supermarkets"; eb.classList.toggle("picked", !!bo);
+    if (eb) { eb.querySelector("span").textContent = bo ? bo.label : "Supermarkets"; eb.classList.toggle("picked", !!bo); }
   }
   function offBlock(label) {
     const key = offKey();
@@ -2052,7 +2116,7 @@ function openSearch(flow) {
       const seen = new Set(usual.map(x => x.id));
       const rec = me.recent.filter(id => !seen.has(id)).map(foodById).filter(Boolean).slice(0, 10);
       if (rec.length) html += `<div class="grp">Recent</div><div class="list">${rec.map(f => pick ? row(f, kcalRight(f)) : usualRow(f, (me.freq || {})[f.id])).join("")}</div>`;
-      if (!usual.length && !rec.length) html += `<p class="note">Type a food like “chicken breast”, pick a restaurant or supermarket above, or scan a barcode. Foods you log often will show up here first.</p>`;
+      if (!usual.length && !rec.length) html += `<p class="note">Type a food, or a shop or restaurant with what you had, like “Tesco ham” or “McDonald's nuggets”. Foods you log often will show up here first.</p>`;
     } else {
       if (!pick) {
         const ds = Object.entries(cache.dishes).filter(([, d]) => hit(snorm(d.name))).slice(0, 6);
@@ -2061,16 +2125,24 @@ function openSearch(flow) {
       const pan = rankFoods(Object.entries(cache.pantry).map(([id, f]) => ({ ...f, id, _n: snorm(f.name + " " + (f.brand || "")) })).filter(f => hit(f._n)), words).slice(0, 12);
       if (pan.length) html += `<div class="grp">${R.fam ? "Family foods" : "Your foods"}</div>${list(pan)}`;
       // Restaurants first only when the search names a restaurant ("nandos chips"); otherwise plain foods come first
-      const rs = pick ? [] : RESTAURANTS.filter(r => hit(r._n)).slice(0, 10);
-      const namesChain = rs.length && RCHAINS.some(c => words.some(w => snorm(c + " " + (CHAIN_ALIAS[c] || "")).split(" ").includes(w)));
+      const chainWords = new Set(RCHAINS.flatMap(c => snorm(c + " " + (CHAIN_ALIAS[c] || "")).split(" ")));
+      const allRs = pick ? [] : RESTAURANTS.filter(r => hit(r._n));
+      const namesChain = allRs.length && words.some(w => chainWords.has(w));
+      const itemWords = words.filter(w => !chainWords.has(w));
+      const rs = (itemWords.length ? rankFoods(allRs, itemWords) : allRs).slice(0, namesChain ? 80 : 10);
       const com = rankFoods(COMMON.filter(f => hit(f._n)), words).slice(0, 12);
-      const rsHtml = rs.length ? `<div class="grp">Restaurants</div>${list(rs)}` : "", comHtml = com.length ? `<div class="grp">Common foods</div>${list(com)}` : "";
+      const chainsHit = [...new Set(rs.map(r => r.brand))];
+      const rsHtml = rs.length ? `<div class="grp">${chainsHit.length === 1 ? esc(chainsHit[0]) : "Restaurants"}</div>${list(rs)}` : "", comHtml = com.length ? `<div class="grp">Common foods</div>${list(com)}` : "";
       let dbHtml = "";
       if (FOODDB) { const more = rankFoods(FOODDB.filter(f => hit(f._n)), words).slice(0, 25); if (more.length) dbHtml = `<div class="grp">More foods</div>${list(more)}`; }
       else { dbHtml = `<p class="note"><span class="spin"></span>&nbsp; Loading more foods…</p>`; loadFoodDb().then(() => { if (input.isConnected) draw(); }); }
       html += namesChain ? rsHtml + comHtml + dbHtml : comHtml + dbHtml + rsHtml;
       const det = detectBrand(raw);
-      html += `<div class="grp">Packaged products</div>${offBlock(det ? `Search ${det.brand.label}${det.rest ? ` for “${det.rest}”` : ""}` : `Search packaged products for “${raw}”`)}`;
+      // a shop named, or little found here: look up packaged products straight away
+      const localHits = rs.length + com.length + pan.length + (FOODDB ? FOODDB.filter(f => hit(f._n)).length : 0);
+      { clearTimeout(draw.auto); if ((det || (FOODDB && localHits < 3)) && words.join("").length >= 3 && offState.key !== offKey()) draw.auto = setTimeout(() => { if (input.isConnected && offState.key !== offKey()) runOff(); }, 550); }
+      html += `<div class="grp">${det ? esc(det.brand.label) + " products" : "Packaged products"}</div>${offBlock(det ? `Search ${det.brand.label}${det.rest ? ` for “${det.rest}”` : ""}` : `Search packaged products for “${raw}”`)}`;
+      html += `<div class="cantfind"><span>Can't find it?</span><button class="btn small" data-tool="tManual">Type it in</button><button class="btn small" data-tool="tScan">Scan</button><button class="btn small" data-tool="tLabel">Label photo</button></div>`;
     }
     res.innerHTML = html;
     const go = $("#offGo"); if (go) go.onclick = runOff;
@@ -2094,7 +2166,7 @@ function openSearch(flow) {
     b.setAttribute("aria-expanded", open); row.hidden = !open; flow[which === "r" ? "showR" : "showB"] = open;
   }
   if ($("#expR")) $("#expR").onclick = () => { haptic(); setExp("r", $("#chainRow").hidden); };
-  $("#expB").onclick = () => { haptic(); setExp("b", $("#brandRow").hidden); };
+  if ($("#expB")) $("#expB").onclick = () => { haptic(); setExp("b", $("#brandRow").hidden); };
   setExp("r", !!(chain || flow.showR)); setExp("b", !!(brand || flow.showB));
   sh.querySelectorAll("[data-brand]").forEach(b => b.onclick = () => {
     haptic(); brand = brand === b.dataset.brand ? null : b.dataset.brand; chain = null; sync(); draw();
@@ -2105,6 +2177,7 @@ function openSearch(flow) {
   sync(); draw();
   res.onclick = e => {
     const b = e.target.closest("button"); if (!b) return;
+    if (b.dataset.tool) { const t = $("#" + b.dataset.tool); if (t) t.click(); return; }
     if (b.dataset.quick) {
       if (b.classList.contains("done")) return;
       quickLog(b.dataset.quick, flow.meal || mealForNow());
@@ -2228,26 +2301,24 @@ function openFood(food, flow) {
     ${flow.fromLabel ? `<div class="banner" style="border-style:solid;border-color:rgba(255,122,61,.5)"><span><b>Read from your photo.</b> Check the numbers match the label, then tap Add.${flow.fromLabel.length ? "<br>" + flow.fromLabel.map(esc).join("<br>") : ""}</span></div>` : ""}
     ${food.src === "off" ? `<p class="note">From Open Food Facts. Check against the pack if something looks off.</p>` : food.src === "db" ? `<p class="note">Typical values. Edit them to match your pack if you have it.</p>` : food.src === "rest" ? `<p class="note">${esc(chainNote(food.brand, food))}</p>` : food.src === "usda" ? `<p class="note">Values per 100 g from the USDA food database. Weigh it, or use the label if you have the pack.</p>` : ""}
     ${food.img ? `<img class="fimg" src="${esc(food.img)}" alt="${esc(food.name)}" onerror="this.remove()">` : ""}
-    <div class="label">
-      <div class="title">Nutrition Facts</div>
-      <input class="nm-in" id="fName" type="text" placeholder="${flow.fromLabel ? "What is it? (optional)" : "Food name"}" value="${esc(food.name)}" aria-label="Food name" ${food.name ? "" : "data-autofocus"}>
-      <input class="br-in" id="fBrand" type="text" placeholder="Brand (optional)" value="${esc(food.brand)}" aria-label="Brand">
-      ${food.code ? `<div class="note code" style="font-size:12px;padding-top:2px">${esc(food.code)}</div>` : ""}
-      <div class="rule-xl"></div>
-      <div class="serv"><span class="sub">Serving</span>
-        <input class="sz" id="fServ" type="text" value="${esc(food.servingLabel)}" aria-label="Serving description">
-        <input class="gr" id="fGrams" type="number" inputmode="decimal" min="0" step="any" placeholder="?" value="${food.servingGrams ?? ""}" aria-label="Grams per serving"><span class="sub">g</span></div>
-      <div class="rule-m"></div>
-      <div class="sub">Amount per serving</div>
-      <div class="ln cal first"><span class="k">Calories</span><input id="fK" type="number" inputmode="decimal" min="0" step="any" value="${food.kcal}" aria-label="Calories per serving"></div>
-      <div class="rule-m" style="margin:2px 0"></div>
-      <div class="ln first"><span class="k"><span class="dot" style="background:var(--protein)"></span>Protein (g)</span><input id="fP" type="number" inputmode="decimal" min="0" step="any" value="${food.protein}" aria-label="Protein grams"></div>
-      <div class="ln"><span class="k"><span class="dot" style="background:var(--carbs)"></span>Carbohydrate (g)</span><input id="fC" type="number" inputmode="decimal" min="0" step="any" value="${food.carbs}" aria-label="Carbohydrate grams"></div>
-      <div class="ln"><span class="k"><span class="dot" style="background:var(--fat)"></span>Total fat (g)</span><input id="fF" type="number" inputmode="decimal" min="0" step="any" value="${food.fat}" aria-label="Fat grams"></div>
+    <div class="fnames">
+      <input class="fname" id="fName" type="text" placeholder="${flow.fromLabel ? "What is it? (optional)" : "Food name"}" value="${esc(food.name)}" aria-label="Food name" ${food.name ? "" : "data-autofocus"}>
+      <input class="fbrand" id="fBrand" type="text" placeholder="Brand (optional)" value="${esc(food.brand)}" aria-label="Brand">
+      ${food.code ? `<span class="note code" style="font-size:12px">${esc(food.code)}</span>` : ""}
+    </div>
+    <div class="nsec"><div class="lbl">Nutrition per serving</div>
+      <div class="ngrid">
+        <label class="nb s2"><span>Serving</span><input id="fServ" type="text" value="${esc(food.servingLabel)}" placeholder="e.g. 1 bar"></label>
+        <label class="nb"><span>Weight</span><input id="fGrams" type="number" inputmode="decimal" min="0" step="any" placeholder="?" value="${food.servingGrams ?? ""}"><em>g</em></label>
+        <label class="nb s3 kcal"><span>Calories</span><input id="fK" type="number" inputmode="decimal" min="0" step="any" value="${food.kcal ?? ""}" placeholder="0"><em>kcal</em></label>
+        <label class="nb"><span><i class="dot" style="background:var(--protein)"></i>Protein</span><input id="fP" type="number" inputmode="decimal" min="0" step="any" value="${food.protein ?? ""}" placeholder="0"><em>g</em></label>
+        <label class="nb"><span><i class="dot" style="background:var(--carbs)"></i>Carbs</span><input id="fC" type="number" inputmode="decimal" min="0" step="any" value="${food.carbs ?? ""}" placeholder="0"><em>g</em></label>
+        <label class="nb"><span><i class="dot" style="background:var(--fat)"></i>Fat</span><input id="fF" type="number" inputmode="decimal" min="0" step="any" value="${food.fat ?? ""}" placeholder="0"><em>g</em></label>
+      </div>
     </div>
     <div class="field"><span class="lbl">How much ${pick ? "goes in the dish" : "did you eat"}</span>
       <div class="amount"><input id="fAmt" type="number" inputmode="decimal" min="0" step="any" value="${unit === "g" ? r1(toW(startAmt)) : startAmt}" aria-label="Amount">${chips("unit", [["g", wWord()], ["serv", "servings"]], unit)}</div>
-      <p class="note" id="fUnitHint" hidden>Enter the grams per serving on the label above to log by weight.</p>
+      <p class="note" id="fUnitHint" hidden>Fill in the serving weight above to log by weight.</p>
     </div>
     ${pick ? "" : mealChips(meal)}
     <div class="total"><span class="big" id="fTot">0 kcal</span><span class="mac" id="fMac"></span></div>
@@ -3003,7 +3074,7 @@ async function getMealAI() {
       confidence: Sc.enumString({ enum: ["low", "medium", "high"] }), note: Sc.string() }, optionalProperties: ["note"] });
   } catch (e) { schema = null; }
   const make = (model, useSchema) => AIM.getGenerativeModel(ai, { model, generationConfig: { responseMimeType: "application/json", temperature: 0.3, ...(useSchema && schema ? { responseSchema: schema } : {}) } });
-  mealAI = { tries: [make("gemini-3.8-flash", true), make("gemini-3.8-flash", false), make("gemini-2.5-flash", true), make("gemini-2.5-flash", false)] };
+  mealAI = { ai, AIM, tries: [make("gemini-3.8-flash", true), make("gemini-3.8-flash", false), make("gemini-2.5-flash", true), make("gemini-2.5-flash", false)] };
   return mealAI;
 }
 function photoToJpeg(file, maxSide) {
@@ -3076,11 +3147,11 @@ async function estimateMeal(dataUrl, hint) {
 }
 function mealError(e) {
   const m = String(e && (e.message || e.code) || "");
-  if (e && e.code === "nokey") return "Meal photos aren't set up yet. Whoever set up Firebase needs to finish the AI Logic and reCAPTCHA steps.";
+  if (e && e.code === "nokey") return "The AI features aren't set up yet. Whoever set up Firebase needs to finish the AI Logic and reCAPTCHA steps.";
   if (e && e.code === "nocfg") return "Accounts need to be switched on for this website first.";
   if (e && e.code === "slow") return "That took too long. Check your connection and try again.";
   if (/app.?check|attestation|recaptcha|appCheck/i.test(m)) return "The security check didn't pass. Try again in a moment; if it keeps happening, the reCAPTCHA key or App Check setup needs a look.";
-  if (/quota|429|resource.?exhausted|rate/i.test(m)) return "Too many photos in a short time. Wait a minute and try again.";
+  if (/quota|429|resource.?exhausted|rate/i.test(m)) return "Too many requests in a short time. Wait a minute and try again.";
   if (/api.*(not been used|disabled)|PERMISSION_DENIED|403/i.test(m)) return "The AI service isn't switched on in Firebase yet (AI Logic › Get started).";
   if (e instanceof SyntaxError) return "The answer came back garbled. Try again, or describe the meal below.";
   if (/network|fetch|failed to load|import/i.test(m)) return "Couldn't reach the AI service. Check your connection.";
@@ -3165,6 +3236,169 @@ function showMealResult(res, flow, thumbUrl, bigUrl, hint) {
   };
 }
 $("#mealPhoto").addEventListener("change", e => { const f = e.target.files && e.target.files[0]; if (f) readMealFile(f); });
+
+/* =========================================================
+   Meal ideas: an AI coach (Gemini through Firebase AI Logic, same setup as meal photos)
+   that suggests meals for the calories left and plans the rest of the day.
+   ========================================================= */
+let coachAI = null;
+async function getCoachAI() {
+  if (coachAI) return coachAI;
+  const { ai, AIM } = await getMealAI();
+  let schema = null;
+  try {
+    const Sc = AIM.Schema, item = Sc.object({ properties: { name: Sc.string(), grams: Sc.number(), kcal: Sc.number(), protein: Sc.number(), carbs: Sc.number(), fat: Sc.number() } });
+    schema = Sc.object({ properties: { reply: Sc.string(), ideas: Sc.array({ items: Sc.object({ properties: { meal: Sc.enumString({ enum: MEALS }), title: Sc.string(), why: Sc.string(), items: Sc.array({ items: item }) }, optionalProperties: ["why"] }) }) } });
+  } catch (e) { schema = null; }
+  const make = (model, useSchema) => AIM.getGenerativeModel(ai, { model, generationConfig: { responseMimeType: "application/json", temperature: 0.8, ...(useSchema && schema ? { responseSchema: schema } : {}) } });
+  coachAI = { tries: [make("gemini-3.8-flash", true), make("gemini-3.8-flash", false), make("gemini-2.5-flash", true), make("gemini-2.5-flash", false)] };
+  return coachAI;
+}
+const coachReady = () => !!(window.FIREBASE_CONFIG && window.RECAPTCHA_SITE_KEY);
+function coachLeft() {
+  const t = sum(S.entries), g = me.goals, burned = burnedOf(S.workouts);
+  return { kcal: g.kcal + burned - t.kcal, protein: g.protein - t.protein, carbs: g.carbs - t.carbs, fat: g.fat - t.fat, t, burned };
+}
+function nextMeal() {
+  const now = mealForNow(), i = MEALS.indexOf(now);
+  if (!S.entries.some(e => e.meal === now)) return now;
+  return MEALS.slice(i + 1).find(m => m !== "Snacks" && !S.entries.some(e => e.meal === m)) || "Snacks";
+}
+function coachContext() {
+  const L = coachLeft(), g = me.goals, now = new Date();
+  const byMeal = MEALS.map(m => { const es = S.entries.filter(e => e.meal === m); return `- ${m}: ${es.length ? es.map(e => `${e.name}${e.qty ? ` (${e.qty})` : ""}, ${Math.round(e.kcal)} kcal`).join("; ") : "nothing yet"}`; }).join("\n");
+  const usual = Object.entries(me.freq || {}).sort((a, b) => (b[1].n || 0) - (a[1].n || 0)).slice(0, 15).map(([id]) => foodById(id)).filter(Boolean).map(f => f.name + (f.brand ? ` (${f.brand})` : "")).join(", ");
+  const dishes = Object.values(cache.dishes).slice(0, 8).map(d => `${d.name} (${Math.round(d.portions ? d.kcal / d.portions : d.kcal)} kcal per portion)`).join(", ");
+  return `It is ${now.toLocaleString("en-GB", { weekday: "long", hour: "2-digit", minute: "2-digit" })}.
+Daily limit: ${g.kcal} kcal${L.burned ? `, plus ${Math.round(L.burned)} kcal burned in workouts today` : ""}. Eaten so far: ${Math.round(L.t.kcal)} kcal. Left: ${Math.round(L.kcal)} kcal.
+Macro targets: protein ${g.protein} g, carbs ${g.carbs} g, fat ${g.fat} g. Eaten: protein ${r1(L.t.protein)} g, carbs ${r1(L.t.carbs)} g, fat ${r1(L.t.fat)} g.
+Today's diary:
+${byMeal}
+Foods they often log: ${usual || "not known yet"}.${dishes ? `\nFamily dishes cooked recently (leftovers may be in the fridge): ${dishes}.` : ""}`;
+}
+const COACH_RULES = `You are a friendly, practical meal coach inside a UK family's calorie-tracking app.
+Help them choose what to eat so they stay within the calories they have left, and plan the rest of the day when asked.
+- Suggest realistic UK food: simple home cooking, supermarket items (Tesco, Sainsbury's, Asda, M&S, Aldi, Lidl and so on) and UK chain restaurants or takeaways when that's what they want. Lean towards foods they already eat.
+- Every idea lists concrete items with grams and the calories, protein, carbs and fat for that amount. Use realistic UK portion sizes and typical values.
+- Make ideas fit the calories left with a small buffer. For a day plan, give one idea per remaining meal (snacks optional) that together fit what's left. Help them get closer to their protein target where it's easy.
+- If they're already over, suggest something light and say so kindly. No guilt, no lectures, never suggest skipping meals or extreme restriction. If they mention a medical condition, pregnancy or eating very little, keep ideas sensible and suggest checking with their GP.
+- Answer questions about food and nutrition briefly. If the question isn't about food, gently steer back.
+- "reply" is 1 to 3 short, warm sentences. Give at most 4 ideas; give none if the message doesn't need any.
+Reply with ONLY JSON in this shape, with plain numbers:
+{"reply":"short answer","ideas":[{"meal":"Dinner","title":"Chicken stir-fry with rice","why":"High protein, about 600 kcal","items":[{"name":"Chicken breast","grams":150,"kcal":240,"protein":45,"carbs":0,"fat":5}]}]}
+"meal" is one of Breakfast, Lunch, Dinner, Snacks.`;
+const coach = { day: null, msgs: [], busy: false };
+function readCoachAnswer(txt) {
+  const t = String(txt || "").replace(/```(json)?/g, "").trim();
+  const j = JSON.parse(t.slice(t.search(/[[{]/), Math.max(t.lastIndexOf("}"), t.lastIndexOf("]")) + 1));
+  const list = Array.isArray(j) ? j : (pickKey(j, ["ideas", "meals", "suggestions", "options"]) || []);
+  const ideas = (Array.isArray(list) ? list : [list]).map(x => {
+    const raw = pickKey(x, ["items", "foods", "ingredients"]) || [];
+    const items = (Array.isArray(raw) ? raw : [raw]).map(y => {
+      const g = k => numOf(pickKey(y, k));
+      const it = { name: String(pickKey(y, ["name", "food", "item"]) || "Food").slice(0, 60), grams: Math.max(0, g(["grams", "weight", "portion_grams", "weight_g"])),
+        kcal: Math.max(0, Math.round(g(["kcal", "calories", "energy_kcal"]))), protein: r1(Math.max(0, g(["protein", "protein_g"]))),
+        carbs: r1(Math.max(0, g(["carbs", "carbohydrates", "carbohydrate", "carbs_g"]))), fat: r1(Math.max(0, g(["fat", "fat_g"]))) };
+      if (!it.kcal && (it.protein || it.carbs || it.fat)) it.kcal = Math.round(4 * it.protein + 4 * it.carbs + 9 * it.fat);
+      return it;
+    }).filter(y => y.kcal > 0);
+    const mealRaw = String(pickKey(x, ["meal", "slot", "when"]) || ""), meal = MEALS.find(m => mealRaw.toLowerCase().startsWith(m.toLowerCase().slice(0, 4))) || nextMeal();
+    return { meal, title: String(pickKey(x, ["title", "name", "dish"]) || items.map(y => y.name).join(", ")).slice(0, 80), why: String(x.why || x.note || "").slice(0, 160), items };
+  }).filter(x => x.items.length).slice(0, 4);
+  const reply = String((!Array.isArray(j) && pickKey(j, ["reply", "message", "answer", "text"])) || (ideas.length ? "Here are some ideas." : ""));
+  return { reply, ideas };
+}
+async function askCoach(text) {
+  const { tries } = await getCoachAI();
+  const past = coach.msgs.slice(-10).map(m => m.role === "user" ? `Them: ${m.text}` : `You: ${m.reply}${m.ideas && m.ideas.length ? ` [ideas: ${m.ideas.map(i => `${i.meal}: ${i.title}, ${Math.round(i.items.reduce((a, y) => a + y.kcal, 0))} kcal`).join("; ")}]` : ""}`).join("\n");
+  const prompt = `${COACH_RULES}\n\nWhere they are today:\n${coachContext()}\n${past ? `\nConversation so far:\n${past}\n` : ""}\nTheir message: ${text.slice(0, 600)}`;
+  let lastErr = null;
+  for (const m of tries) {
+    try {
+      const r = await Promise.race([m.generateContent([prompt]), new Promise((_, rej) => setTimeout(() => rej(Object.assign(new Error("slow"), { code: "slow" })), 45000))]);
+      const res = readCoachAnswer(r.response.text());
+      if (!res.reply && !res.ideas.length) throw new SyntaxError("empty");
+      return res;
+    } catch (e) {
+      lastErr = e;
+      const msg = String(e && (e.message || e.code) || "");
+      if (!(e instanceof SyntaxError) && !/not found|404|not supported|unsupported|is not available|schema|invalid argument|400|INVALID_ARGUMENT/i.test(msg)) break;
+    }
+  }
+  throw lastErr || new Error("No answer");
+}
+const SPARK = `<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2.5l1.9 5.6 5.6 1.9-5.6 1.9L12 17.5l-1.9-5.6L4.5 10l5.6-1.9z"/><path d="M19 14.5l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8z" opacity=".7"/></svg>`;
+function renderCoachPill() {
+  const b = $("#coachBtn"); if (!b) return;
+  const show = coachReady() && dayKey(S.date) === dayKey(new Date());
+  b.hidden = !show; if (!show) return;
+  const L = coachLeft();
+  b.innerHTML = `${SPARK}<span>${L.kcal > 150 ? `What should I eat?` : L.kcal >= 0 ? "Light ideas for later" : "Light ideas for later"}</span><small>${L.kcal >= 0 ? `${fmt(L.kcal)} kcal left` : `${fmt(-L.kcal)} over`}</small>${ICON('<path d="M9 6l6 6-6 6"/>')}`;
+}
+function openCoach() {
+  const today = dayKey(new Date());
+  if (coach.day !== today) { coach.day = today; coach.msgs = []; }
+  const sh = openSheet(`<div class="sheet-h"><h3><span class="spark">${SPARK}</span>Meal ideas</h3><button class="iconbtn" data-close aria-label="Close">✕</button></div>
+    <div class="coach-sum" id="cSum"></div>
+    <div class="coach-log" id="cLog" aria-live="polite"></div>
+    <div class="coach-foot"><div class="hscroll" id="cQuick"></div>
+    <form class="coach-in" id="cForm"><textarea id="cIn" rows="1" placeholder="Ask anything, e.g. dinner with chicken under 600 kcal" enterkeyhint="send"></textarea>
+      <button class="cgo" id="cGo" aria-label="Send">${ICON('<path d="M5 12h14M13 6l6 6-6 6"/>')}</button></form></div>`);
+  sh.classList.add("coach");
+  const sumLine = () => {
+    const L = coachLeft();
+    $("#cSum").innerHTML = L.kcal >= 0 ? `<b>${fmt(L.kcal)} kcal left</b><span>Protein ${fmt(Math.max(0, L.protein))} g · carbs ${fmt(Math.max(0, L.carbs))} g · fat ${fmt(Math.max(0, L.fat))} g to go</span>`
+      : `<b class="over">${fmt(-L.kcal)} kcal over</b><span>Ask for something light if you're still hungry</span>`;
+  };
+  const quick = () => {
+    const nm = nextMeal(), lower = nm.toLowerCase(), late = new Date().getHours() >= 20;
+    const q = [`What should I have for ${lower}?`, late ? "Plan tomorrow" : "Plan the rest of my day", "High-protein snack ideas", `Quick ${lower} in 15 minutes`, "A takeaway that fits", "Something from the supermarket"];
+    $("#cQuick").innerHTML = q.map(x => `<button class="chip" data-q="${esc(x)}">${esc(x)}</button>`).join("");
+  };
+  const ideaCard = (idea, mi, ii) => {
+    const tot = idea.items.reduce((a, y) => ({ k: a.k + y.kcal, p: a.p + y.protein }), { k: 0, p: 0 });
+    return `<div class="idea"><div class="idea-h"><span class="tag">${esc(idea.meal)}</span><span class="k">${fmt(tot.k)} kcal${tot.p ? ` · ${fmt(tot.p)} g protein` : ""}</span></div>
+      <b class="idea-t">${esc(idea.title)}</b>${idea.why ? `<p class="why">${esc(idea.why)}</p>` : ""}
+      <ul>${idea.items.map(y => `<li><span>${esc(y.name)}${y.grams ? ` <small>${esc(fmtW(y.grams))}</small>` : ""}</span><span>${fmt(y.kcal)}</span></li>`).join("")}</ul>
+      <button class="btn small ${idea.added ? "" : "primary"}" data-idea="${mi}:${ii}" ${idea.added ? "disabled" : ""}>${idea.added ? "Added ✓" : `Add to ${esc(idea.meal)}`}</button></div>`;
+  };
+  const draw = () => {
+    sumLine();
+    const log = $("#cLog");
+    log.innerHTML = (coach.msgs.length ? "" : `<div class="cmsg ai"><p>Hi${me.name ? " " + esc(me.name.split(" ")[0]) : ""}! Tell me what you fancy, or pick a question below. I'll suggest meals that fit your ${fmt(Math.max(0, coachLeft().kcal))} kcal left.</p></div>`) +
+      coach.msgs.map((m, mi) => m.role === "user" ? `<div class="cmsg me"><p>${esc(m.text)}</p></div>`
+        : m.err ? `<div class="cmsg ai err"><p>${esc(m.err)}</p>${m.detail ? `<small>${esc(m.detail)}</small>` : ""}</div>`
+        : `<div class="cmsg ai">${m.reply ? `<p>${esc(m.reply)}</p>` : ""}${(m.ideas || []).map((idea, ii) => ideaCard(idea, mi, ii)).join("")}</div>`).join("") +
+      (coach.busy ? `<div class="cmsg ai"><p class="typing-dots"><i></i><i></i><i></i></p></div>` : "");
+    quick();
+    $("#cGo").disabled = coach.busy;
+    const sc = sh.closest(".sheet"); if (sc && coach.msgs.length) requestAnimationFrame(() => sc.scrollTo({ top: sc.scrollHeight, behavior: reduced ? "auto" : "smooth" }));
+  };
+  const send = async text => {
+    text = String(text || "").trim(); if (!text || coach.busy) return;
+    coach.msgs.push({ role: "user", text }); coach.busy = true; $("#cIn").value = ""; fit(); draw(); haptic();
+    try { const res = await askCoach(text); coach.msgs.push({ role: "ai", ...res }); }
+    catch (e) { coach.msgs.push({ role: "ai", err: mealError(e).replace(/describe the meal below|describe it below/, "ask again"), detail: String(e && (e.code || e.message) || "").slice(0, 140) }); }
+    coach.busy = false;
+    if ($("#cLog")) draw();
+  };
+  const input = $("#cIn"), fit = () => { input.style.height = "auto"; input.style.height = Math.min(120, input.scrollHeight) + "px"; };
+  input.addEventListener("input", fit);
+  input.addEventListener("keydown", e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(input.value); } });
+  $("#cForm").onsubmit = e => { e.preventDefault(); send(input.value); };
+  $("#cQuick").onclick = e => { const b = e.target.closest("[data-q]"); if (b) send(b.dataset.q); };
+  $("#cLog").onclick = e => {
+    const b = e.target.closest("[data-idea]"); if (!b || b.disabled) return;
+    const [mi, ii] = b.dataset.idea.split(":").map(Number), idea = coach.msgs[mi] && coach.msgs[mi].ideas[ii]; if (!idea) return;
+    const ids = [], now = Date.now();
+    idea.items.forEach((y, i) => { const id = rid(10); ids.push(id); S.entries.push({ id, at: now + i, meal: idea.meal, name: y.name, brand: "meal idea", qty: y.grams ? "about " + fmtW(y.grams) : "1 portion", grams: Math.round(y.grams) || null, img: "", kcal: Math.round(y.kcal), protein: y.protein, carbs: y.carbs, fat: y.fat }); });
+    idea.added = true; S.fresh = ids[0]; saveDay(); render(); haptic(); draw();
+    const k = idea.items.reduce((a, y) => a + y.kcal, 0);
+    toast({ t: idea.title, s: `+${fmt(k)} kcal to ${idea.meal.toLowerCase()} · ${fmt(Math.max(0, coachLeft().kcal))} left` }, coachLeft().kcal < 0, { label: "Undo", fn: () => { S.entries = S.entries.filter(x => !ids.includes(x.id)); idea.added = false; saveDay(); render(); if ($("#cLog")) draw(); } });
+  };
+  getCoachAI().catch(() => {});
+  draw();
+}
 
 /* =========================================================
    Limit & goals
