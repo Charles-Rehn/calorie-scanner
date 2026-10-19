@@ -289,6 +289,57 @@ details[open] summary::after{transform:translateY(1px) rotate(225deg)}
 #toast.show{transform:translate(-50%,0);opacity:1}
 #toast.bad{background:rgba(110,18,32,.9);border-color:rgba(255,77,94,.5)}
 
+/* v4: three stats, chip scrollers, family, workouts, suggestions, plan */
+.hstats{grid-template-columns:repeat(3,1fr);gap:8px}
+.hstat{padding:10px 12px;min-width:0}
+.hstat .n{font-size:22px}
+.hstat.burn .n{color:var(--ok)}
+.hscroll{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;
+  margin-inline:calc(-1 * max(16px, env(safe-area-inset-left,0px)));padding:2px max(16px, env(safe-area-inset-left,0px))}
+.hscroll::-webkit-scrollbar{display:none}
+.hscroll .chip{flex:none}
+#famSec{display:flex;flex-direction:column;gap:12px}
+.fam{display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--line);border-radius:24px;overflow:hidden}
+.fmem{display:flex;align-items:center;gap:12px;padding:12px 14px;border:0;border-top:1px solid var(--line);background:none;width:100%;text-align:left;color:inherit;transition:background-color .2s}
+.fmem:first-child{border-top:0}
+.fmem:active{background:rgba(255,255,255,.05)}
+.mini{width:44px;height:44px;flex:none;transform:rotate(-90deg)}
+.mini circle{fill:none;stroke-width:5;stroke-linecap:round}
+.mini .track{stroke:rgba(255,255,255,.08)}
+.mini .prog{stroke:url(#flame);transition:stroke-dashoffset 1s var(--ease)}
+.fmem.over .mini .prog{stroke:var(--over)}
+.fmem .nm{flex:1;min-width:0}
+.fmem .nm b{display:block;font-weight:750;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fmem .nm small{display:block;color:var(--muted);font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fmem .kc{font-weight:850;text-align:right;white-space:nowrap}
+.fmem .kc small{display:block;font-size:11px;color:var(--muted);font-weight:600}
+.fmem.over .kc{color:var(--over)}
+.fmem .burnt{color:var(--ok)}
+.fam-note{padding:12px 14px;color:var(--muted);font-size:13px;border-top:1px solid var(--line)}
+.entry.wk .kc{color:var(--ok)}
+.meal-ic.wk{color:var(--ok)}
+.sugg{display:flex;gap:6px;flex-wrap:wrap;padding:0 14px 14px 61px;margin-top:-4px}
+.schip{border:1px dashed var(--line-2);background:transparent;color:var(--ink);border-radius:99px;padding:7px 12px;font-size:13px;font-weight:700;display:inline-flex;gap:6px;align-items:baseline;max-width:100%;min-width:0}
+.schip span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.schip small{color:var(--muted);font-weight:600;white-space:nowrap}
+.switchrow{display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--surface-2);border-radius:18px;cursor:pointer}
+.switchrow>span{flex:1;min-width:0}
+.switchrow input{width:46px;height:28px;accent-color:var(--flame-2);flex:none;margin:0}
+.dock .btn{font-size:15px;padding:0 10px;gap:6px}
+.plans{display:flex;flex-direction:column;gap:8px}
+.plan{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:18px;border:1px solid var(--line-2);background:var(--surface-2);color:var(--ink);text-align:left;width:100%}
+.plan .nm{flex:1;min-width:0}
+.plan .nm b{display:block;font-weight:800}
+.plan .nm small{display:block;color:var(--muted);font-size:12px}
+.plan .kc{font-size:22px;font-weight:900;font-stretch:86%;white-space:nowrap}
+.plan .kc small{display:block;font-size:11px;color:var(--muted);font-weight:600;text-align:right;font-stretch:100%}
+.plan[aria-pressed="true"]{border-color:var(--flame-2);background:rgba(255,106,61,.12);box-shadow:0 0 0 1px var(--flame-2) inset}
+.plan .tag{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:var(--accent-ink);background:linear-gradient(135deg,var(--flame-1),var(--flame-2));border-radius:99px;padding:2px 7px;margin-left:6px;vertical-align:2px}
+.maint{font-size:13px;color:var(--muted)}
+.maint b{color:var(--ink)}
+.inl{display:flex;gap:8px;align-items:flex-end}
+.inl>*{flex:1;min-width:0}
+.unitchips .chip{padding:6px 11px;font-size:12px}
 @media (prefers-reduced-motion: reduce){
   *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;transition-delay:0s!important}
 }
@@ -307,8 +358,8 @@ details[open] summary::after{transform:translateY(1px) rotate(225deg)}
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="17" cy="9" r="2.5"/><path d="M15.5 14.2c3 .2 5.5 2.6 5.5 5.8"/></svg>
         <span id="famName">Family</span>
       </button>
-      <button class="iconbtn" id="goalsBtn" aria-label="Daily limit and goals">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/></svg>
+      <button class="iconbtn" id="goalsBtn" aria-label="Settings">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
       </button>
     </div>
   </header>
@@ -335,8 +386,9 @@ details[open] summary::after{transform:translateY(1px) rotate(225deg)}
     </div>
     <div class="overmsg" id="overMsg" hidden></div>
     <div class="hstats">
-      <div class="hstat"><span class="l">Eaten</span><span class="n"><em id="sFood">0</em> <small>kcal</small></span></div>
-      <button class="hstat" id="limitBtn" aria-label="Change daily limit"><span class="l">Limit</span><span class="n"><em id="sGoal">2,000</em> <small>kcal</small></span></button>
+      <div class="hstat"><span class="l">Eaten</span><span class="n"><em id="sFood">0</em></span></div>
+      <div class="hstat burn"><span class="l">Burned</span><span class="n"><em id="sBurn">0</em></span></div>
+      <button class="hstat" id="limitBtn" aria-label="Change daily limit"><span class="l">Limit</span><span class="n"><em id="sGoal">2,000</em></span></button>
     </div>
     <div class="macros">
       <div class="macro m-p"><div class="t"><b>Protein</b><span><em id="mP">0</em><small> / <em id="mPg">150</em> g</small></span></div><div class="bar"><i></i></div></div>
@@ -345,6 +397,11 @@ details[open] summary::after{transform:translateY(1px) rotate(225deg)}
     </div>
     <div class="week-h"><span>Last 7 days</span><span id="weekNote"></span></div>
     <div class="week" id="week"></div>
+  </section>
+
+  <section id="famSec" hidden>
+    <div class="sec-h"><h2 id="famTitle">Family</h2><span class="note" id="famDay"></span></div>
+    <div class="fam" id="famList"></div>
   </section>
 
   <div class="sec-h"><h2 id="dishTitle">Dishes</h2><button class="add" id="newDishBtn">+ New dish</button></div>
@@ -365,6 +422,10 @@ details[open] summary::after{transform:translateY(1px) rotate(225deg)}
     <button class="btn" id="searchBtn">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>
       Search
+    </button>
+    <button class="btn" id="workoutBtn">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 7v10M18 7v10M3 9.5v5M21 9.5v5M6 12h12"/></svg>
+      Workout
     </button>
   </div>
 </div>
@@ -398,6 +459,16 @@ const rid = (n = 12) => { const a = "abcdefghijkmnpqrstuvwxyz23456789"; let s = 
 const dayKey = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 const mealForNow = () => { const h = new Date().getHours(); return h < 11 ? "Breakfast" : h < 15 ? "Lunch" : h < 21 ? "Dinner" : "Snacks"; };
 const norm = s => String(s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+// For searching: "McDonald's" -> "mcdonalds", "M&S" -> "ms"
+const snorm = s => norm(s).replace(/['’`&]/g, "").replace(/[^a-z0-9]+/g, " ").trim();
+// Metric or imperial, set in Settings. Food weights are stored in grams and body weight in kg either way.
+const OZ = 28.3495;
+const imperial = () => { try { return me.units === "imperial"; } catch (e) { return false; } };
+const wWord = () => imperial() ? "ounces" : "grams";
+const toW = g => imperial() ? g / OZ : g;
+const fromW = x => imperial() ? x * OZ : x;
+const fmtW = g => imperial() ? `${r1(g / OZ)} oz` : `${fmt(g)} g`;
+const fmtBody = kg => { if (!imperial()) return `${r1(kg)} kg`; const t = kg * 2.20462; let st = Math.floor(t / 14), lb = Math.round(t - st * 14); if (lb === 14) { st++; lb = 0; } return `${st} st ${lb} lb`; };
 const hash = s => { let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return (h >>> 0).toString(36); };
 const clean = o => JSON.parse(JSON.stringify(o));
 const LS = {
@@ -575,9 +646,158 @@ Coffee, black|2|0.3|0|0|1 cup (240 ml)|240`
     const [name, k, p, c, f, sl, sg] = line.split("|");
     const g = +sg || 100, m = g / 100;
     return { id: "db-" + i, src: "db", name, brand: "", code: "", servingLabel: sl || "100 g", servingGrams: g,
-      kcal: Math.round(+k * m), protein: r1(+p * m), carbs: r1(+c * m), fat: r1(+f * m), _n: norm(name) };
+      kcal: Math.round(+k * m), protein: r1(+p * m), carbs: r1(+c * m), fat: r1(+f * m), _n: snorm(name) };
   });
-const COMMON_BY_ID = Object.fromEntries(COMMON.map(f => [f.id, f]));
+/* =========================================================
+   Restaurants: approximate values from the chains' published (mainly UK) nutrition info.
+   chain|item|serving|kcal|protein|carbs|fat
+   ========================================================= */
+const RESTAURANTS = `McDonald's|Big Mac|1 burger|508|26|42|25
+McDonald's|Quarter Pounder with Cheese|1 burger|518|31|37|26
+McDonald's|Double Cheeseburger|1 burger|445|26|34|22
+McDonald's|Cheeseburger|1 burger|298|15|31|12
+McDonald's|Hamburger|1 burger|250|12|30|8
+McDonald's|McChicken Sandwich|1 burger|388|16|40|17
+McDonald's|Filet-O-Fish|1 burger|329|15|35|13
+McDonald's|Chicken McNuggets, 6 pieces|6 pieces|259|15|16|15
+McDonald's|Chicken McNuggets, 9 pieces|9 pieces|388|23|24|23
+McDonald's|Chicken McNuggets, 20 pieces|20 pieces|863|51|54|50
+McDonald's|Fries, small|small|237|3|30|11
+McDonald's|Fries, medium|medium|337|4|42|16
+McDonald's|Fries, large|large|444|5|56|21
+McDonald's|Egg McMuffin|1 muffin|297|18|28|12
+McDonald's|Sausage & Egg McMuffin|1 muffin|423|23|27|24
+McDonald's|Hash Brown|1 hash brown|138|1|14|9
+McDonald's|McFlurry Oreo|regular|340|8|53|11
+McDonald's|Coca-Cola, medium|400 ml|170|0|42|0
+McDonald's|Coca-Cola Zero, medium|400 ml|1|0|0|0
+Burger King|Whopper|1 burger|640|29|50|36
+Burger King|Whopper with Cheese|1 burger|730|34|51|43
+Burger King|Bacon Double Cheeseburger|1 burger|450|27|31|24
+Burger King|Cheeseburger|1 burger|285|15|30|12
+Burger King|Chicken Royale|1 burger|620|25|54|33
+Burger King|Chicken Nuggets, 6 pieces|6 pieces|265|13|17|16
+Burger King|Fries, regular|regular|290|4|38|13
+Burger King|Onion Rings, regular|regular|330|4|38|18
+KFC|Original Recipe chicken, 1 piece|1 piece (average)|230|20|7|14
+KFC|Zinger Burger|1 burger|450|26|41|20
+KFC|Fillet Burger|1 burger|440|27|42|18
+KFC|Popcorn Chicken, regular|regular|285|18|16|16
+KFC|Hot Wings, 3 pieces|3 pieces|230|14|7|16
+KFC|Fries, regular|regular|250|3|33|11
+KFC|Gravy, regular|regular|80|1|9|4
+KFC|Coleslaw, regular|regular|140|1|8|12
+Subway|Sweet Onion Chicken Teriyaki, 6-inch|6-inch (footlong = 2)|330|25|49|4
+Subway|Italian B.M.T., 6-inch|6-inch (footlong = 2)|380|18|41|16
+Subway|Meatball Marinara, 6-inch|6-inch (footlong = 2)|430|20|51|16
+Subway|Tuna, 6-inch|6-inch (footlong = 2)|420|18|40|21
+Subway|Turkey Breast, 6-inch|6-inch (footlong = 2)|260|18|40|3
+Subway|Steak & Cheese, 6-inch|6-inch (footlong = 2)|340|24|40|9
+Subway|Veggie Delite, 6-inch|6-inch (footlong = 2)|210|8|40|2
+Starbucks|Caffè Latte, grande, semi-skimmed|grande|185|12|18|7
+Starbucks|Cappuccino, grande, semi-skimmed|grande|120|8|12|4.5
+Starbucks|Flat White, semi-skimmed|1 cup|115|7|10|5
+Starbucks|Caramel Macchiato, grande, semi-skimmed|grande|230|10|33|6
+Starbucks|Caramel Frappuccino, grande, with cream|grande|380|5|58|14
+Starbucks|Chai Tea Latte, grande, semi-skimmed|grande|220|7|41|3.5
+Starbucks|Hot Chocolate, grande, with cream|grande|350|13|47|13
+Starbucks|Americano, grande|grande|15|1|2|0
+Starbucks|Butter Croissant|1 croissant|280|6|31|15
+Starbucks|Blueberry Muffin|1 muffin|410|6|54|19
+Costa|Latte, medium, semi-skimmed|medium|175|12|17|6
+Costa|Flat White, semi-skimmed|1 cup|120|8|11|5
+Costa|Cappuccino, medium, semi-skimmed|medium|120|8|12|4
+Costa|Americano, medium|medium|10|1|1|0
+Costa|Hot Chocolate, medium, semi-skimmed|medium|270|10|40|8
+Nando's|Quarter chicken, breast|1/4 chicken|250|46|1|6
+Nando's|Quarter chicken, leg|1/4 chicken|350|37|0|22
+Nando's|Half chicken|1/2 chicken|600|83|1|28
+Nando's|Butterfly chicken breast|1 breast|330|62|1|8
+Nando's|Peri-Peri Chips, regular|regular|420|6|52|21
+Nando's|Spicy Rice, regular|regular|320|6|55|8
+Nando's|Corn on the Cob, regular|regular|120|4|20|3
+Nando's|Garlic Bread, regular|regular|360|9|42|17
+Greggs|Sausage Roll|1 roll|328|9|23|22
+Greggs|Vegan Sausage Roll|1 roll|311|12|26|17
+Greggs|Steak Bake|1 bake|408|13|32|25
+Greggs|Chicken Bake|1 bake|435|15|34|26
+Greggs|Sausage, Bean & Cheese Melt|1 melt|425|14|32|27
+Greggs|Glazed Ring Doughnut|1 doughnut|191|3|24|9
+Domino's|Margherita, large, per slice|1 slice|190|8|23|7
+Domino's|Pepperoni Passion, large, per slice|1 slice|235|10|23|11
+Domino's|Texas BBQ, large, per slice|1 slice|215|10|25|8
+Domino's|Garlic & Herb Dip|1 pot|330|1|2|36
+Five Guys|Hamburger|1 burger|840|39|39|43
+Five Guys|Cheeseburger|1 burger|980|47|40|55
+Five Guys|Little Hamburger|1 burger|540|23|39|26
+Five Guys|Little Cheeseburger|1 burger|610|27|40|32
+Five Guys|Fries, little|little|528|8|72|23
+Five Guys|Fries, regular|regular|953|15|131|41
+Taco Bell|Crunchy Taco|1 taco|170|8|13|9
+Taco Bell|Soft Taco|1 taco|180|9|17|9
+Taco Bell|Crunchwrap Supreme|1 wrap|530|16|71|21
+Taco Bell|Burrito Supreme|1 burrito|390|16|51|14
+Taco Bell|Chicken Quesadilla|1 quesadilla|520|27|37|28
+Taco Bell|Nachos BellGrande|1 portion|740|16|82|38`
+  .split("\n").map(line => {
+    const [chain, name, sl, k, p, c, f] = line.split("|");
+    return { id: "rs-" + hash(chain + "|" + name), src: "rest", name, brand: chain, code: "", servingLabel: sl, servingGrams: null,
+      kcal: +k, protein: +p, carbs: +c, fat: +f, _n: snorm(chain + " " + name) };
+  });
+const RCHAINS = [...new Set(RESTAURANTS.map(r => r.brand))];
+
+/* Shops and brands. by: which Open Food Facts field to filter on first.
+   Supermarket own-label is usually under the brand; Aldi and Lidl use sub-brands, so we look at where it's sold. */
+const SHOP_BRANDS = [
+  ["Tesco", "tesco", "tesco", "brands"], ["Sainsbury's", "sainsbury-s", "sainsburys|sainsbury", "brands"],
+  ["Asda", "asda", "asda", "brands"], ["Aldi", "aldi", "aldi", "stores"], ["Lidl", "lidl", "lidl", "stores"],
+  ["M&S", "marks-spencer", "m&s|ms|marks and spencer|marks & spencer|marks spencer", "brands"],
+  ["Morrisons", "morrisons", "morrisons", "brands"], ["Waitrose", "waitrose", "waitrose", "brands"],
+  ["Co-op", "co-op", "coop|co op", "brands"], ["Iceland", "iceland", "iceland", "brands"], ["Ocado", "ocado", "ocado", "brands"],
+  ["Spar", "spar", "spar", "brands"], ["Costco", "kirkland-signature", "costco|kirkland", "brands"], ["Booths", "booths", "booths", "brands"],
+  ["Farmfoods", "farmfoods", "farmfoods", "stores"],
+  ["Mercadona", "hacendado", "mercadona|hacendado", "brands"], ["Carrefour", "carrefour", "carrefour", "brands"],
+  ["Dia", "dia", "dia", "brands"], ["Alcampo", "auchan", "alcampo|auchan", "brands"], ["El Corte Inglés", "el-corte-ingles", "el corte ingles|corte ingles", "brands"],
+  ["Kellogg's", "kellogg-s", "kelloggs|kellogg", "brands"], ["Nestlé", "nestle", "nestle", "brands"], ["Cadbury", "cadbury", "cadbury", "brands"],
+  ["Heinz", "heinz", "heinz", "brands"], ["Müller", "muller", "muller|mueller", "brands"], ["Alpro", "alpro", "alpro", "brands"], ["Danone", "danone", "danone", "brands"]
+].map(([label, tag, al, by]) => ({ label, tag, by, aliases: al.split("|").map(snorm).filter(Boolean) }));
+const brandObj = tag => SHOP_BRANDS.find(b => b.tag === tag) || null;
+function detectBrand(raw) {
+  const s = " " + snorm(raw) + " ";
+  for (const b of SHOP_BRANDS) for (const a of b.aliases) {
+    if (s.includes(" " + a + " ")) return { brand: b, rest: s.replace(" " + a + " ", " ").trim() };
+  }
+  return null;
+}
+
+/* Workouts: [name, MET moderate, easy, hard]. Steps use their own formula. */
+const WORKOUTS = [["Gym", 5, 3.5, 6], ["Running", 9.8, 8.3, 11.5], ["Walking", 3.5, 2.8, 4.8], ["Steps", 0, 0, 0], ["Cycling", 7.5, 5.8, 10],
+  ["Swimming", 7, 5.8, 9.8], ["Football", 7, 5, 10], ["Padel", 6, 4.5, 7.5], ["Tennis", 7.3, 5, 8], ["HIIT", 8, 6, 10],
+  ["Yoga", 2.5, 2, 4], ["Dancing", 5, 4, 7.3], ["Hiking", 6, 5.3, 7.8], ["Other", 5, 3.5, 8]];
+const burnedOf = ws => (ws || []).reduce((s, w) => s + (+w.kcal || 0), 0);
+const dayNorm = v => Array.isArray(v) ? { entries: v, workouts: [] } : { entries: (v && v.entries) || [], workouts: (v && v.workouts) || [] };
+const netOf = d => sum(d.entries).kcal - burnedOf(d.workouts);
+
+/* What you usually have: counts per food, per meal, with the amount you last logged */
+function rememberUse(id, meal, amt, unit) {
+  const f = me.freq || (me.freq = {}), r = f[id] || (f[id] = { n: 0, m: {} });
+  r.n++; r.m[meal] = (r.m[meal] || 0) + 1; r.last = Date.now(); r.amt = amt; r.unit = unit;
+  const ids = Object.keys(f);
+  if (ids.length > 150) ids.sort((a, b) => (f[a].last || 0) - (f[b].last || 0)).slice(0, ids.length - 150).forEach(x => delete f[x]);
+}
+function suggestions(meal, n = 6, mealOnly = false) {
+  const f = me.freq || {}, now = Date.now();
+  return Object.entries(f)
+    .map(([id, r]) => ({ id, r, mc: (r.m && r.m[meal]) || 0, s: ((r.m && r.m[meal]) || 0) * 4 + (r.n || 0) + (now - (r.last || 0) < 3 * 864e5 ? 2 : 0) }))
+    .filter(x => (mealOnly ? x.mc > 0 : x.s > 0) && foodById(x.id))
+    .sort((a, b) => b.s - a.s).slice(0, n);
+}
+function usualQty(f, r) {
+  if (!r || !(r.amt > 0)) return { mult: 1, qty: f.servingLabel || "1 serving" };
+  if (r.unit === "g" && f.servingGrams > 0) return { mult: r.amt / f.servingGrams, qty: fmtW(r.amt) };
+  return { mult: r.amt, qty: `${r1(r.amt)} × ${f.servingLabel || "serving"}` };
+}
+const COMMON_BY_ID = Object.fromEntries([...COMMON, ...RESTAURANTS].map(f => [f.id, f]));
 
 /* =========================================================
    Data
@@ -589,11 +809,11 @@ const COMMON_BY_ID = Object.fromEntries(COMMON.map(f => [f.id, f]));
    ========================================================= */
 const url = new URL(location.href);
 const joinCode = (url.searchParams.get("family") || "").replace(/[^a-z0-9]/gi, "").toLowerCase() || null;
-const DEFAULT_ME = () => ({ pid: null, name: "", family: null, goals: { kcal: 2000, protein: 150, carbs: 200, fat: 65 }, recent: [] });
-function loadMe() { const m = Object.assign(DEFAULT_ME(), LS.get("me", {})); if (!m.pid) m.pid = rid(14); LS.set("me", m); return m; }
+const DEFAULT_ME = () => ({ pid: null, name: "", family: null, goals: { kcal: 2000, protein: 150, carbs: 200, fat: 65 }, recent: [], freq: {}, weight: null, share: true, profile: null, lastWorkout: null, units: "metric" });
+function loadMe() { const m = Object.assign(DEFAULT_ME(), LS.get("me", {})); if (!m.pid) m.pid = rid(14); if (m.profile && m.profile.units && !LS.get("me", {}).units) m.units = m.profile.units; LS.set("me", m); return m; }
 let me = loadMe();
 
-const R = { fs: null, user: null, fam: null, err: null, unsubs: [] };
+const R = { fs: null, user: null, fam: null, err: null, unsubs: [], shared: {}, famDayKey: null, famDayUnsub: null };
 let listeners = {}; // collections kept on the device
 const cache = { pantry: {}, dishes: {}, members: {} };
 
@@ -611,20 +831,38 @@ const Data = {
     if (u) {
       try {
         const s = await u.collection("days").doc(k).get();
-        if (s.exists) { const e = s.data().entries || []; LS.set("day:" + k, e); return e; }
+        if (s.exists) { const d = dayNorm(s.data()); LS.set("day:" + k, d); return d; }
       } catch (e) {}
     }
-    return local || [];
+    return dayNorm(local);
   },
-  setDay(k, entries) {
-    LS.set("day:" + k, entries);
+  setDay(k, d) {
+    LS.set("day:" + k, { entries: d.entries, workouts: d.workouts });
     const u = userRef();
-    if (u) u.collection("days").doc(k).set(clean({ entries, updated: Date.now() })).catch(remoteFail);
+    if (u) u.collection("days").doc(k).set(clean({ entries: d.entries, workouts: d.workouts, updated: Date.now() })).catch(remoteFail);
+    Data.shareDay(k, d);
+  },
+  // What the family sees: your meals, workouts and totals for the day
+  shareDay(k, d, force) {
+    if (!R.fam || !R.user || me.share === false || S.dayOwner !== R.user.uid) return;
+    const doc = { name: me.name || "", limit: me.goals.kcal, kcal: Math.round(sum(d.entries).kcal), burned: Math.round(burnedOf(d.workouts)),
+      entries: d.entries.map(e => ({ meal: e.meal, name: e.name, qty: e.qty || "", kcal: Math.round(+e.kcal || 0) })),
+      workouts: d.workouts.map(w => ({ type: w.type, detail: w.detail || "", kcal: Math.round(+w.kcal || 0) })) };
+    const sig = R.fam.id + k + JSON.stringify(doc);
+    if (!force && R.shared[k] === sig) return;
+    R.shared[k] = sig;
+    R.fam.collection("days").doc(k).collection("people").doc(R.user.uid).set({ ...clean(doc), updated: Date.now() }).catch(remoteFail);
+  },
+  unshareDay(k) {
+    if (!R.fam || !R.user) return;
+    delete R.shared[k];
+    R.fam.collection("days").doc(k).collection("people").doc(R.user.uid).delete().catch(() => {});
   },
   saveMe() {
     LS.set("me", me);
     const u = userRef();
-    if (u) u.set(clean({ name: me.name, goals: me.goals, recent: me.recent, family: me.family || null }), { merge: true }).catch(remoteFail);
+    if (u) u.set(clean({ name: me.name, goals: me.goals, recent: me.recent, family: me.family || null, freq: me.freq || {}, weight: me.weight || null,
+      share: me.share !== false, profile: me.profile || null, lastWorkout: me.lastWorkout || null, units: me.units || "metric" }), { merge: true }).catch(remoteFail);
     if (R.fam && me.name) R.fam.collection("members").doc(me.pid).set({ name: me.name, joined: cache.members[me.pid]?.joined || Date.now() }).catch(remoteFail);
   },
   watch(c, cb) {
@@ -668,6 +906,8 @@ async function initRemote() {
 }
 function stopRemote() {
   R.unsubs.forEach(u => { try { u(); } catch (e) {} }); R.unsubs = [];
+  if (R.famDayUnsub) { try { R.famDayUnsub(); } catch (e) {} }
+  R.famDayUnsub = null; R.famDayKey = null; R.shared = {}; S.famDay = {};
   R.fam = null; S.famInfo = null; listeners = {};
   cache.pantry = {}; cache.dishes = {}; cache.members = {};
 }
@@ -678,8 +918,9 @@ async function signedIn(user) {
   closeSheet(); stopRemote();
   const wasLocal = LS.ns === "local";
   const carry = wasLocal && !LS.get("carried", false, true) ? {
-    days: LS.keys("day:").map(k => [k.slice(4), LS.get(k, [])]).filter(([, e]) => e.length),
-    pantry: LS.get("col:mine:pantry", {}), dishes: LS.get("col:mine:dishes", {}), goals: me.goals, recent: me.recent
+    days: LS.keys("day:").map(k => [k.slice(4), dayNorm(LS.get(k, null))]).filter(([, d]) => d.entries.length || d.workouts.length),
+    pantry: LS.get("col:mine:pantry", {}), dishes: LS.get("col:mine:dishes", {}), goals: me.goals, recent: me.recent,
+    freq: me.freq, weight: me.weight, profile: me.profile
   } : null;
   R.user = user; LS.ns = user.uid; LS.set("everSignedIn", true, true);
   me = Object.assign(DEFAULT_ME(), LS.get("me", {})); me.pid = user.uid;
@@ -687,19 +928,21 @@ async function signedIn(user) {
   let fresh = true;
   try {
     const s = await u.get();
-    if (s.exists) { fresh = false; const d = s.data(); if (d.goals) me.goals = { ...me.goals, ...d.goals }; if (Array.isArray(d.recent)) me.recent = d.recent; if (d.name) me.name = d.name; if ("family" in d) me.family = d.family || null; }
+    if (s.exists) { fresh = false; const d = s.data(); if (d.goals) me.goals = { ...me.goals, ...d.goals }; if (Array.isArray(d.recent)) me.recent = d.recent; if (d.name) me.name = d.name; if ("family" in d) me.family = d.family || null;
+      if (d.freq) me.freq = d.freq; if (d.weight) me.weight = d.weight; if ("share" in d) me.share = d.share !== false; if (d.profile) me.profile = d.profile; if (d.lastWorkout) me.lastWorkout = d.lastWorkout;
+      me.units = d.units || (d.profile && d.profile.units) || me.units || "metric"; }
   } catch (e) {}
   if (!me.name && user.displayName) me.name = user.displayName;
   if (carry && (carry.days.length || Object.keys(carry.pantry).length || Object.keys(carry.dishes).length)) {
     const jobs = [];
     for (const [k, local] of carry.days) jobs.push((async () => {
       const doc = u.collection("days").doc(k), s = await doc.get();
-      const remote = s.exists ? (s.data().entries || []) : [], ids = new Set(remote.map(e => e.id));
-      await doc.set(clean({ entries: remote.concat(local.filter(e => !ids.has(e.id))), updated: Date.now() }));
+      const remote = dayNorm(s.exists ? s.data() : null), merge = (a, b) => { const ids = new Set(a.map(e => e.id)); return a.concat(b.filter(e => !ids.has(e.id))); };
+      await doc.set(clean({ entries: merge(remote.entries, local.entries), workouts: merge(remote.workouts, local.workouts), updated: Date.now() }));
     })());
     for (const [id, f] of Object.entries(carry.pantry)) jobs.push(u.collection("pantry").doc(id).set(clean(f), { merge: true }));
     for (const [id, d] of Object.entries(carry.dishes)) jobs.push(u.collection("dishes").doc(id).set(clean({ ...d, by: d.by && d.by.length < 20 ? user.uid : d.by }), { merge: true }));
-    if (fresh) { me.goals = carry.goals; me.recent = carry.recent; }
+    if (fresh) { me.goals = carry.goals; me.recent = carry.recent; me.freq = carry.freq || {}; me.weight = carry.weight || null; me.profile = carry.profile || null; }
     await Promise.allSettled(jobs);
     LS.set("carried", true, true);
     // it now lives in the account, so clear the signed-out copy on this device
@@ -739,18 +982,19 @@ async function connectFamily(code, { create = false, name = "" } = {}) {
   R.fam = ref; me.family = code;
   Data.saveMe();
   startWatches();
-  R.unsubs.push(ref.onSnapshot(s => { S.famInfo = s.exists ? s.data() : null; renderHeader(); }, () => {}));
+  R.unsubs.push(ref.onSnapshot(s => { S.famInfo = s.exists ? s.data() : null; renderHeader(); renderFamily(); }, () => {}));
+  watchFamDay();
   render();
 }
 
 /* =========================================================
    State
    ========================================================= */
-const S = { date: new Date(), entries: [], week: {}, open: null, famInfo: null };
+const S = { date: new Date(), entries: [], workouts: [], week: {}, open: null, famInfo: null, famDay: {}, dayOwner: "local" };
 function startWatches() {
   Data.watch("pantry", m => { cache.pantry = m; });
   Data.watch("dishes", m => { cache.dishes = m; renderDishes(); });
-  Data.watch("members", m => { cache.members = m; renderDishes(); const l = $("#memList"); if (l) l.innerHTML = memListHtml(); });
+  Data.watch("members", m => { cache.members = m; renderDishes(); renderFamily(); const l = $("#memList"); if (l) l.innerHTML = memListHtml(); });
 }
 const memberName = pid => pid === me.pid ? "You" : (cache.members[pid]?.name || "Someone");
 function foodById(id) { return COMMON_BY_ID[id] || (cache.pantry[id] ? { ...cache.pantry[id], id } : null); }
@@ -758,24 +1002,27 @@ function foodId(f) { return f.id && !String(f.id).startsWith("tmp") ? f.id : f.c
 function remember(id) { me.recent = [id, ...me.recent.filter(x => x !== id)].slice(0, 40); Data.saveMe(); }
 
 async function loadDay() {
-  const k = dayKey(S.date), es = await Data.getDay(k);
+  const k = dayKey(S.date), d = await Data.getDay(k);
   if (k !== dayKey(S.date)) return; // a newer day was picked meanwhile
-  S.entries = es; S.week[k] = sum(es).kcal; render();
+  S.entries = d.entries; S.workouts = d.workouts; S.dayOwner = R.user ? R.user.uid : "local";
+  S.week[k] = netOf(d); render(); watchFamDay();
+  if (k === dayKey(new Date())) Data.shareDay(k, d);
 }
 async function loadWeek() {
   const keys = weekKeys();
   const vals = await Promise.all(keys.map(k => Data.getDay(k)));
-  keys.forEach((k, i) => S.week[k] = sum(vals[i]).kcal);
+  keys.forEach((k, i) => S.week[k] = netOf(vals[i]));
   renderSummary();
 }
 function weekKeys() { const out = []; for (let i = 6; i >= 0; i--) { const d = new Date(S.date); d.setDate(d.getDate() - i); out.push(dayKey(d)); } return out; }
-function saveDay() { const k = dayKey(S.date); Data.setDay(k, S.entries); S.week[k] = sum(S.entries).kcal; }
+function saveDay() { const k = dayKey(S.date), d = { entries: S.entries, workouts: S.workouts }; Data.setDay(k, d); S.week[k] = netOf(d); }
 function sum(es) { return (es || []).reduce((t, e) => ({ kcal: t.kcal + (+e.kcal || 0), protein: t.protein + (+e.protein || 0), carbs: t.carbs + (+e.carbs || 0), fat: t.fat + (+e.fat || 0) }), { kcal: 0, protein: 0, carbs: 0, fat: 0 }); }
 function addEntry(e) {
-  const before = sum(S.entries).kcal;
+  const before = sum(S.entries).kcal - burnedOf(S.workouts);
   const nid = rid(10); S.fresh = nid;
   S.entries.push({ id: nid, at: Date.now(), ...e }); saveDay(); render(); haptic();
   const after = before + (+e.kcal || 0), lim = me.goals.kcal;
+  // limit stays the same; workouts are already taken off "before"
   if (after > lim && before <= lim) toast(`Added ${fmt(e.kcal)} kcal. You're now ${fmt(after - lim)} kcal over your limit.`, true);
   else if (after > lim) toast(`Added ${fmt(e.kcal)} kcal. ${fmt(after - lim)} kcal over your limit.`, true);
   else toast(`Added ${fmt(e.kcal)} kcal to ${e.meal}. ${fmt(lim - after)} left.`);
@@ -800,19 +1047,20 @@ function renderSummary() {
   $("#dayLabel").innerHTML = `${esc(name)}<small>${esc(S.date.toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long" }))}</small>`;
   $("#nextDay").disabled = k >= today;
 
-  const t = sum(S.entries), g = me.goals, rem = g.kcal - t.kcal, over = rem < 0;
+  const t = sum(S.entries), burned = burnedOf(S.workouts), g = me.goals, budget = g.kcal + burned, rem = budget - t.kcal, over = rem < 0;
   tween($("#sRem"), Math.abs(rem));
+  tween($("#sBurn"), burned);
   $("#sRemL").textContent = over ? "kcal over" : "kcal left";
   tween($("#sFood"), t.kcal);
   $("#sGoal").textContent = fmt(g.kcal);
   $("#summary").classList.toggle("over", over);
   document.body.classList.toggle("is-over", over);
-  const pct = g.kcal ? Math.min(1, t.kcal / g.kcal) : 0, opct = over && g.kcal ? Math.min(1, (t.kcal - g.kcal) / g.kcal) : 0;
+  const pct = budget ? Math.min(1, t.kcal / budget) : 0, opct = over && budget ? Math.min(1, (t.kcal - budget) / budget) : 0;
   const pr = $("#ringProg"), ov = $("#ringOver");
   pr.style.opacity = pct > 0.002 ? "" : "0"; pr.style.strokeDashoffset = (RING_C * (1 - pct)).toFixed(2);
   ov.style.opacity = opct > 0.002 ? "" : "0"; ov.style.strokeDashoffset = (RING_C * (1 - opct)).toFixed(2);
   const om = $("#overMsg");
-  if (over) { om.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l10 18H2z"/><path d="M12 10v5M12 18v.5"/></svg>${fmt(-rem)} kcal over your ${fmt(g.kcal)} limit`; om.hidden = false; }
+  if (over) { om.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l10 18H2z"/><path d="M12 10v5M12 18v.5"/></svg>${fmt(-rem)} kcal over your ${fmt(g.kcal)} limit${burned ? ` + ${fmt(burned)} burned` : ""}`; om.hidden = false; }
   else om.hidden = true;
   [["mP", "protein", ".m-p"], ["mC", "carbs", ".m-c"], ["mF", "fat", ".m-f"]].forEach(([id, key, cls]) => {
     tween($("#" + id), t[key]);
@@ -863,6 +1111,8 @@ const MEAL_IC = {
 const PLUS = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>`;
 function renderMeals() {
   const fresh = S.fresh; S.fresh = null;
+  const isToday = dayKey(S.date) === dayKey(new Date());
+  setTimeout(() => { S.freshW = null; }, 0);
   $("#meals").innerHTML = MEALS.map(m => {
     const es = S.entries.filter(e => e.meal === m), mk = sum(es).kcal;
     return `<section class="meal" aria-label="${m}">
@@ -876,22 +1126,44 @@ function renderMeals() {
           <span class="note" style="margin-right:auto">P ${r1(e.protein)} · C ${r1(e.carbs)} · F ${r1(e.fat)} g</span>
           ${(e.dishId && cache.dishes[e.dishId]) || (e.foodId && foodById(e.foodId)) ? `<button class="btn small" data-again="${e.id}">Log again</button>` : ""}
           <button class="btn small danger" data-del="${e.id}">Remove</button></div>` : ""}
-      `).join("") : `<p class="empty">Nothing yet</p>`}
+      `).join("") : `<p class="empty">Nothing yet</p>${isToday ? suggChips(m) : ""}`}
     </section>`;
-  }).join("");
+  }).join("") + workoutsCard();
 }
-function render() { renderHeader(); renderSummary(); renderDishes(); renderMeals(); }
+function suggChips(m) {
+  const sg = suggestions(m, 2, true).filter(x => x.r.m[m] >= 2);
+  if (!sg.length) return "";
+  return `<div class="sugg">${sg.map(x => { const f = foodById(x.id), u = usualQty(f, x.r); return `<button class="schip" data-sugg="${esc(x.id)}" data-meal="${m}">+ <span>${esc(f.name)}</span><small>${fmt(f.kcal * u.mult)} kcal</small></button>`; }).join("")}</div>`;
+}
+const DUMBBELL = ICON('<path d="M6 7v10M18 7v10M3 9.5v5M21 9.5v5M6 12h12"/>');
+function workoutsCard() {
+  const ws = S.workouts, total = burnedOf(ws);
+  return `<section class="meal" aria-label="Workouts">
+    <div class="meal-h"><span class="meal-ic wk">${DUMBBELL}</span><h3>Workouts</h3><span class="k">${ws.length ? "−" + fmt(total) + " kcal" : ""}</span><button class="add" data-workout="1" aria-label="Add a workout">${PLUS}</button></div>
+    ${ws.length ? ws.map(w => `
+      <button class="entry wk${w.id === S.freshW ? " fresh" : ""}" data-entry="${w.id}" aria-expanded="${S.open === w.id}">
+        <span class="nm"><b>${esc(w.type)}</b><small>${esc(w.detail || "")}</small></span>
+        <span class="kc">−${fmt(w.kcal)}<small>kcal</small></span>
+      </button>
+      ${S.open === w.id ? `<div class="entry-actions"><button class="btn small danger" data-wdel="${w.id}">Remove</button></div>` : ""}`).join("")
+      : `<p class="empty">Burned calories are added to what you can eat today.</p>`}
+  </section>`;
+}
+function render() { renderHeader(); renderSummary(); renderFamily(); renderDishes(); renderMeals(); }
 
 $("#meals").addEventListener("click", ev => {
   const b = ev.target.closest("button"); if (!b) return;
   if (b.dataset.add) openSearch({ meal: b.dataset.add });
+  else if (b.dataset.workout) openWorkout();
+  else if (b.dataset.sugg) { const f = foodById(b.dataset.sugg), r = (me.freq || {})[b.dataset.sugg] || {}; if (f) openFood({ ...f }, { meal: b.dataset.meal, amt: r.amt, unit: r.unit }); }
   else if (b.dataset.entry) { S.open = S.open === b.dataset.entry ? null : b.dataset.entry; renderMeals(); }
-  else if (b.dataset.del) {
+  else if (b.dataset.del || b.dataset.wdel) {
     if (b.disabled) return; b.disabled = true; haptic();
-    const id = b.dataset.del, e = S.entries.find(x => x.id === id);
+    const isW = !!b.dataset.wdel, id = b.dataset.del || b.dataset.wdel, e = isW ? null : S.entries.find(x => x.id === id);
     const finish = () => {
       if (e && e.dishId && e.logId) Data.del(`dishes/${e.dishId}/logs`, e.logId);
-      S.entries = S.entries.filter(x => x.id !== id); S.open = null; saveDay(); render(); toast("Removed");
+      if (isW) S.workouts = S.workouts.filter(x => x.id !== id); else S.entries = S.entries.filter(x => x.id !== id);
+      S.open = null; saveDay(); render(); toast("Removed");
     };
     const els = [$(`[data-entry="${id}"]`), b.closest(".entry-actions")].filter(Boolean);
     if (reduced || !els.length || !els[0].animate) return finish();
@@ -941,6 +1213,8 @@ $("#nextDay").onclick = () => goDay(shiftDay(1), 1);
 $("#newDishBtn").onclick = () => openDishEditor();
 $("#scanBtn").onclick = () => startScan({ meal: mealForNow() });
 $("#searchBtn").onclick = () => openSearch({ meal: mealForNow() });
+$("#workoutBtn").onclick = () => openWorkout();
+$("#famList").addEventListener("click", e => { const b = e.target.closest("[data-mem]"); if (b) openMember(b.dataset.mem); });
 $("#goalsBtn").onclick = openGoals;
 $("#limitBtn").onclick = openGoals;
 $("#famBtn").onclick = openFamily;
@@ -1036,61 +1310,102 @@ const mealChips = sel => chips("meal", MEALS.map(m => [m, m]), sel);
    ========================================================= */
 function openSearch(flow) {
   const pick = !!flow.pick;
+  let chain = flow.chain || null, brand = flow.brand || null;
   const sh = openSheet(`${head(pick ? "Add ingredient" : "Search food", pick)}
     ${pick ? "" : mealChips(flow.meal)}
-    <form id="sForm" role="search"><input id="sIn" type="search" placeholder="Search foods, brands, dishes" autocomplete="off" data-autofocus enterkeyhint="search"></form>
+    <form id="sForm" role="search"><input id="sIn" type="search" placeholder="Search foods, shops, restaurants" autocomplete="off" data-autofocus enterkeyhint="search" value="${esc(flow.q || "")}"></form>
+    ${pick ? "" : `<div class="grp">Restaurants</div>
+    <div class="hscroll" id="chainRow">${RCHAINS.map(c => `<button class="chip" data-chain="${esc(c)}" aria-pressed="${c === chain}">${esc(c)}</button>`).join("")}</div>`}
+    <div class="grp">Supermarkets & brands</div>
+    <div class="hscroll" id="brandRow">${SHOP_BRANDS.map(b => `<button class="chip" data-brand="${b.tag}" aria-pressed="${b.tag === brand}">${esc(b.label)}</button>`).join("")}</div>
     <div class="tools">
       <button class="tool" id="tScan"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7V4h3M18 4h3v3M21 17v3h-3M6 20H3v-3"/><path d="M7 8v8M10 8v8M13 8v8M16 8v8" stroke-width="1.6"/></svg>Scan</button>
       <button class="tool" id="tManual"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg>Enter manually</button>
       ${pick ? `<button class="tool" id="tCode"><span class="code" style="font-size:15px;color:var(--accent)">123</span>Type barcode</button>` : `<button class="tool" id="tDish"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 10h16v6a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4z"/><path d="M2 10h20"/></svg>Create dish</button>`}
     </div>
     <div id="sRes" style="display:flex;flex-direction:column;gap:12px"></div>`, pick ? flow.back : null);
-  if (!pick) wireChips(sh, "meal", m => flow.meal = m);
   const input = $("#sIn"), res = $("#sRes");
-  let offState = { q: "", items: null, loading: false, err: "" }, items = {};
-  const row = (f, right) => { items[f.id] = f; return `<button class="entry" data-pick="${esc(f.id)}"><span class="nm"><b>${esc(f.name)}</b><small>${esc([f.brand, f.servingLabel].filter(Boolean).join(" · "))}</small></span><span class="kc">${right}</span></button>`; };
+  let offState = flow.off || { key: "", items: null, loading: false, err: "" }, items = {};
+  if (!pick) wireChips(sh, "meal", m => { flow.meal = m; draw(); });
+  const row = (f, right, extra = "") => { items[f.id] = f; return `<button class="entry" data-pick="${esc(f.id)}" ${extra}><span class="nm"><b>${esc(f.name)}</b><small>${esc([f.brand, f.servingLabel].filter(Boolean).join(" · "))}</small></span><span class="kc">${right}</span></button>`; };
   const kcalRight = f => `${fmt(f.kcal)}<small>kcal</small>`;
+  const list = fs => `<div class="list">${fs.map(f => row(f, kcalRight(f))).join("")}</div>`;
+  const usualRow = (f, r) => { items[f.id] = f; const u = usualQty(f, r); return `<button class="entry" data-pick="${esc(f.id)}" data-usual="1"><span class="nm"><b>${esc(f.name)}</b><small>${esc([f.brand, "usually " + u.qty].filter(Boolean).join(" · "))}</small></span><span class="kc">${fmt(f.kcal * u.mult)}<small>kcal</small></span></button>`; };
+  const offKey = () => snorm(input.value) + "|" + (brand || "");
+  function sync() {
+    sh.querySelectorAll("[data-chain]").forEach(b => b.setAttribute("aria-pressed", b.dataset.chain === chain));
+    sh.querySelectorAll("[data-brand]").forEach(b => b.setAttribute("aria-pressed", b.dataset.brand === brand));
+    const bo = brandObj(brand);
+    input.placeholder = chain ? `Search the ${chain} menu` : bo ? `Search ${bo.label} products` : "Search foods, shops, restaurants";
+    flow.chain = chain; flow.brand = brand;
+  }
+  function offBlock(label) {
+    const key = offKey();
+    if (offState.key === key && offState.items) return offState.items.length ? list(offState.items) : `<p class="note">No products found. Try fewer words, or scan the barcode.</p>`;
+    if (offState.key === key && offState.loading) return `<p class="note"><span class="spin"></span>&nbsp; Searching…</p>`;
+    return `${offState.key === key && offState.err ? `<p class="err">${esc(offState.err)}</p>` : ""}<button class="btn wide" id="offGo">${esc(label)}</button>`;
+  }
   function draw() {
     items = {};
-    const q = norm(input.value.trim()), words = q.split(/\s+/).filter(Boolean);
-    const hit = s => words.every(w => s.includes(w));
+    const raw = input.value.trim(), q = snorm(raw), words = q.split(" ").filter(Boolean), hit = s => words.every(w => s.includes(w));
+    flow.q = raw;
     let html = "";
-    if (!q) {
-      const rec = me.recent.map(foodById).filter(Boolean).slice(0, 12);
-      html += rec.length ? `<div class="grp">Recent</div><div class="list">${rec.map(f => row(f, kcalRight(f))).join("")}</div>`
-        : `<p class="note">Type a food like “chicken breast” or a brand. Results come from common foods, foods your family has added, and the Open Food Facts database.</p>`;
+    if (chain) {
+      const menu = RESTAURANTS.filter(r => r.brand === chain && hit(r._n));
+      html += `<div class="grp">${esc(chain)} menu</div>${menu.length ? list(menu) : `<p class="note">Nothing on the ${esc(chain)} menu matches “${esc(raw)}”.</p>`}
+        <p class="note">Approximate values from ${esc(chain)}'s published nutrition info (UK menu). Sizes and recipes vary by country.</p>`;
+    } else if (brand) {
+      const bo = brandObj(brand), bn = snorm(bo.label);
+      const pan = Object.entries(cache.pantry).map(([id, f]) => ({ ...f, id })).filter(f => snorm(f.brand || "").includes(bn) && hit(snorm(f.name + " " + f.brand))).slice(0, 10);
+      if (pan.length) html += `<div class="grp">${R.fam ? "Family" : "Your"} ${esc(bo.label)} foods</div>${list(pan)}`;
+      html += `<div class="grp">${esc(bo.label)} products</div>${offBlock(raw ? `Search ${bo.label} for “${raw}”` : `Show popular ${bo.label} products`)}`;
+    } else if (!q) {
+      const usual = pick ? [] : suggestions(flow.meal, 6);
+      if (usual.length) html += `<div class="grp">Your usual ${esc((flow.meal || "").toLowerCase())}</div><div class="list">${usual.map(x => usualRow(foodById(x.id), x.r)).join("")}</div>`;
+      const seen = new Set(usual.map(x => x.id));
+      const rec = me.recent.filter(id => !seen.has(id)).map(foodById).filter(Boolean).slice(0, 10);
+      if (rec.length) html += `<div class="grp">Recent</div>${list(rec)}`;
+      if (!usual.length && !rec.length) html += `<p class="note">Type a food like “chicken breast”, pick a restaurant or supermarket above, or scan a barcode. Foods you log often will show up here first.</p>`;
     } else {
       if (!pick) {
-        const ds = Object.entries(cache.dishes).filter(([, d]) => hit(norm(d.name))).slice(0, 6);
+        const ds = Object.entries(cache.dishes).filter(([, d]) => hit(snorm(d.name))).slice(0, 6);
         if (ds.length) html += `<div class="grp">Dishes</div><div class="list">${ds.map(([id, d]) => `<button class="entry" data-dishpick="${esc(id)}"><span class="nm"><b>${esc(d.name)}</b><small>${esc(memberName(d.by))} · ${d.portions || "?"} portions</small></span><span class="kc">${d.portions ? fmt(d.kcal / d.portions) : fmt(d.kcal)}<small>${d.portions ? "kcal/portion" : "kcal"}</small></span></button>`).join("")}</div>`;
       }
-      const pan = Object.entries(cache.pantry).map(([id, f]) => ({ ...f, id })).filter(f => hit(norm(f.name + " " + (f.brand || "")))).slice(0, 15);
-      if (pan.length) html += `<div class="grp">${R.fam ? "Family foods" : "Your foods"}</div><div class="list">${pan.map(f => row(f, kcalRight(f))).join("")}</div>`;
-      const com = COMMON.filter(f => hit(f._n)).slice(0, 15);
-      if (com.length) html += `<div class="grp">Common foods</div><div class="list">${com.map(f => row(f, kcalRight(f))).join("")}</div>`;
-      html += `<div class="grp">Open Food Facts</div>`;
-      if (offState.q === q && offState.items) {
-        html += offState.items.length ? `<div class="list">${offState.items.map(f => row(f, kcalRight(f))).join("")}</div>` : `<p class="note">No products found for “${esc(input.value.trim())}”.</p>`;
-      } else if (offState.loading) html += `<p class="note"><span class="spin"></span>&nbsp; Searching millions of products…</p>`;
-      else html += `${offState.err ? `<p class="err">${esc(offState.err)}</p>` : ""}<button class="btn wide" id="offGo">Search packaged products for “${esc(input.value.trim())}”</button>`;
+      const pan = Object.entries(cache.pantry).map(([id, f]) => ({ ...f, id })).filter(f => hit(snorm(f.name + " " + (f.brand || "")))).slice(0, 12);
+      if (pan.length) html += `<div class="grp">${R.fam ? "Family foods" : "Your foods"}</div>${list(pan)}`;
+      if (!pick) { const rs = RESTAURANTS.filter(r => hit(r._n)).slice(0, 10); if (rs.length) html += `<div class="grp">Restaurants</div>${list(rs)}`; }
+      const com = COMMON.filter(f => hit(f._n)).slice(0, 12);
+      if (com.length) html += `<div class="grp">Common foods</div>${list(com)}`;
+      const det = detectBrand(raw);
+      html += `<div class="grp">Packaged products</div>${offBlock(det ? `Search ${det.brand.label}${det.rest ? ` for “${det.rest}”` : ""}` : `Search packaged products for “${raw}”`)}`;
     }
     res.innerHTML = html;
     const go = $("#offGo"); if (go) go.onclick = runOff;
   }
   async function runOff() {
-    const raw = input.value.trim(), q = norm(raw); if (!q) return;
-    offState = { q, items: null, loading: true, err: "" }; draw();
-    try { offState.items = await searchOFF(raw); }
+    const raw = input.value.trim(), key = offKey();
+    let b = brandObj(brand), terms = raw;
+    if (!b) { const det = detectBrand(raw); if (det) { b = det.brand; terms = det.rest; } }
+    if (!b && !snorm(raw)) return;
+    offState = { key, items: null, loading: true, err: "" }; flow.off = offState; draw();
+    try { offState.items = await searchOFF(terms, b); }
     catch (e) { offState.err = e.message || "Search failed. Check your connection and try again."; }
-    offState.loading = false; if (norm(input.value.trim()) === q) draw();
+    offState.loading = false; if (offKey() === key && input.isConnected) draw();
   }
+  sh.querySelectorAll("[data-chain]").forEach(b => b.onclick = () => { haptic(); chain = chain === b.dataset.chain ? null : b.dataset.chain; brand = null; sync(); draw(); });
+  sh.querySelectorAll("[data-brand]").forEach(b => b.onclick = () => {
+    haptic(); brand = brand === b.dataset.brand ? null : b.dataset.brand; chain = null; sync(); draw();
+    if (brand && !(offState.key === offKey() && offState.items)) runOff();
+  });
   let t; input.oninput = () => { clearTimeout(t); t = setTimeout(draw, 120); };
-  $("#sForm").onsubmit = e => { e.preventDefault(); input.blur(); runOff(); };
-  draw();
+  $("#sForm").onsubmit = e => { e.preventDefault(); input.blur(); if (!chain) runOff(); };
+  sync(); draw();
   res.onclick = e => {
     const b = e.target.closest("button"); if (!b) return;
-    if (b.dataset.pick) openFood({ ...items[b.dataset.pick] }, { ...flow, back: () => openSearch(flow) });
-    else if (b.dataset.dishpick) openDish(b.dataset.dishpick, { meal: flow.meal });
+    if (b.dataset.pick) {
+      const r = b.dataset.usual ? (me.freq || {})[b.dataset.pick] || {} : {};
+      openFood({ ...items[b.dataset.pick] }, { ...flow, amt: r.amt, unit: r.unit, back: () => openSearch(flow) });
+    } else if (b.dataset.dishpick) openDish(b.dataset.dishpick, { meal: flow.meal });
   };
   $("#tScan").onclick = () => startScan(flow);
   $("#tManual").onclick = () => openFood(blankFood(input.value.trim()), { ...flow, back: () => openSearch(flow) });
@@ -1099,14 +1414,14 @@ function openSearch(flow) {
 }
 
 let offTimes = [];
-async function searchOFF(q) {
+const OFF_FIELDS = "code,product_name,product_name_en,product_name_es,brands,nutriments,serving_size,serving_quantity";
+async function offFetch(params) {
   offTimes = offTimes.filter(x => Date.now() - x < 60000);
   if (offTimes.length >= 9) throw new Error("Open Food Facts allows about 10 searches a minute. Wait a moment and try again.");
   offTimes.push(Date.now());
   const ctl = new AbortController(), tm = setTimeout(() => ctl.abort(), 12000);
   try {
-    const u = `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(q)}&search_simple=1&action=process&json=1&page_size=25&sort_by=unique_scans_n&fields=code,product_name,product_name_en,product_name_es,brands,nutriments,serving_size,serving_quantity`;
-    const r = await fetch(u, { signal: ctl.signal });
+    const r = await fetch(`https://world.openfoodfacts.org/cgi/search.pl?search_simple=1&action=process&json=1&page_size=30&sort_by=unique_scans_n&fields=${OFF_FIELDS}&${params}`, { signal: ctl.signal });
     if (!r.ok) throw new Error(r.status === 429 || r.status === 503 ? "Open Food Facts is busy. Try again in a minute." : "Search failed. Try again.");
     const j = await r.json();
     return (j.products || []).map(offToFood).filter(Boolean);
@@ -1115,6 +1430,19 @@ async function searchOFF(q) {
     if (e instanceof TypeError) throw new Error("Couldn't reach Open Food Facts. Check your connection.");
     throw e;
   } finally { clearTimeout(tm); }
+}
+// Search everything, or one shop/brand: by its label first, then where it's sold, then plain text.
+async function searchOFF(q, b) {
+  const t = q ? `search_terms=${encodeURIComponent(q)}` : "";
+  if (!b) return offFetch(t);
+  const by = [b.by, b.by === "brands" ? "stores" : "brands"];
+  let items = await offFetch(`${t}&tagtype_0=${by[0]}&tag_contains_0=contains&tag_0=${encodeURIComponent(b.tag)}`);
+  if (items.length < 5) {
+    const more = await offFetch(`${t}&tagtype_0=${by[1]}&tag_contains_0=contains&tag_0=${encodeURIComponent(b.tag)}`).catch(() => []);
+    const seen = new Set(items.map(x => x.id)); items = items.concat(more.filter(x => !seen.has(x.id)));
+  }
+  if (!items.length) items = await offFetch(`search_terms=${encodeURIComponent((b.label + " " + q).trim())}`).catch(() => []);
+  return items;
 }
 function offToFood(p) {
   const n = p.nutriments || {};
@@ -1144,10 +1472,15 @@ function openFood(food, flow) {
   const pick = !!flow.pick;
   let meal = flow.meal || mealForNow();
   let unit = food.servingGrams > 0 ? "g" : "serv";
-  const startAmt = unit === "g" ? food.servingGrams : 1;
+  let startAmt = unit === "g" ? food.servingGrams : 1;
+  if (flow.amt > 0) {
+    if (flow.unit === "g" && food.servingGrams > 0) { unit = "g"; startAmt = flow.amt; }
+    else if (flow.unit === "serv") { unit = "serv"; startAmt = flow.amt; }
+  }
+  const builtin = food.src === "db" || food.src === "rest";
   const sh = openSheet(`${head(flow.unknown ? "New product" : pick ? "Add ingredient" : "Log food", !!flow.back)}
     ${flow.unknown ? `<div class="banner"><span>Barcode <span class="code">${esc(food.code)}</span> isn't in Open Food Facts yet. Type the numbers from the nutrition panel once and it's saved for ${R.fam ? "the whole family" : "next time"}.</span></div>` : ""}
-    ${food.src === "off" ? `<p class="note">From Open Food Facts. Check against the pack if something looks off.</p>` : food.src === "db" ? `<p class="note">Typical values. Edit them to match your pack if you have it.</p>` : ""}
+    ${food.src === "off" ? `<p class="note">From Open Food Facts. Check against the pack if something looks off.</p>` : food.src === "db" ? `<p class="note">Typical values. Edit them to match your pack if you have it.</p>` : food.src === "rest" ? `<p class="note">Approximate values from ${esc(food.brand)}'s published nutrition info. Menus vary by country, so edit them if yours differ.</p>` : ""}
     <div class="label">
       <div class="title">Nutrition Facts</div>
       <input class="nm-in" id="fName" type="text" placeholder="Food name" value="${esc(food.name)}" aria-label="Food name" ${food.name ? "" : "data-autofocus"}>
@@ -1166,7 +1499,7 @@ function openFood(food, flow) {
       <div class="ln"><span class="k"><span class="dot" style="background:var(--fat)"></span>Total fat (g)</span><input id="fF" type="number" inputmode="decimal" min="0" step="any" value="${food.fat}" aria-label="Fat grams"></div>
     </div>
     <div class="field"><span class="lbl">How much ${pick ? "goes in the dish" : "did you eat"}</span>
-      <div class="amount"><input id="fAmt" type="number" inputmode="decimal" min="0" step="any" value="${startAmt}" aria-label="Amount">${chips("unit", [["g", "grams"], ["serv", "servings"]], unit)}</div>
+      <div class="amount"><input id="fAmt" type="number" inputmode="decimal" min="0" step="any" value="${unit === "g" ? r1(toW(startAmt)) : startAmt}" aria-label="Amount">${chips("unit", [["g", wWord()], ["serv", "servings"]], unit)}</div>
       <p class="note" id="fUnitHint" hidden>Enter the grams per serving on the label above to log by weight.</p>
     </div>
     ${pick ? "" : mealChips(meal)}
@@ -1178,14 +1511,14 @@ function openFood(food, flow) {
     const g = num("fGrams"), amt = num("fAmt") || 0;
     if (u === "g" && !(g > 0)) { $("#fUnitHint").hidden = false; setUnit(unit); return; }
     // convert the typed amount so the total stays the same
-    if (u !== unit && g > 0) $("#fAmt").value = u === "g" ? r1(amt * g) : r1(amt / g);
+    if (u !== unit && g > 0) $("#fAmt").value = u === "g" ? r1(toW(amt * g)) : r1(fromW(amt) / g);
     unit = u; $("#fUnitHint").hidden = true; calc();
   });
   function setUnit(u) { sh.querySelectorAll('[data-chips="unit"] .chip').forEach(x => x.setAttribute("aria-pressed", x.dataset.v === u)); }
   const num = id => { const x = parseFloat($("#" + id).value); return isNaN(x) ? null : x; };
   function calc() {
     const amt = num("fAmt") || 0, g = num("fGrams");
-    const mult = unit === "g" ? (g > 0 ? amt / g : 0) : amt;
+    const mult = unit === "g" ? (g > 0 ? fromW(amt) / g : 0) : amt;
     const t = { kcal: (num("fK") || 0) * mult, protein: (num("fP") || 0) * mult, carbs: (num("fC") || 0) * mult, fat: (num("fF") || 0) * mult };
     $("#fTot").textContent = fmt(t.kcal) + " kcal";
     $("#fMac").textContent = `P ${r1(t.protein)} · C ${r1(t.carbs)} · F ${r1(t.fat)} g`;
@@ -1200,16 +1533,17 @@ function openFood(food, flow) {
     if (f.kcal == null) return err("Enter the calories per serving.");
     const { t, amt, g } = calc();
     if (!(amt > 0)) return err("Enter how much.");
-    const edited = food.src === "db" && ["kcal", "protein", "carbs", "fat", "servingGrams", "name"].some(k => String(f[k] ?? "") !== String(food[k] ?? ""));
-    let id = food.src === "db" && !edited ? food.id : foodId({ ...f, id: food.src === "db" ? null : food.id });
-    if (food.src !== "db" || edited) {
+    const edited = builtin && ["kcal", "protein", "carbs", "fat", "servingGrams", "name"].some(k => String(f[k] ?? "") !== String(food[k] ?? ""));
+    let id = builtin && !edited ? food.id : foodId({ ...f, id: builtin ? null : food.id });
+    if (!builtin || edited) {
       const { _n, id: _i, ...rest } = f;
-      Data.put("pantry", id, { ...rest, src: food.src === "db" ? "manual" : food.src, by: food.by || me.pid, used: Date.now() });
+      Data.put("pantry", id, { ...rest, src: builtin ? "manual" : food.src, by: food.by || me.pid, used: Date.now() });
       cache.pantry[id] = { ...rest, used: Date.now() };
     }
+    if (!pick) rememberUse(id, meal, unit === "g" ? fromW(amt) : amt, unit);
     remember(id);
-    const grams = unit === "g" ? amt : (g > 0 ? amt * g : null);
-    const qty = unit === "g" ? `${r1(amt)} g` : `${r1(amt)} × ${f.servingLabel}`;
+    const grams = unit === "g" ? fromW(amt) : (g > 0 ? amt * g : null);
+    const qty = unit === "g" ? fmtW(fromW(amt)) : `${r1(amt)} × ${f.servingLabel}`;
     const out = { name: f.name, brand: f.brand, qty, grams, foodId: id, kcal: Math.round(t.kcal), protein: r1(t.protein), carbs: r1(t.carbs), fat: r1(t.fat) };
     if (pick) { flow.pick(out); return; }
     closeSheet(); addEntry({ ...out, meal });
@@ -1354,16 +1688,17 @@ function openDishEditor(existing) {
     <button class="btn wide" id="dAddIng">+ Add ingredient</button>
     <div class="row">
       <div class="field"><label for="dPor">Portions it makes</label><input id="dPor" type="number" inputmode="numeric" min="1" step="1" value="${d.portions || ""}"></div>
-      <div class="field"><label for="dW">Cooked weight (g)</label><input id="dW" type="number" inputmode="numeric" min="0" step="any" placeholder="optional" value="${d.cookedGrams || ""}"></div>
+      <div class="field"><label for="dW">Cooked weight (${imperial() ? "oz" : "g"})</label><input id="dW" type="number" inputmode="decimal" min="0" step="any" placeholder="optional" value="${d.cookedGrams ? (imperial() ? r1(toW(d.cookedGrams)) : Math.round(d.cookedGrams)) : ""}"></div>
     </div>
-    <p class="note">Weigh the finished food, minus the pot's own weight, so everyone can log their portion in grams. Without it, people log by portions.</p>
-    <div class="stats"><div><b id="dT">${fmt(t.kcal)}</b><small>kcal total</small></div><div><b id="dPP">–</b><small>per portion</small></div><div><b id="d100">–</b><small>per 100 g</small></div></div>
+    <p class="note">Weigh the finished food, minus the pot's own weight, so everyone can log their portion in ${wWord()}. Without it, people log by portions.</p>
+    <div class="stats"><div><b id="dT">${fmt(t.kcal)}</b><small>kcal total</small></div><div><b id="dPP">–</b><small>per portion</small></div><div><b id="d100">–</b><small>per ${imperial() ? "oz" : "100 g"}</small></div></div>
     <p class="err" id="dErr" hidden></p>
     <div class="row">${d.isNew && (d.name || d.ingredients.length) ? `<button class="btn ghost" id="dReset">Start over</button>` : ""}<button class="btn primary" id="dSave">${d.isNew ? "Save dish" : "Save changes"}</button></div>`);
   const upd = () => {
-    d.name = $("#dName").value; d.portions = parseFloat($("#dPor").value) || null; d.cookedGrams = parseFloat($("#dW").value) || null;
+    const dw = parseFloat($("#dW").value);
+    d.name = $("#dName").value; d.portions = parseFloat($("#dPor").value) || null; d.cookedGrams = dw > 0 ? fromW(dw) : null;
     $("#dPP").textContent = d.portions ? fmt(t.kcal / d.portions) : "–";
-    $("#d100").textContent = d.cookedGrams ? fmt(t.kcal / d.cookedGrams * 100) : "–";
+    $("#d100").textContent = d.cookedGrams ? fmt(t.kcal / d.cookedGrams * (imperial() ? OZ : 100)) : "–";
   };
   sh.addEventListener("input", upd); upd();
   $("#dIngs").onclick = e => { const b = e.target.closest("[data-rm]"); if (b) { d.ingredients.splice(+b.dataset.rm, 1); openDishEditor(); } };
@@ -1393,11 +1728,11 @@ function openDish(id, flow) {
   const when = new Date(d.at).toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "short" });
   const sh = openSheet(`${head(esc(d.name))}
     <p class="note">Made by ${esc(memberName(d.by))} · ${esc(when)} · ${d.ingredients.length} ingredients</p>
-    <div class="stats"><div><b>${fmt(d.kcal)}</b><small>whole dish</small></div><div><b>${fmt(d.kcal / d.portions)}</b><small>per portion</small></div><div><b>${hasW ? fmt(d.kcal / d.cookedGrams * 100) : "–"}</b><small>per 100 g</small></div></div>
+    <div class="stats"><div><b>${fmt(d.kcal)}</b><small>whole dish</small></div><div><b>${fmt(d.kcal / d.portions)}</b><small>per portion</small></div><div><b>${hasW ? fmt(d.kcal / d.cookedGrams * (imperial() ? OZ : 100)) : "–"}</b><small>per ${imperial() ? "oz" : "100 g"}</small></div></div>
     <div class="pot-meter"><div class="lbl" id="potTxt">Who's had some</div><div class="bar"><i id="potBar" style="width:0%"></i></div><div class="list" id="logs"></div></div>
     <div class="field"><span class="lbl">How much did you eat</span>
-      <div class="amount"><input id="aAmt" type="number" inputmode="decimal" min="0" step="any" value="${hasW ? Math.round(portionG) : 1}" aria-label="Amount">${chips("unit", hasW ? [["g", "grams"], ["portion", "portions"]] : [["portion", "portions"]], unit)}</div>
-      ${hasW ? `<p class="note">One portion is about ${fmt(portionG)} g. Weigh your plate for the most accurate number.</p>` : `<p class="note">Add the cooked weight to this dish to log by grams.</p>`}
+      <div class="amount"><input id="aAmt" type="number" inputmode="decimal" min="0" step="any" value="${hasW ? (imperial() ? r1(toW(portionG)) : Math.round(portionG)) : 1}" aria-label="Amount">${chips("unit", hasW ? [["g", wWord()], ["portion", "portions"]] : [["portion", "portions"]], unit)}</div>
+      ${hasW ? `<p class="note">One portion is about ${fmtW(portionG)}. Weigh your plate for the most accurate number.</p>` : `<p class="note">Add the cooked weight to this dish to log by weight.</p>`}
     </div>
     ${mealChips(meal)}
     <div class="total"><span class="big" id="aTot">0 kcal</span><span class="mac" id="aMac"></span></div>
@@ -1407,12 +1742,12 @@ function openDish(id, flow) {
   wireChips(sh, "meal", m => { meal = m; $("#aLog").textContent = "Log my portion to " + m; });
   wireChips(sh, "unit", u => {
     const amt = parseFloat($("#aAmt").value) || 0;
-    if (u !== unit) $("#aAmt").value = u === "g" ? Math.round(amt * portionG) : r1(amt / portionG);
+    if (u !== unit) $("#aAmt").value = u === "g" ? (imperial() ? r1(toW(amt * portionG)) : Math.round(amt * portionG)) : r1(fromW(amt) / portionG);
     unit = u; calc();
   });
   function calc() {
     const amt = parseFloat($("#aAmt").value) || 0;
-    const frac = unit === "g" ? amt / d.cookedGrams : amt / d.portions;
+    const frac = unit === "g" ? fromW(amt) / d.cookedGrams : amt / d.portions;
     const t = { kcal: d.kcal * frac, protein: d.protein * frac, carbs: d.carbs * frac, fat: d.fat * frac };
     $("#aTot").textContent = fmt(t.kcal) + " kcal";
     $("#aMac").textContent = `P ${r1(t.protein)} · C ${r1(t.carbs)} · F ${r1(t.fat)} g`;
@@ -1425,14 +1760,14 @@ function openDish(id, flow) {
     const el = $("#logs"); if (!el) return;
     $("#potBar").style.width = Math.min(100, eaten * 100) + "%";
     const left = Math.max(0, 1 - eaten);
-    $("#potTxt").textContent = arr.length ? (hasW ? `About ${fmt(left * d.cookedGrams)} g left (${r1(left * d.portions)} portions)` : `About ${r1(left * d.portions)} of ${d.portions} portions left`) : "Nobody has logged this yet";
+    $("#potTxt").textContent = arr.length ? (hasW ? `About ${fmtW(left * d.cookedGrams)} left (${r1(left * d.portions)} portions)` : `About ${r1(left * d.portions)} of ${d.portions} portions left`) : "Nobody has logged this yet";
     el.innerHTML = arr.map(l => `<div class="entry"><span class="nm"><b>${esc(memberName(l.who))}</b><small>${esc(l.qty)} · ${esc(l.meal || "")}</small></span><span class="kc">${fmt(l.kcal)}<small>kcal</small></span></div>`).join("");
     el.hidden = !arr.length;
   }));
   $("#aLog").onclick = () => {
     const { t, amt, frac } = calc();
     if (!(amt > 0)) return toast("Enter how much you ate", true);
-    const qty = unit === "g" ? `${fmt(amt)} g` : `${r1(amt)} portion${amt === 1 ? "" : "s"}`;
+    const qty = unit === "g" ? fmtW(fromW(amt)) : `${r1(amt)} portion${amt === 1 ? "" : "s"}`;
     const logId = rid(12);
     Data.put(`dishes/${id}/logs`, logId, { who: me.pid, qty, frac, kcal: Math.round(t.kcal), meal, day: dayKey(S.date), at: Date.now() });
     closeSheet();
@@ -1449,13 +1784,151 @@ function openDish(id, flow) {
 }
 
 /* =========================================================
+   Workouts
+   ========================================================= */
+function openWorkout() {
+  let type = WORKOUTS.some(w => w[0] === me.lastWorkout) ? me.lastWorkout : "Gym", level = "mod", touched = false;
+  const sh = openSheet(`${head("Add a workout")}
+    ${chips("wtype", WORKOUTS.map(w => [w[0], w[0]]), type)}
+    <div class="inl">
+      <div class="field"><label for="wAmt" id="wAmtL">Minutes</label><input id="wAmt" type="number" inputmode="numeric" min="0" step="1" value="30" style="font-size:22px;font-weight:850"></div>
+      <div class="field"><label for="wKcal">Calories burned</label><input id="wKcal" type="number" inputmode="numeric" min="0" step="1" style="font-size:22px;font-weight:850"></div>
+    </div>
+    <div id="wLevel"><div class="lbl" style="margin-bottom:6px">How hard</div>${chips("wlevel", [["easy", "Easy"], ["mod", "Moderate"], ["hard", "Hard"]], level)}</div>
+    ${me.weight ? "" : `<div class="field"><label for="wWeight">Your weight in ${imperial() ? "pounds" : "kg"}, for better estimates</label><input id="wWeight" type="number" inputmode="decimal" min="20" placeholder="${imperial() ? 165 : 75}"></div>`}
+    <p class="note" id="wHint"></p>
+    <p class="err" id="wErr" hidden></p>
+    <button class="btn primary wide" id="wAdd">Add workout</button>`);
+  const typedKg = () => { const w = parseFloat(($("#wWeight") || {}).value); return w > 20 ? (imperial() ? w * 0.453592 : w) : null; };
+  const kg = () => me.weight || typedKg() || 75;
+  function est() {
+    const w = WORKOUTS.find(x => x[0] === type), amt = parseFloat($("#wAmt").value) || 0;
+    if (type === "Steps") return amt * 0.04 * kg() / 70;
+    const met = level === "easy" ? w[2] : level === "hard" ? w[3] : w[1];
+    return met * kg() * amt / 60;
+  }
+  function update() {
+    if (!touched) $("#wKcal").value = Math.round(est());
+    $("#wHint").textContent = `Estimated for ${fmtBody(kg())}${me.weight || typedKg() ? "" : " (add your weight for a better estimate)"}. If your watch or phone shows calories burned, type that number instead.`;
+  }
+  wireChips(sh, "wtype", v => {
+    const wasSteps = type === "Steps"; type = v; touched = false;
+    $("#wAmtL").textContent = type === "Steps" ? "Steps" : "Minutes";
+    if (type === "Steps" && !wasSteps) $("#wAmt").value = 8000;
+    if (type !== "Steps" && wasSteps) $("#wAmt").value = 30;
+    $("#wLevel").hidden = type === "Steps"; update();
+  });
+  wireChips(sh, "wlevel", v => { level = v; touched = false; update(); });
+  $("#wKcal").addEventListener("input", () => { touched = true; });
+  ["wAmt", "wWeight"].forEach(id => { const el = $("#" + id); if (el) el.addEventListener("input", update); });
+  $("#wLevel").hidden = type === "Steps";
+  if (type === "Steps") { $("#wAmtL").textContent = "Steps"; $("#wAmt").value = 8000; }
+  update();
+  $("#wAdd").onclick = () => {
+    const kcal = Math.round(parseFloat($("#wKcal").value)), amt = parseFloat($("#wAmt").value) || 0;
+    const err = m => { $("#wErr").textContent = m; $("#wErr").hidden = false; };
+    if (!(kcal > 0)) return err("Enter the calories burned.");
+    const ww = typedKg(); if (ww) me.weight = r1(ww);
+    me.lastWorkout = type; Data.saveMe();
+    const lv = { easy: "easy", mod: "", hard: "hard" }[level];
+    const detail = type === "Steps" ? `${fmt(amt)} steps` : `${fmt(amt)} min${lv ? " · " + lv : ""}`;
+    const id = rid(10); S.freshW = id;
+    S.workouts.push({ id, type, detail, kcal, at: Date.now() });
+    saveDay(); closeSheet(); render(); haptic();
+    toast(`${type}: ${fmt(kcal)} kcal burned, added to your day`);
+  };
+}
+
+/* =========================================================
+   Family: everyone's day
+   ========================================================= */
+function dayWord() {
+  const k = dayKey(S.date), y = new Date(); y.setDate(y.getDate() - 1);
+  return k === dayKey(new Date()) ? "today" : k === dayKey(y) ? "yesterday" : "on " + S.date.toLocaleDateString(undefined, { weekday: "long" });
+}
+function watchFamDay() {
+  const k = dayKey(S.date), key = R.fam ? R.fam.id + "/" + k : null;
+  if (R.famDayKey === key) return;
+  if (R.famDayUnsub) { try { R.famDayUnsub(); } catch (e) {} R.famDayUnsub = null; }
+  R.famDayKey = key; S.famDay = {};
+  if (R.fam) R.famDayUnsub = Data.watchPath(`days/${k}/people`, m => { if (R.famDayKey === key) { S.famDay = m; renderFamily(); } });
+  renderFamily();
+}
+function personDay(id) {
+  if (id === me.pid) return { name: "You", limit: me.goals.kcal, kcal: sum(S.entries).kcal, burned: burnedOf(S.workouts), entries: S.entries, workouts: S.workouts, mine: true };
+  const d = S.famDay[id], m = cache.members[id];
+  return d ? { ...d, name: (m && m.name) || d.name || "Someone" } : { name: (m && m.name) || "Someone", none: true };
+}
+function renderFamily() {
+  const sec = $("#famSec"); if (!sec) return;
+  if (!R.fam) { sec.hidden = true; return; }
+  sec.hidden = false;
+  $("#famTitle").textContent = S.famInfo && S.famInfo.name ? S.famInfo.name : "Family";
+  $("#famDay").textContent = dayWord().replace(/^./, c => c.toUpperCase());
+  const ids = [...new Set([me.pid, ...Object.keys(cache.members), ...Object.keys(S.famDay)])];
+  const C = 113.1;
+  const rows = ids.map(id => {
+    const p = personDay(id);
+    if (p.none) return `<button class="fmem" data-mem="${esc(id)}"><svg class="mini" viewBox="0 0 44 44" aria-hidden="true"><circle class="track" cx="22" cy="22" r="18"/></svg><span class="nm"><b>${esc(p.name)}</b><small>Nothing logged ${dayWord()}</small></span></button>`;
+    const budget = (p.limit || 2000) + (p.burned || 0), left = budget - (p.kcal || 0), over = left < 0, pct = budget ? Math.min(1, (p.kcal || 0) / budget) : 0;
+    const meals = new Set((p.entries || []).map(e => e.meal)).size;
+    const sub = `${fmt(p.kcal)} of ${fmt(budget)} kcal${p.burned ? ` · <span class="burnt">${fmt(p.burned)} burned</span>` : meals ? ` · ${meals} meal${meals > 1 ? "s" : ""}` : ""}`;
+    return `<button class="fmem${over ? " over" : ""}" data-mem="${esc(id)}">
+      <svg class="mini" viewBox="0 0 44 44" aria-hidden="true"><circle class="track" cx="22" cy="22" r="18"/><circle class="prog" cx="22" cy="22" r="18" stroke-dasharray="${C} ${C}" style="stroke-dashoffset:${(C * (1 - pct)).toFixed(1)};${pct > 0.002 ? "" : "opacity:0"}"/></svg>
+      <span class="nm"><b>${esc(p.name)}</b><small>${sub}</small></span>
+      <span class="kc">${fmt(Math.abs(left))}<small>${over ? "over" : "left"}</small></span></button>`;
+  });
+  $("#famList").innerHTML = rows.join("") + (me.share === false ? `<div class="fam-note">You're not sharing your diary. Turn it on in Family.</div>` : "");
+}
+function openMember(id) {
+  const p = personDay(id);
+  if (p.none) { openSheet(`${head(esc(p.name))}<p class="note">${esc(p.name)} hasn't logged anything ${dayWord()} yet.</p>`); return; }
+  const budget = (p.limit || 2000) + (p.burned || 0), left = budget - (p.kcal || 0);
+  const ents = p.entries || [], ws = p.workouts || [];
+  const mealHtml = MEALS.map(m => {
+    const es = ents.filter(e => e.meal === m); if (!es.length) return "";
+    return `<div class="grp">${m} · ${fmt(sum(es).kcal)} kcal</div><div class="list">${es.map(e => `<div class="entry"><span class="nm"><b>${esc(e.name)}</b><small>${esc(e.qty || "")}</small></span><span class="kc">${fmt(e.kcal)}<small>kcal</small></span></div>`).join("")}</div>`;
+  }).join("");
+  const wHtml = ws.length ? `<div class="grp">Workouts · ${fmt(burnedOf(ws))} kcal burned</div><div class="list">${ws.map(w => `<div class="entry wk"><span class="nm"><b>${esc(w.type)}</b><small>${esc(w.detail || "")}</small></span><span class="kc">−${fmt(w.kcal)}<small>kcal</small></span></div>`).join("")}</div>` : "";
+  openSheet(`${head(esc(p.mine ? "Your day" : p.name + "'s day"))}
+    <p class="note">${esc(S.date.toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long" }))}</p>
+    <div class="stats"><div><b>${fmt(p.kcal)}</b><small>eaten</small></div><div><b style="color:var(--ok)">${fmt(p.burned || 0)}</b><small>burned</small></div><div><b style="${left < 0 ? "color:var(--over)" : ""}">${fmt(Math.abs(left))}</b><small>${left < 0 ? "over" : "left"}</small></div></div>
+    ${mealHtml || `<p class="note">No food logged ${dayWord()}.</p>`}
+    ${wHtml}`);
+}
+
+/* =========================================================
    Limit & goals
    ========================================================= */
 function openGoals() {
   const g = me.goals;
-  const sh = openSheet(`${head("Daily limit")}
-    <div class="field"><label for="gK">Calorie limit per day (kcal)</label><input id="gK" type="number" inputmode="numeric" value="${g.kcal}" style="font-size:22px;font-weight:800"></div>
-    <p class="note">You'll see a red warning when a day goes over this, and the 7-day strip marks the days you went over.</p>
+  const pr = Object.assign({ sex: null, age: "", heightCm: "", weightKg: me.weight || "", activity: "sit", units: "metric", pace: null }, me.profile || {});
+  let units = me.units || pr.units || "metric", sex = pr.sex, activity = pr.activity, pace = pr.pace;
+  const ACT = [["sit", "Mostly sitting", 1.2], ["light", "On my feet a bit", 1.375], ["active", "Active job", 1.55], ["very", "Very active", 1.725]];
+  const PACES = [["0.25", "Gentle", 0.25], ["0.5", "Steady", 0.5], ["0.75", "Faster", 0.75]];
+  const ftIn = cm => { const t = cm / 2.54; let ft = Math.floor(t / 12), inch = Math.round(t - ft * 12); if (inch === 12) { ft++; inch = 0; } return [ft, inch]; };
+  const stLb = kg => { const t = kg * 2.20462; let st = Math.floor(t / 14), lb = Math.round(t - st * 14); if (lb === 14) { st++; lb = 0; } return [st, lb]; };
+  const [ft0, in0] = pr.heightCm ? ftIn(pr.heightCm) : ["", ""], [st0, lb0] = pr.weightKg ? stLb(pr.weightKg) : ["", ""];
+  const sh = openSheet(`${head("Settings")}
+    <div class="grp">Units</div>
+    ${chips("units", [["metric", "Metric: kg, cm, grams"], ["imperial", "Imperial: st, ft, ounces"]], units)}
+    <p class="note">Nutrition labels stay in grams, as printed on the pack. Calories are always kcal.</p>
+    <div class="grp">Your plan</div>
+    <p class="note">Tell us a bit about you and we'll suggest a daily calorie limit. You can always type your own.</p>
+    ${chips("sex", [["male", "Male"], ["female", "Female"]], sex)}
+    <div class="inl">
+      <div class="field" style="flex:0 0 28%"><label for="pAge">Age</label><input id="pAge" type="number" inputmode="numeric" min="12" max="100" value="${pr.age || ""}"></div>
+      <div class="field" id="hMet"><label for="pCm">Height (cm)</label><input id="pCm" type="number" inputmode="decimal" value="${pr.heightCm || ""}"></div>
+      <div class="field" id="hImp"><label for="pFt">Height (ft, in)</label><div class="inl"><input id="pFt" type="number" inputmode="numeric" placeholder="ft" value="${ft0}"><input id="pIn" type="number" inputmode="numeric" placeholder="in" value="${in0}"></div></div>
+    </div>
+    <div class="field" id="wMet"><label for="pKg">Current weight (kg)</label><input id="pKg" type="number" inputmode="decimal" value="${pr.weightKg || ""}"></div>
+    <div class="field" id="wImp"><label for="pSt">Current weight (stone, pounds)</label><div class="inl"><input id="pSt" type="number" inputmode="numeric" placeholder="st" value="${st0}"><input id="pLb" type="number" inputmode="decimal" placeholder="lb" value="${lb0}"></div></div>
+    <div><div class="lbl" style="margin-bottom:6px">Your normal day, not counting workouts</div>${chips("act", ACT.map(a => [a[0], a[1]]), activity)}</div>
+    <div class="grp">How fast do you want to lose weight?</div>
+    <div id="plans" class="plans"></div>
+    <div class="grp">Daily calorie limit</div>
+    <div class="field"><label for="gK">Calories per day: pick a plan above or type your own</label><input id="gK" type="number" inputmode="numeric" value="${g.kcal}" style="font-size:22px;font-weight:800"></div>
+    <p class="note">Workouts you log are added on top of this, and you'll see a red warning when a day goes over.</p>
     <div class="grp">Macro goals</div>
     <div class="row">
       <div class="field"><label for="gP">Protein (g)</label><input id="gP" type="number" inputmode="numeric" value="${g.protein}"></div>
@@ -1464,12 +1937,58 @@ function openGoals() {
     </div>
     <p class="note" id="gHint"></p>
     <button class="btn primary wide" id="gSave">Save</button>`);
-  const hint = () => { const k = 4 * (+$("#gP").value || 0) + 4 * (+$("#gC").value || 0) + 9 * (+$("#gF").value || 0); $("#gHint").textContent = `Those macros add up to ${fmt(k)} kcal (4 per gram of protein or carbs, 9 per gram of fat).`; };
-  sh.addEventListener("input", hint); hint();
+  const v = id => parseFloat($("#" + id).value);
+  const getCm = () => units === "metric" ? v("pCm") : (v("pFt") || 0) * 30.48 + (v("pIn") || 0) * 2.54;
+  const getKg = () => units === "metric" ? v("pKg") : (v("pSt") || 0) * 6.35029 + (v("pLb") || 0) * 0.453592;
+  const r10 = x => Math.round(x / 10) * 10;
+  function showUnits() { $("#hMet").hidden = $("#wMet").hidden = units !== "metric"; $("#hImp").hidden = $("#wImp").hidden = units === "metric"; }
+  function hint() { const k = 4 * (v("gP") || 0) + 4 * (v("gC") || 0) + 9 * (v("gF") || 0); $("#gHint").textContent = `Those macros add up to ${fmt(k)} kcal (4 per gram of protein or carbs, 9 per gram of fat).`; }
+  function setMacros(kcal) {
+    const kg = getKg(), p = Math.round(Math.min(kg > 30 ? 1.6 * kg : 120, kcal * 0.35 / 4)), f = Math.round(kcal * 0.3 / 9), c = Math.max(0, Math.round((kcal - p * 4 - f * 9) / 4));
+    $("#gP").value = p; $("#gC").value = c; $("#gF").value = f; hint();
+  }
+  function calc() {
+    const age = v("pAge"), cm = getCm(), kg = getKg();
+    if (!sex || !(age >= 12 && age <= 100) || !(cm > 100 && cm < 250) || !(kg > 30 && kg < 350)) {
+      $("#plans").innerHTML = `<p class="note">Fill in ${[!sex && "male or female", !(age >= 12 && age <= 100) && "age", !(cm > 100 && cm < 250) && "height", !(kg > 30 && kg < 350) && "weight"].filter(Boolean).join(", ")} to see suggestions.</p>`;
+      return null;
+    }
+    const bmr = 10 * kg + 6.25 * cm - 5 * age + (sex === "male" ? 5 : -161);
+    const tdee = bmr * ACT.find(a => a[0] === activity)[2], floor = sex === "male" ? 1500 : 1200;
+    const plans = PACES.map(([id, label, kgw]) => { const raw = tdee - kgw * 7700 / 7, k = Math.max(floor, r10(raw)); return { id, label, kgw, k, clamped: raw < floor }; });
+    $("#plans").innerHTML = plans.map(p => `<button class="plan" data-pace="${p.id}" data-kcal="${p.k}" aria-pressed="${pace === p.id}">
+        <span class="nm"><b>${p.label}${p.id === "0.5" ? `<span class="tag">Popular</span>` : ""}</b><small>Lose about ${units === "metric" ? p.kgw + " kg" : (p.kgw * 2.20462).toFixed(1).replace(/\.0$/, "") + " lb"} a week${p.clamped ? " · held at a safe minimum" : ""}</small></span>
+        <span class="kc">${fmt(p.k)}<small>kcal a day</small></span></button>`).join("")
+      + `<p class="maint">To stay at your current weight: <b>${fmt(r10(tdee))} kcal</b> a day.</p>`;
+    $("#plans").querySelectorAll(".plan").forEach(b => b.onclick = () => {
+      haptic(); pace = b.dataset.pace; $("#gK").value = b.dataset.kcal; setMacros(+b.dataset.kcal);
+      $("#plans").querySelectorAll(".plan").forEach(x => x.setAttribute("aria-pressed", x === b));
+    });
+    if (pace) { const p = plans.find(x => x.id === pace); if (p && +$("#gK").value !== p.k) { $("#gK").value = p.k; setMacros(p.k); } }
+    return { kg, cm, age };
+  }
+  wireChips(sh, "sex", x => { sex = x; calc(); });
+  wireChips(sh, "act", x => { activity = x; calc(); });
+  wireChips(sh, "units", x => {
+    if (x === units) return;
+    const cm = getCm(), kg = getKg(); units = x;
+    if (cm > 0) { $("#pCm").value = Math.round(cm); const [a, b] = ftIn(cm); $("#pFt").value = a; $("#pIn").value = b; }
+    if (kg > 0) { $("#pKg").value = r1(kg); const [a, b] = stLb(kg); $("#pSt").value = a; $("#pLb").value = b; }
+    showUnits(); calc();
+  });
+  ["pAge", "pCm", "pFt", "pIn", "pKg", "pSt", "pLb"].forEach(id => $("#" + id).addEventListener("input", calc));
+  $("#gK").addEventListener("input", () => { pace = null; $("#plans").querySelectorAll(".plan").forEach(x => x.setAttribute("aria-pressed", "false")); });
+  ["gP", "gC", "gF"].forEach(id => $("#" + id).addEventListener("input", hint));
+  showUnits(); calc(); hint();
   $("#gSave").onclick = () => {
     const n = (id, d) => { const x = Math.round(+$("#" + id).value); return x > 0 ? x : d; };
+    const ok = calc(), cm = getCm(), kg = getKg(), age = v("pAge");
+    me.units = units;
+    me.profile = { sex, units, activity, pace, age: age > 0 ? age : "", heightCm: cm > 0 ? Math.round(cm) : "", weightKg: kg > 0 ? r1(kg) : "" };
+    if (kg > 30) me.weight = r1(kg);
     me.goals = { kcal: n("gK", 2000), protein: n("gP", 150), carbs: n("gC", 200), fat: n("gF", 65) };
-    Data.saveMe(); closeSheet(); render(); toast("Saved");
+    Data.saveMe(); closeSheet(); render(); toast(ok && pace ? `Saved: ${fmt(me.goals.kcal)} kcal a day` : "Saved");
+    if (R.fam) Data.shareDay(dayKey(S.date), { entries: S.entries, workouts: S.workouts }, true);
   };
 }
 
@@ -1606,6 +2125,7 @@ function openFamily() {
   }
   openSheet(`${head(esc(S.famInfo?.name || "Family"))}
     ${accountRow()}
+    <label class="switchrow" for="shareT"><span><b>Share my diary with the family</b><br><span class="note">They see what you eat and your workouts each day.</span></span><input type="checkbox" id="shareT" switch ${me.share !== false ? "checked" : ""}></label>
     <div class="field"><label for="fnm">Family name</label><input id="fnm" type="text" value="${esc(S.famInfo?.name || "")}"></div>
     <div class="field"><label for="myName2">Your name</label><input id="myName2" type="text" value="${esc(me.name)}"></div>
     <div class="grp">Members</div>
@@ -1617,6 +2137,12 @@ function openFamily() {
     <button class="btn primary wide" id="famSave">Save names</button>
     <button class="btn ghost small danger" id="leave">Leave this family</button>`);
   copyBtn("cpLink", inviteLink(me.family)); wireSignOut();
+  $("#shareT").onchange = e => {
+    haptic(); me.share = e.target.checked; Data.saveMe();
+    const k = dayKey(S.date), today = dayKey(new Date()), d = { entries: S.entries, workouts: S.workouts };
+    if (me.share) Data.shareDay(k, d, true); else { Data.unshareDay(k); Data.unshareDay(today); }
+    renderFamily(); toast(me.share ? "Sharing your diary with the family" : "Your diary is private again");
+  };
   $("#famSave").onclick = () => {
     const fn = $("#fnm").value.trim(), mn = $("#myName2").value.trim();
     if (fn && fn !== S.famInfo?.name) R.fam.set({ name: fn }, { merge: true }).catch(remoteFail);

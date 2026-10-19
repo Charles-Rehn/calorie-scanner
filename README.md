@@ -6,6 +6,11 @@ A free calorie tracker that installs on iPhone and iPad from a website, with no 
 - Log by weight in grams or by servings
 - Daily calorie limit, with a red warning when you go over and a 7-day strip showing which days were over
 - Dishes: add every ingredient of something you cooked (say a spaghetti bolognese) once, then log your portion by grams or portions
+- Workouts: log a workout (with a calorie estimate from your weight) and the burned calories are added to your day
+- Family feed: see what everyone in the family has eaten today, and their workouts (each person can switch sharing off)
+- Suggestions: foods you have often show first, with your usual amount filled in
+- Shops and restaurants: search one supermarket's products (Tesco, Sainsbury's, Asda, Aldi, Lidl, M&S and more) or pick from built-in menus for McDonald's, Burger King, KFC, Subway, Starbucks, Costa, Nando's, Greggs, Domino's, Five Guys and Taco Bell (approximate published values)
+- Settings: metric or imperial, plus a calorie plan from your height, weight, age and activity with three weight-loss speeds
 - Accounts: sign in with email and password and your diary is on every phone and iPad you use; you stay signed in until you sign out
 - Family: share dishes and foods, so everyone logs their own portion of the same meal and sees how much is left in the pot
 
