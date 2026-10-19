@@ -524,6 +524,8 @@ input[type=text],input[type=email],input[type=password],input[type=number],input
 @keyframes shim{50%{opacity:.45}}
 .offload{gap:12px;color:var(--muted);pointer-events:none}
 .offload .spin{width:14px;height:14px;margin:0 12px}
+.airow b{color:var(--flame-1)}
+.airow .thumb svg{color:var(--flame-1)}
 .cantfind{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:4px 0 8px}
 .cantfind span{font-size:13px;color:var(--muted);font-weight:600;margin-right:4px}
 .coachpill{display:flex;align-items:center;gap:10px;width:100%;border:1px solid rgba(255,140,80,.22);border-radius:16px;padding:12px 12px 12px 14px;color:var(--ink);font-weight:700;font-size:15px;text-align:left;
@@ -2261,14 +2263,25 @@ function correctWords(words) {
   });
 }
 // Quick product lookup while typing: the fast search only, the older one as a fallback
-const offQuickCache = new Map();
+const offQuickCache = new Map(); let offBusyUntil = 0;
 async function searchOFFQuick(Q) {
   const b = Q.det ? Q.det.brand : null, terms = correctWords(Q.itemWords).join(" ");
   const key = (b ? b.tag : "") + "|" + terms;
   if (offQuickCache.has(key)) return offQuickCache.get(key);
-  const [uk, all] = await Promise.all([salFetch(terms, b, true).catch(() => []), salFetch(terms, b).catch(() => null)]);
-  let items = mergeFoods(uk.map(f => Object.assign(f, { uk: true })), all || []);
-  if (!items.length) items = await searchOFF(terms, b); // the older search as a second chance
+  if (Date.now() < offBusyUntil) throw Object.assign(new Error("The online food database is busy, so only foods saved in the app are shown for a moment."), { diag: "cooling down" });
+  let items, diag = [];
+  try { items = await salFetch(terms, b); diag.push("fast:" + items.length); }
+  catch (e) {
+    diag.push("fast:" + (e.status || (/long/.test(e.message) ? "timeout" : "net")));
+    if (e.status === 429) offBusyUntil = Date.now() + 30000;
+    // the older search, once, if the fast one couldn't be reached
+    try { items = await offFetch(`search_terms=${encodeURIComponent((b ? b.names[0] + " " : "") + terms)}`); diag.push("old:" + items.length); }
+    catch (e2) {
+      diag.push("old:" + (e2.status || (/long/.test(e2.message) ? "timeout" : /in a row/.test(e2.message) ? "limit" : "net")));
+      if (e2.status === 429) offBusyUntil = Date.now() + 30000;
+      throw Object.assign(new Error("The online food database isn't answering right now."), { diag: diag.join(" · ") });
+    }
+  }
   items = items.map(f => b ? { ...f, _shop: true } : f);
   offQuickCache.set(key, items);
   return items;
@@ -2288,6 +2301,14 @@ function openSearch(flow) {
     <div id="sRes" style="display:flex;flex-direction:column;gap:12px"></div>`, pick ? flow.back : null);
   const input = $("#sIn"), res = $("#sRes");
   let items = {}, shown = 25, lastQ = "", pinned = [], typedAt = 0;
+  const aiRes = { key: "", items: null, loading: false, err: "" };
+  async function runAI(q) {
+    if (aiRes.loading && aiRes.key === q) return;
+    Object.assign(aiRes, { key: q, items: null, loading: true, err: "" }); draw(true);
+    try { const r = await askFoodAI(q); if (aiRes.key === q) aiRes.items = r; }
+    catch (e) { if (aiRes.key === q) aiRes.err = mealError(e).replace(/,? or describe (the meal|it) below/, ""); }
+    if (aiRes.key === q) { aiRes.loading = false; if (input.isConnected) draw(true); }
+  }
   const off = { key: "", items: null, loading: false, err: "", timer: 0, gen: 0 };
   if (!pick) wireChips(sh, "meal", m => { flow.meal = m; draw(); });
   const tidy = f => { if (f.src !== "usda" || !f.name.includes(",")) return [f.name, ""]; const [a, ...b] = f.name.split(", "); return [a, b.join(", ")]; };
@@ -2307,9 +2328,9 @@ function openSearch(flow) {
     const gen = ++off.gen;
     off.timer = setTimeout(async () => {
       try { const r = await searchOFFQuick(Q); if (gen === off.gen) { off.items = r; } }
-      catch (e) { if (gen === off.gen) off.err = e.message || "Couldn't reach the product database."; }
+      catch (e) { if (gen === off.gen) { off.err = e.message || "Couldn't reach the product database."; off.diag = e.diag || String(e.status || ""); } }
       if (gen === off.gen) { off.loading = false; if (input.isConnected) draw(true); }
-    }, offQuickCache.size && offQuickCache.has(key) ? 0 : 320);
+    }, 450);
   }
   function draw(fromOff) {
     items = {};
@@ -2341,14 +2362,23 @@ function openSearch(flow) {
     if (!FOODDB) loadFoodDb().then(() => { if (input.isConnected) draw(true); });
     const fixed = correctWords(Q.itemWords).join(" ");
     if (list.length && fixed !== Q.itemWords.join(" ") && !list.slice(0, 3).some(f => Q.itemWords.every(w => foodToks(f).some(t => t.startsWith(w))))) html += `<p class="note">Showing matches for “${esc(fixed)}”</p>`;
+    // AI answers: shown first once asked for (or asked automatically when nothing else turned up)
+    const aiOn = coachReady() && Q.q.replace(/\s/g, "").length >= 3 && !/^\d{6,}$/.test(Q.q);
+    if (aiOn && !off.loading && (off.err || (off.items && !off.items.length)) && list.length < 3 && aiRes.key !== Q.q) setTimeout(() => { if (input.isConnected && snorm(input.value) === Q.q) runAI(Q.q); }, 0);
+    if (aiOn && aiRes.key === Q.q) {
+      if (aiRes.loading) html += `<div class="grp">From AI</div><div class="list"><div class="entry offload"><span class="spin"></span><span class="nm"><small>Looking up “${esc(raw)}”…</small></span></div></div>`;
+      else if (aiRes.items && aiRes.items.length) html += `<div class="grp">From AI <small>typical values, check the pack</small></div><div class="list">${aiRes.items.map(f => row(f, kcalRight(f))).join("")}</div>`;
+      else if (aiRes.err) html += `<p class="note">${esc(aiRes.err)}</p>`;
+    }
     if (list.length) {
       const label = Q.chain && list[0].brand === Q.chain ? Q.chain : Q.det ? `${Q.det.brand.label} and more` : "Best matches";
       html += `<div class="grp">${esc(label)}</div><div class="list">${list.slice(0, shown).map(resultRow).join("")}${off.loading ? `<div class="entry offload"><span class="spin"></span><span class="nm"><small>Looking for ${Q.det ? esc(Q.det.brand.label) + " " : ""}products…</small></span></div>` : ""}</div>`;
       if (list.length > shown) html += `<button class="btn wide" id="sMore">Show more (${fmt(list.length - shown)})</button>`;
     } else if (off.loading || !FOODDB) html += skel(5);
-    else if (/^\d{8,14}$/.test(Q.q)) {}
+    else if (/^\d{8,14}$/.test(Q.q) || (aiRes.key === Q.q && (aiRes.loading || (aiRes.items && aiRes.items.length)))) {}
     else html += `<p class="note">Nothing found for “${esc(raw)}”. Try fewer words, or check the spelling.</p>`;
-    if (off.err && !off.loading) html += `<p class="note">${esc(off.err)} <button class="btn small" id="offRetry">Try again</button></p>`;
+    if (off.err && !off.loading) html += `<p class="note">${esc(off.err)} <button class="btn small" id="offRetry">Try again</button>${off.diag ? `<br><span style="font-size:11px;font-family:var(--mono);color:var(--faint)">${esc(off.diag)}</span>` : ""}</p>`;
+    if (aiOn && aiRes.key !== Q.q) html += `<div class="list"><button class="entry airow" data-ai="1"><span class="thumb ph" style="--h:35">${SPARK}</span><span class="nm"><b>Look up “${esc(raw)}” with AI</b><small>Typical values for any brand or dish</small></span></button></div>`;
     html += `<div class="cantfind"><span>Can't find it?</span><button class="btn small" data-tool="tManual">Type it in</button><button class="btn small" data-tool="tScan">Scan</button><button class="btn small" data-tool="tLabel">Label photo</button></div>`;
     res.innerHTML = html;
     const more = $("#sMore"); if (more) more.onclick = () => { shown += 25; draw(true); };
@@ -2361,6 +2391,7 @@ function openSearch(flow) {
     const b = e.target.closest("button"); if (!b) return;
     if (b.dataset.tool) { const t = $("#" + b.dataset.tool); if (t) t.click(); return; }
     if (b.dataset.code) { lookup(b.dataset.code, flow); return; }
+    if (b.dataset.ai) { runAI(snorm(input.value)); return; }
     if (b.dataset.quick) {
       if (b.classList.contains("done")) return;
       quickLog(b.dataset.quick, flow.meal || mealForNow());
@@ -2408,9 +2439,9 @@ async function salFetch(q, b, ukOnly) {
   const brandsOr = b ? [...new Set(b.names.map(qq).concat(b.tags.map(qq)))].map(n => `brands:${n}`) : [];
   const build = brands => [q && q.trim(), brands && b ? "(" + brandsOr.join(" OR ") + ")" : "", ukOnly ? `countries:"en:united-kingdom"` : ""].filter(Boolean).join(" AND ");
   const url = query => `https://search.openfoodfacts.org/search?q=${encodeURIComponent(query)}&page_size=40&langs=en&fields=${OFF_FIELDS}`;
-  for (const [query, sort] of [[build(true), true], [build(true), false], [build(false), true]]) {
+  for (const [query, sort] of b ? [[build(true), true], [build(false), true]] : [[build(false), true], [build(false), false]]) {
     try { return offList(await getJSON(url(query) + (sort ? "&sort_by=-unique_scans_n" : ""), 9000)); }
-    catch (e) { if (!(e.status >= 400 && e.status < 500)) throw e; } // a query the service didn't accept: try a simpler one
+    catch (e) { if (e.status !== 400 && e.status !== 422) throw e; } // only a query it couldn't read gets a simpler retry; busy or offline stops here
   }
   return [];
 }
@@ -2496,6 +2527,7 @@ function openFood(food, flow) {
   const sh = openSheet(`${head(flow.unknown ? "New product" : pick ? "Add ingredient" : "Log food", !!flow.back)}
     ${flow.unknown ? `<div class="banner"><span>Barcode <span class="code">${esc(food.code)}</span> isn't in Open Food Facts yet. Photograph the nutrition label or type the numbers once, and it's saved for ${R.fam ? "the whole family" : "next time"}.</span><button class="btn primary small" id="fLabel" style="align-self:flex-start">Photograph the label</button></div>` : ""}
     ${flow.fromLabel ? `<div class="banner" style="border-style:solid;border-color:rgba(255,122,61,.5)"><span><b>Read from your photo.</b> Check the numbers match the label, then tap Add.${flow.fromLabel.length ? "<br>" + flow.fromLabel.map(esc).join("<br>") : ""}</span></div>` : ""}
+    ${food.src === "ai" ? `<p class="note">Typical values looked up by AI. Check them against the pack if you have it; once logged, it's saved for next time.</p>` : ""}
     ${food.src === "off" ? `<p class="note">From Open Food Facts. Check against the pack if something looks off.</p>` : food.src === "db" ? `<p class="note">Typical values. Edit them to match your pack if you have it.</p>` : food.src === "rest" ? `<p class="note">${esc(chainNote(food.brand, food))}</p>` : food.src === "usda" ? `<p class="note">Values per 100 g from the USDA food database. Weigh it, or use the label if you have the pack.</p>` : ""}
     ${food.img ? `<img class="fimg" src="${esc(food.img)}" alt="${esc(food.name)}" onerror="this.remove()">` : ""}
     <div class="fnames">
@@ -3609,6 +3641,52 @@ function openCoach() {
   };
   getCoachAI().catch(() => {});
   draw();
+}
+
+
+/* Any brand or dish: typical nutrition looked up by AI when the food database can't help */
+let foodAI = null;
+async function getFoodAI() {
+  if (foodAI) return foodAI;
+  const { ai, AIM, ready } = await getMealAI();
+  let schema = null;
+  try { const Sc = AIM.Schema; schema = Sc.object({ properties: { foods: Sc.array({ items: Sc.object({ properties: { name: Sc.string(), brand: Sc.string(), serving: Sc.string(), servingGrams: Sc.number(), kcal100: Sc.number(), protein100: Sc.number(), carbs100: Sc.number(), fat100: Sc.number() }, optionalProperties: ["brand"] }) }) } }); } catch (e) { schema = null; }
+  const make = (model, useSchema) => AIM.getGenerativeModel(ai, { model, generationConfig: { responseMimeType: "application/json", temperature: 0.2, ...(useSchema && schema ? { responseSchema: schema } : {}) } });
+  foodAI = { ready, tries: [make("gemini-3.8-flash", true), make("gemini-3.8-flash", false), make("gemini-2.5-flash", true), make("gemini-2.5-flash", false)] };
+  return foodAI;
+}
+const aiFoodCache = new Map();
+async function askFoodAI(q) {
+  if (aiFoodCache.has(q)) return aiFoodCache.get(q);
+  const { tries, ready } = await getFoodAI(); await ready;
+  const prompt = `You are a UK food nutrition database. Someone searched a calorie tracker for: "${q.replace(/"/g, "'").slice(0, 120)}".
+List up to 5 real foods or products that best match, most likely first: UK versions of branded products (use the exact product and brand names, and include common variants or sizes), or typical versions of a dish or generic food.
+For each give the nutrition per 100 g (per 100 ml for drinks) as printed on UK packs or typical for that food, and one typical serving with its weight in grams.
+Reply with ONLY JSON, plain numbers: {"foods":[{"name":"Twix","brand":"Mars","serving":"1 twin bar (50 g)","servingGrams":50,"kcal100":495,"protein100":4.5,"carbs100":64,"fat100":24}]}`;
+  let lastErr = null;
+  for (const m of tries) {
+    try {
+      const r = await aiCall(() => m.generateContent([prompt]), 30000);
+      const t = String(r.response.text() || "").replace(/```(json)?/g, "").trim();
+      const j = JSON.parse(t.slice(t.search(/[[{]/), Math.max(t.lastIndexOf("}"), t.lastIndexOf("]")) + 1));
+      const list = Array.isArray(j) ? j : (pickKey(j, ["foods", "items", "products"]) || []);
+      const out = list.map(x => {
+        if (!x || !x.name) return null;
+        const g = numOf(pickKey(x, ["servingGrams", "serving_grams", "grams"])) || 100, f = g / 100;
+        const k = numOf(pickKey(x, ["kcal100", "kcal_100g", "kcal", "calories"]));
+        return { id: "ai-" + hash(snorm(x.name + " " + (x.brand || ""))), src: "ai", code: "", name: String(x.name).slice(0, 70), brand: String(x.brand || "").slice(0, 40),
+          servingLabel: String(x.serving || `${g} g`).slice(0, 40), servingGrams: g, kcal: Math.round(k * f),
+          protein: r1(numOf(pickKey(x, ["protein100", "protein"])) * f), carbs: r1(numOf(pickKey(x, ["carbs100", "carbs", "carbohydrates"])) * f), fat: r1(numOf(pickKey(x, ["fat100", "fat"])) * f) };
+      }).filter(Boolean).slice(0, 6);
+      aiFoodCache.set(q, out);
+      return out;
+    } catch (e) {
+      lastErr = e;
+      const msg = String(e && (e.message || e.code) || "");
+      if (!(e instanceof SyntaxError) && !/not found|404|not supported|unsupported|is not available|schema|invalid argument|400|INVALID_ARGUMENT/i.test(msg)) break;
+    }
+  }
+  throw lastErr || new Error("No answer");
 }
 
 /* =========================================================
