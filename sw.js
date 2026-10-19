@@ -1,6 +1,6 @@
 // Opens instantly from the saved copy, then quietly fetches any update in the
 // background so the next launch has it.
-const CACHE = "calorie-scanner-v19";
+const CACHE = "calorie-scanner-v20";
 const SHELL = ["./", "./index.html", "./config.js", "./manifest.webmanifest", "./icon-180.png", "./icon-192.png", "./icon-512.png", "./foods.json"];
 
 self.addEventListener("install", e => {

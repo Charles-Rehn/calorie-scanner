@@ -920,7 +920,67 @@ Roast chicken dinner|130|10|11|5|1 plate (550 g)|550
 Roast beef dinner|135|10|11|5.5|1 plate (550 g)|550
 Chicken Caesar salad|140|11|6|8|1 bowl (300 g)|300
 Oven chips|160|2.5|25|5|1 portion (150 g)|150
-Boiled egg|143|12.6|0.7|9.5|1 egg (50 g)|50`
+Boiled egg|143|12.6|0.7|9.5|1 egg (50 g)|50
+Special K (Kellogg's)|379|9|80|1.5|1 bowl (30 g)|30
+Weetabix|362|12|69|2|2 biscuits (37.5 g)|37.5
+Crunchy Nut (Kellogg's)|402|6|82|4.5|1 bowl (30 g)|30
+Shreddies (Nestlé)|371|10|73|1.9|1 bowl (40 g)|40
+Cheerios (Nestlé)|380|8.5|74|4|1 bowl (30 g)|30
+Coco Pops (Kellogg's)|389|5|84|2.5|1 bowl (30 g)|30
+Rice Krispies (Kellogg's)|387|6|87|1|1 bowl (30 g)|30
+Bran Flakes|357|10|67|2.5|1 bowl (30 g)|30
+Frosties (Kellogg's)|375|4.5|87|0.6|1 bowl (30 g)|30
+Shredded Wheat (Nestlé)|357|12|68|2.2|2 biscuits (45 g)|45
+Alpen Original muesli|371|10|66|6|1 bowl (45 g)|45
+Fruit & Fibre|370|8|68|6|1 bowl (40 g)|40
+Coca-Cola (Coke)|42|0|10.6|0|1 can (330 ml)|330
+Diet Coke / Coke Zero|0.3|0|0|0|1 can (330 ml)|330
+Pepsi Max|0.4|0|0|0|1 can (330 ml)|330
+Red Bull|46|0|11|0|1 can (250 ml)|250
+KitKat, 4 finger (Nestlé)|513|6.5|61|26.5|1 bar (41.5 g)|41.5
+Mars bar|449|4|70|17|1 bar (51 g)|51
+Snickers|502|9|55|27|1 bar (48 g)|48
+Twix|500|4.6|64|24|2 fingers (50 g)|50
+Cadbury Dairy Milk|534|7.3|57|30|1 bar (45 g)|45
+Walkers Ready Salted crisps|524|6.5|51|32|1 bag (25 g)|25
+Pringles Original|534|4|51|34|1 handful (30 g)|30
+McVitie's Digestive|483|7|63|21|1 biscuit (15 g)|15
+Jaffa Cakes|377|4|70|8|1 cake (12 g)|12
+Hobnobs|474|7|62|21|1 biscuit (15 g)|15
+Heinz Baked Beanz|79|4.7|12.5|0.2|half a can (207 g)|207
+Nutella|539|6.3|57.5|30.9|1 tbsp (15 g)|15
+Pot Noodle, chicken & mushroom|428|9|60|16|1 pot (90 g)|90
+Belvita breakfast biscuits|455|8|68|15|1 pack of 4 (45 g)|45
+Nature Valley Oats & Honey bar|452|8|64|16|2 bars (42 g)|42
+Fish fingers (Birds Eye)|205|13|17|9|1 finger (28 g)|28
+Quorn mince|105|14.5|4.5|2|1 portion (100 g)|100
+Babybel|305|22|0|24|1 cheese (20 g)|20
+Yakult|66|1.3|15|0.1|1 bottle (65 ml)|65
+Galaxy chocolate|546|6.4|56|32|1 bar (42 g)|42
+Maltesers|501|8|62|24|1 bag (37 g)|37
+Bounty|487|3.7|59|26|1 bar, 2 pieces (57 g)|57
+Milky Way|451|4|72|16|1 bar (21.5 g)|21.5
+Aero|534|6.5|58|30|1 bar (36 g)|36
+Wispa|550|7|52|34|1 bar (36 g)|36
+Crunchie|465|4|72|18|1 bar (40 g)|40
+Double Decker|459|4.5|68|19|1 bar (54.5 g)|54.5
+Toffee Crisp|509|4|62|27|1 bar (38 g)|38
+Lion bar|485|5|66|22|1 bar (50 g)|50
+Yorkie|535|6.5|56|31|1 bar (46 g)|46
+Twirl|525|7.6|56|30|1 bar, 2 fingers (43 g)|43
+Freddo|532|7.4|57|30|1 bar (18 g)|18
+Kinder Bueno|572|8.6|49.5|37.3|1 pack, 2 bars (43 g)|43
+Kinder chocolate bar|566|8.7|53.5|35|1 bar (12.5 g)|12.5
+Ferrero Rocher|603|8.2|44|42|1 chocolate (12.5 g)|12.5
+Haribo Starmix|344|6.6|77|0.2|1 small bag (30 g)|30
+Skittles|405|0|91|4|1 bag (45 g)|45
+M&M's Peanut|512|9.6|57|26|1 bag (45 g)|45
+Oreo|474|5|69|19.5|1 biscuit (11 g)|11
+Hula Hoops|494|3.5|64|25|1 bag (24 g)|24
+Quavers|538|2.4|62|30|1 bag (16 g)|16
+Mini Cheddars|518|10|55|28|1 bag (25 g)|25
+Doritos Cool Original|495|7|60|24|1 handful (30 g)|30
+Fanta Orange|19|0|4.6|0|1 can (330 ml)|330`
   .split("\n").map((line, i) => {
     const [name, k, p, c, f, sl, sg] = line.split("|");
     const g = +sg || 100, m = g / 100;
@@ -2150,14 +2210,17 @@ function scoreFood(f, Q) {
   const ws = f.src === "off" && f._shop ? Q.itemWords : Q.words.filter(w => !(Q.shopWords.has(w) && !f._mine));
   if (!ws.length) return f.src === "off" && f._shop ? 4 : -1;
   let s = 0, inHead = 0;
+  const glued = f._gl || (f._gl = nm.replace(/ /g, "")), wj = ws.join("");
   for (let i = 0; i < ws.length; i++) {
     const w = ws[i]; let m = wordMatch(w, toks, i === ws.length - 1);
     if (!m && (SYN[w] || []).some(v => v.includes(" ") && nm.includes(v))) m = 2.2;
+    if (!m && wj.length >= 5 && glued.includes(wj)) m = 2.8; // "kit kat" / "kitkat"
+    if (!m && w.length >= 5 && glued.includes(w)) m = 2.6;
     if (!m) return -1;
     s += m; if ((" " + head).includes(" " + w.slice(0, 4))) inHead++;
   }
   const st = x => x.split(" ").map(stemW).join(" "), qj = st(ws.join(" ")), sn = f._sn || (f._sn = st(nm)), sh = f._sh || (f._sh = st(head));
-  if (sn === qj || sh === qj) s += 5; else if (sh.startsWith(qj)) s += 3.5; else if (sn.startsWith(qj)) s += 3; else if (sn.includes(qj)) s += 1.5;
+  if (sn === qj || sh === qj) s += 5; else if (sh.startsWith(qj)) s += 3.5; else if (sn.startsWith(qj)) s += 3; else if (sn.includes(qj)) s += 1.5; else if (glued.startsWith(wj)) s += 3.5;
   if (inHead === ws.length) s += 1.5;
   s -= Math.min(3, nm.length / 30);
   if (f._mine) s += 3;
@@ -2203,8 +2266,8 @@ async function searchOFFQuick(Q) {
   const key = (b ? b.tag : "") + "|" + terms;
   if (offQuickCache.has(key)) return offQuickCache.get(key);
   let items;
-  try { items = await salFetch(terms, b); }
-  catch (e) { items = await searchOFF(terms, b); }
+  try { items = await salFetch(terms, b); } catch (e) { items = null; }
+  if (!items || !items.length) items = await searchOFF(terms, b); // the older search as a second chance
   items = items.map(f => b ? { ...f, _shop: true } : f);
   offQuickCache.set(key, items);
   return items;
