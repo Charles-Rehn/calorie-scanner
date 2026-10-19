@@ -91,7 +91,7 @@ def main(src, out):
         m = re.search(r"/front_([a-z]{2})\.(\d+)\.\d+\.jpg", g(row, "image_small_url") or g(row, "image_front_small_url"))
         if m: img = f"{m.group(1)}.{m.group(2)}"
         # UK products first: a UK family mostly buys what UK shops sell
-        rows.append(((scans * 4 + 100 if uk else scans) + (5 if img else 0), [code, name, brand, round(k), r1(p), r1(c), r1(fat),
+        rows.append(((scans * 4 + 100 if uk else scans / 3) + (5 if img else 0), [code, name, brand, round(k), r1(p), r1(c), r1(fat),
                      sl if sq and 0 < sq <= 2000 else "", round(sq, 1) if sq and 0 < sq <= 2000 else 0, 1 if uk else 0, img]))
     rows.sort(key=lambda r: -r[0])
     print(f"read {total:,} rows, kept {len(rows):,} products in {time.time() - t0:.0f}s", flush=True)
