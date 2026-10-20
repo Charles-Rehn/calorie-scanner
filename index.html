@@ -1637,10 +1637,18 @@ const Data = {
     const local = LS.get("day:" + k, null);
     const u = userRef();
     if (u) {
-      try {
-        const s = await u.collection("days").doc(k).get();
-        if (s.exists) { const d = dayNorm(s.data()); LS.set("day:" + k, d); return d; }
-      } catch (e) {}
+      let remote = null;
+      try { const s = await u.collection("days").doc(k).get(); if (s.exists) remote = dayNorm(s.data()); } catch (e) {}
+      // Food logged on this phone while it was signed out ends up in a separate on-device diary: bring it into the account
+      const stray = dayNorm(LS.get("local:day:" + k, null, true));
+      if (stray.entries.length || stray.workouts.length) {
+        const base = remote || dayNorm(local), ids = new Set(base.entries.map(e => e.id)), wids = new Set(base.workouts.map(w => w.id));
+        const merged = { entries: base.entries.concat(stray.entries.filter(e => !ids.has(e.id))), workouts: base.workouts.concat(stray.workouts.filter(w => !wids.has(w.id))) };
+        LS.del("local:day:" + k, true);
+        Data.setDay(k, merged);
+        return merged;
+      }
+      if (remote) { LS.set("day:" + k, remote); return remote; }
     }
     return dayNorm(local);
   },
@@ -1765,6 +1773,8 @@ async function signedIn(user) {
   if (pend.length) { await Promise.allSettled(pend.map(k => { const d = dayNorm(LS.get("day:" + k, null)); return u.collection("days").doc(k).set(clean({ entries: d.entries, workouts: d.workouts, updated: Date.now() })); })); LS.del("pend"); }
   Data.saveMe();
   startWatches();
+  // anything logged on this phone while signed out goes into the account
+  try { for (let i = localStorage.length - 1; i >= 0; i--) { const key = localStorage.key(i); if (key && key.startsWith("cs2:local:day:")) Data.getDay(key.slice(14)).catch(() => {}); } } catch (e) {}
   const code = me.family;
   if (code) { try { await connectFamily(code); } catch (e) { me.family = null; Data.saveMe(); stopRemote(); startWatches(); } }
   await loadDay(); await loadWeek(); render(); renderAccount();
@@ -4061,7 +4071,10 @@ setTimeout(() => loadZX().catch(() => {}), 2500);
       note.textContent = R.fam ? `Signed in as ${user.email}. Sharing with ${S.famInfo?.name || "your family"}.` : `Signed in as ${user.email}. Your diary syncs to every device you sign in on.`;
     } else {
       if (R.user) signedOut();
-      else if (LS.ns !== "local") { LS.del("lastUid", true); stopRemote(); LS.ns = "local"; me = loadMe(); startWatches(); loadDay().then(loadWeek); render(); }
+      else if (LS.ns !== "local") {
+        LS.del("lastUid", true); stopRemote(); LS.ns = "local"; me = loadMe(); startWatches(); loadDay().then(loadWeek); render();
+        renderAccount(); openAuth("in"); toast("You've been signed out. Sign in to see your diary.", true); return;
+      }
       note.textContent = "Saved on this device only. Sign in to keep it on all your devices.";
       renderAccount();
       if (wasFirst && (!LS.get("skipAuth", false, true) || joinCode)) openAuth(joinCode || !LS.get("everSignedIn", false, true) ? "up" : "in");
